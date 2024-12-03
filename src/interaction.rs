@@ -1,5 +1,5 @@
-use bevy::{prelude::*, render::view::VisibleEntities};
 use avian2d::prelude::*;
+use bevy::{prelude::*, render::view::VisibleEntities};
 
 pub struct InteractionPlugin;
 

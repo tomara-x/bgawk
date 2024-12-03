@@ -1,13 +1,12 @@
 use crate::{
+    components::*,
     interaction::{DrawSettings, Selected},
     lapis::Lapis,
-    components::*,
-
 };
 use avian2d::prelude::*;
 use bevy::{
     app::{App, Plugin, Update},
-    prelude::{ResMut, Query, With},
+    prelude::{Query, ResMut, With},
 };
 use bevy_egui::{EguiContexts, EguiPlugin};
 use egui::*;
@@ -52,14 +51,18 @@ fn egui_ui(
                         .desired_rows(1)
                         .lock_focus(true)
                         .layouter(&mut layouter),
-                ).on_hover_text("link a propery of this entity to a shared var.\n\
+                )
+                .on_hover_text(
+                    "link a propery of this entity to a shared var.\n\
                 every line should follow the form:\n\
                 property > variable\n\
                 to make the variable update based on the property value; or:\n\
                 property < variable\n\
                 to set the property based on the variable's value.\n\
-                property list: x, y, radius, mass, ...\n\
-                ");
+                property list:\n\
+                x, y, rx (x radius), ry (y radius), rot, mass, ...\n\
+                ",
+                );
                 // TODO rest of the properties
             });
             ui.horizontal(|ui| {
@@ -71,12 +74,15 @@ fn egui_ui(
                         .desired_rows(1)
                         .lock_focus(true)
                         .layouter(&mut layouter),
-                ).on_hover_text("code that will execute on collision.\n\
+                )
+                .on_hover_text(
+                    "code that will execute on collision.\n\
                 these placeholders will be substituted:\n\
                 {r} for this entity's radius\n\
                 {x} for x position\n\
                 {y} for y position\n\
-                ");
+                ",
+                );
                 //TODO rest of the placeholders
             });
         }
@@ -96,8 +102,7 @@ fn egui_ui(
                 .show_ui(ui, |ui| {
                     ui.selectable_value(&mut settings.rigid_body, RigidBody::Static, "Static");
                     ui.selectable_value(&mut settings.rigid_body, RigidBody::Dynamic, "Dynamic");
-                }
-            );
+                });
             // TODO move to edit
             ui.horizontal(|ui| {
                 ui.add(DragValue::new(&mut settings.collision_layer).range(0..=31));
@@ -107,7 +112,7 @@ fn egui_ui(
     }
     Window::new("lapis output")
         // TODO why pivot doesn't work?
-        .default_pos(Pos2::new(1000.,0.))
+        .default_pos(Pos2::new(1000., 0.))
         .show(ctx, |ui| {
             ScrollArea::vertical().stick_to_bottom(true).show(ui, |ui| {
                 ui.add(
@@ -122,33 +127,33 @@ fn egui_ui(
             });
         });
     Window::new("lapis input")
-        .default_pos(Pos2::new(1000.,1000.))
+        .default_pos(Pos2::new(1000., 1000.))
         .show(ctx, |ui| {
-        ScrollArea::vertical().show(ui, |ui| {
-            ui.horizontal(|ui| {
-                ui.with_layout(Layout::right_to_left(Align::TOP), |ui| {
-                    let execute = ui.button("e");
-                    let input_focused = ui
-                        .add(
-                            TextEdit::multiline(&mut lapis.input)
-                                .hint_text("type a statement then press ctrl+enter")
-                                .font(TextStyle::Monospace)
-                                .code_editor()
-                                .desired_rows(5)
-                                .lock_focus(true)
-                                .desired_width(f32::INFINITY)
-                                .layouter(&mut layouter),
-                        )
-                        .has_focus();
-                    let shortcut = KeyboardShortcut::new(Modifiers::COMMAND, Key::Enter);
-                    if input_focused && ctx.input_mut(|i| i.consume_shortcut(&shortcut))
-                        || execute.clicked()
-                    {
-                        let input = std::mem::take(&mut lapis.input);
-                        lapis.eval(&input);
-                    }
+            ScrollArea::vertical().show(ui, |ui| {
+                ui.horizontal(|ui| {
+                    ui.with_layout(Layout::right_to_left(Align::TOP), |ui| {
+                        let execute = ui.button("e");
+                        let input_focused = ui
+                            .add(
+                                TextEdit::multiline(&mut lapis.input)
+                                    .hint_text("type a statement then press ctrl+enter")
+                                    .font(TextStyle::Monospace)
+                                    .code_editor()
+                                    .desired_rows(5)
+                                    .lock_focus(true)
+                                    .desired_width(f32::INFINITY)
+                                    .layouter(&mut layouter),
+                            )
+                            .has_focus();
+                        let shortcut = KeyboardShortcut::new(Modifiers::COMMAND, Key::Enter);
+                        if input_focused && ctx.input_mut(|i| i.consume_shortcut(&shortcut))
+                            || execute.clicked()
+                        {
+                            let input = std::mem::take(&mut lapis.input);
+                            lapis.eval(&input);
+                        }
+                    });
                 });
             });
         });
-    });
 }

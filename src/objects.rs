@@ -77,17 +77,15 @@ fn eval_collisions(
         if contacts.collision_started() {
             for e in [contacts.entity1, contacts.entity2] {
                 if let Ok(c) = code.get(e) {
-                    // better checking than this
-                    if c.0.contains('{') {
-                        let trans = trans_query.get(e).unwrap();
-                        let r = trans.scale.x;
-                        //TODO placeholders for x, y, rotation, sides, etc
-                        let code = c.0.replace("{r}", &format!("{r}"));
-                        if !code.is_empty() {
+                    if !c.0.is_empty() {
+                        // TODO better checking than this
+                        if c.0.contains('{') {
+                            let trans = trans_query.get(e).unwrap();
+                            let r = trans.scale.x;
+                            //TODO placeholders for x, y, rotation, sides, etc
+                            let code = c.0.replace("{r}", &format!("{r}"));
                             lapis.eval(&code);
-                        }
-                    } else {
-                        if !c.0.is_empty() {
+                        } else {
                             lapis.eval(&c.0);
                         }
                     }
@@ -102,6 +100,7 @@ fn sync_links(
     //mut meshes: ResMut<Assets<Mesh>>,
     //mut materials: ResMut<Assets<ColorMaterial>>,
     mut trans_query: Query<&mut Transform>,
+    mut mass_query: Query<&mut Mass>,
     //mut collider_query: Query<&mut Collider>,
     lapis: Res<Lapis>,
 ) {
@@ -109,19 +108,76 @@ fn sync_links(
         for link in links.lines() {
             // links are in the form "property > var" or "property < var"
             let mut link = link.split_ascii_whitespace();
-            let Some(property) = link.next() else { continue };
+            let Some(property) = link.next() else {
+                continue;
+            };
             let Some(dir) = link.next() else { continue };
             let Some(var) = link.next() else { continue };
             if let Some(var) = lapis.smap.get(var) {
-                if property == "x" {
-                    let trans = &mut trans_query.get_mut(e).unwrap();
-                    if dir == "<" {
-                        trans.translation.x = var.value();
-                    } else if dir == ">" {
-                        var.set(trans.translation.x);
+                match property {
+                    "x" => {
+                        let trans = &mut trans_query.get_mut(e).unwrap();
+                        if dir == "<" {
+                            trans.translation.x = var.value();
+                        } else if dir == ">" {
+                            var.set(trans.translation.x);
+                        }
                     }
+                    "y" => {
+                        let trans = &mut trans_query.get_mut(e).unwrap();
+                        if dir == "<" {
+                            trans.translation.y = var.value();
+                        } else if dir == ">" {
+                            var.set(trans.translation.y);
+                        }
+                    }
+                    "rx" => {
+                        let trans = &mut trans_query.get_mut(e).unwrap();
+                        if dir == "<" {
+                            trans.scale.x = var.value();
+                        } else if dir == ">" {
+                            var.set(trans.scale.x);
+                        }
+                    }
+                    "ry" => {
+                        let trans = &mut trans_query.get_mut(e).unwrap();
+                        if dir == "<" {
+                            trans.scale.y = var.value();
+                        } else if dir == ">" {
+                            var.set(trans.scale.y);
+                        }
+                    }
+                    "rot" => {
+                        let trans = &mut trans_query.get_mut(e).unwrap();
+                        if dir == "<" {
+                            trans.rotation = Quat::from_rotation_z(var.value());
+                        } else if dir == ">" {
+                            let rot = &mut trans.rotation.to_euler(EulerRot::XYZ).2;
+                            var.set(*rot);
+                        }
+                    }
+                    "mass" => {
+                        let mass = &mut mass_query.get_mut(e).unwrap();
+                        if dir == "<" {
+                            mass.set(var.value());
+                        } else if dir == ">" {
+                            var.set(mass.value());
+                        }
+                    }
+                    _ => {}
                 }
-                // TODO rest of the links
+                //h hue
+                //s saturation
+                //l lightness
+                //a alpha
+                //sides
+                //vx
+                //vy
+                //va (angular velocity)
+                //restitution
+                //lindamp
+                //angdamp
+                //inertia
             }
         }
     }
