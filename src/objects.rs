@@ -1,0 +1,128 @@
+use crate::{components::*, interaction::*, lapis::Lapis};
+use avian2d::prelude::*;
+use bevy::prelude::*;
+
+pub struct ObjectsPlugin;
+
+impl Plugin for ObjectsPlugin {
+    fn build(&self, app: &mut App) {
+        app.add_systems(Update, spawn.run_if(resource_equals(EguiFocused(false))))
+            .add_systems(PhysicsSchedule, attract.in_set(PhysicsStepSet::First))
+            .add_systems(Update, eval_collisions)
+            .add_systems(Update, sync_links);
+    }
+}
+
+fn spawn(
+    mut commands: Commands,
+    cursor: Res<CursorInfo>,
+    mut meshes: ResMut<Assets<Mesh>>,
+    mut materials: ResMut<Assets<ColorMaterial>>,
+    keyboard_input: Res<ButtonInput<KeyCode>>,
+    mouse_button_input: Res<ButtonInput<MouseButton>>,
+    settings: Res<DrawSettings>,
+    egui_focused: Res<EguiFocused>,
+) {
+    if !keyboard_input.pressed(KeyCode::Space)
+        && mouse_button_input.just_released(MouseButton::Left)
+        && settings.draw
+        // avoid spawning when dragging outside of egui
+        && !egui_focused.is_changed()
+    {
+        let r = cursor.f.distance(cursor.i).max(1.0);
+        let color = Srgba::from_f32_array(settings.color);
+        let mesh_handle = meshes.add(RegularPolygon::new(1., settings.sides));
+        // TODO the alpha blending thingy
+        let mat_handle = materials.add(ColorMaterial::from_color(color));
+        let layer = 1 << settings.collision_layer;
+        commands.spawn((
+            Mesh2d(mesh_handle),
+            MeshMaterial2d(mat_handle),
+            settings.rigid_body,
+            Links::default(),
+            Code::default(),
+            Collider::regular_polygon(1., settings.sides),
+            CollisionLayers::from_bits(layer, layer),
+            Transform {
+                translation: cursor.i.extend(0.),
+                scale: Vec3::new(r, r, 1.),
+                ..default()
+            },
+        ));
+    }
+}
+
+// TODO only work on dynamic objects
+// TODO separate layers
+fn attract(mut query: Query<(&mut Mass, &Position, &mut LinearVelocity)>) {
+    let mut combinations = query.iter_combinations_mut();
+    while let Some([mut e1, mut e2]) = combinations.fetch_next() {
+        let m1 = e1.0.value();
+        let m2 = e2.0.value();
+        let p1 = e1.1 .0;
+        let p2 = e2.1 .0;
+        let r = p1.distance(p2);
+        e1.2 .0 += (p2 - p1) * (m2 / r.powf(2.)) * 0.1;
+        e2.2 .0 += (p1 - p2) * (m1 / r.powf(2.)) * 0.1;
+    }
+}
+
+fn eval_collisions(
+    mut collision_event_reader: EventReader<Collision>,
+    code: Query<&Code>,
+    mut lapis: ResMut<Lapis>,
+    trans_query: Query<&Transform>,
+) {
+    for Collision(contacts) in collision_event_reader.read() {
+        if contacts.collision_started() {
+            for e in [contacts.entity1, contacts.entity2] {
+                if let Ok(c) = code.get(e) {
+                    // better checking than this
+                    if c.0.contains('{') {
+                        let trans = trans_query.get(e).unwrap();
+                        let r = trans.scale.x;
+                        //TODO placeholders for x, y, rotation, sides, etc
+                        let code = c.0.replace("{r}", &format!("{r}"));
+                        if !code.is_empty() {
+                            lapis.eval(&code);
+                        }
+                    } else {
+                        if !c.0.is_empty() {
+                            lapis.eval(&c.0);
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+fn sync_links(
+    links_query: Query<(Entity, &Links)>,
+    //mut meshes: ResMut<Assets<Mesh>>,
+    //mut materials: ResMut<Assets<ColorMaterial>>,
+    mut trans_query: Query<&mut Transform>,
+    //mut collider_query: Query<&mut Collider>,
+    lapis: Res<Lapis>,
+) {
+    for (e, Links(links)) in links_query.iter() {
+        for link in links.lines() {
+            // links are in the form "property > var" or "property < var"
+            let mut link = link.split_ascii_whitespace();
+            let Some(property) = link.next() else { continue };
+            let Some(dir) = link.next() else { continue };
+            let Some(var) = link.next() else { continue };
+            if let Some(var) = lapis.smap.get(var) {
+                if property == "x" {
+                    let trans = &mut trans_query.get_mut(e).unwrap();
+                    if dir == "<" {
+                        trans.translation.x = var.value();
+                    } else if dir == ">" {
+                        var.set(trans.translation.x);
+                    }
+                }
+                // TODO rest of the links
+            }
+        }
+    }
+}
