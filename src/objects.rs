@@ -21,6 +21,10 @@ pub struct Code(pub String);
 #[reflect(Component)]
 pub struct Links(pub String);
 
+#[derive(Component, Reflect)]
+#[reflect(Component)]
+pub struct Sides(pub u32);
+
 fn spawn(
     mut commands: Commands,
     cursor: Res<CursorInfo>,
@@ -62,6 +66,7 @@ fn spawn(
                 scale: Vec3::new(r, r, 1.),
                 ..default()
             },
+            Sides(settings.sides),
         ));
     }
 }
@@ -109,18 +114,20 @@ fn eval_collisions(
 
 fn sync_links(
     links_query: Query<(Entity, &Links)>,
-    //mut meshes: ResMut<Assets<Mesh>>,
     mut trans_query: Query<&mut Transform>,
     mut mass_query: Query<&mut Mass>,
-    //mut collider_query: Query<&mut Collider>,
     mut lin_velocity_query: Query<&mut LinearVelocity>,
     mut ang_velocity_query: Query<&mut AngularVelocity>,
     mut restitution_query: Query<&mut Restitution>,
     mut lin_damp_query: Query<&mut LinearDamping>,
     mut ang_damp_query: Query<&mut AngularDamping>,
     mut inertia_query: Query<&mut AngularInertia>,
-    mut materials: ResMut<Assets<ColorMaterial>>,
     material_ids: Query<&MeshMaterial2d<ColorMaterial>>,
+    mut materials: ResMut<Assets<ColorMaterial>>,
+    mesh_ids: Query<&Mesh2d>,
+    mut meshes: ResMut<Assets<Mesh>>,
+    mut collider_query: Query<&mut Collider>,
+    sides_query: Query<&Sides>,
     lapis: Res<Lapis>,
 ) {
     for (e, Links(links)) in links_query.iter() {
@@ -288,9 +295,21 @@ fn sync_links(
                             var.set(hsla.alpha);
                         }
                     }
+                    "sides" => {
+                        if dir == "<" {
+                            let sides = (var.value() as u32).clamp(3, 128);
+                            let mesh_id = mesh_ids.get(e).unwrap();
+                            let mesh = meshes.get_mut(mesh_id).unwrap();
+                            *mesh = RegularPolygon::new(1., sides).into();
+                            let mut collider = collider_query.get_mut(e).unwrap();
+                            *collider = Collider::regular_polygon(1., sides);
+                        } else if dir == ">" {
+                            let sides = sides_query.get(e).unwrap();
+                            var.set(sides.0 as f32);
+                        }
+                    }
                     _ => {}
                 }
-                //TODO sides
             }
         }
     }
