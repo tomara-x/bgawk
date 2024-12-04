@@ -51,6 +51,7 @@ fn egui_ui(
                 .layouter(&mut layouter),
         );
         lapis.eval(&update_code.0);
+        ui.label("selected:");
         if let Ok((mut code, mut links)) = selected.get_single_mut() {
             ui.horizontal(|ui| {
                 ui.label("links");
