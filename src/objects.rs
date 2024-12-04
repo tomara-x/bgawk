@@ -107,7 +107,6 @@ fn eval_collisions(
 fn sync_links(
     links_query: Query<(Entity, &Links)>,
     //mut meshes: ResMut<Assets<Mesh>>,
-    //mut materials: ResMut<Assets<ColorMaterial>>,
     mut trans_query: Query<&mut Transform>,
     mut mass_query: Query<&mut Mass>,
     //mut collider_query: Query<&mut Collider>,
@@ -117,6 +116,8 @@ fn sync_links(
     mut lin_damp_query: Query<&mut LinearDamping>,
     mut ang_damp_query: Query<&mut AngularDamping>,
     mut inertia_query: Query<&mut AngularInertia>,
+    mut materials: ResMut<Assets<ColorMaterial>>,
+    material_ids: Query<&MeshMaterial2d<ColorMaterial>>,
     lapis: Res<Lapis>,
 ) {
     for (e, Links(links)) in links_query.iter() {
@@ -236,14 +237,57 @@ fn sync_links(
                             var.set(inertia.value());
                         }
                     }
+                    "h" => {
+                        let mat_id = material_ids.get(e).unwrap();
+                        let mat = materials.get_mut(mat_id).unwrap();
+                        if dir == "<" {
+                            let mut hsla: Hsla = mat.color.into();
+                            hsla.hue = var.value();
+                            mat.color = hsla.into();
+                        } else if dir == ">" {
+                            let hsla: Hsla = mat.color.into();
+                            var.set(hsla.hue);
+                        }
+                    }
+                    "s" => {
+                        let mat_id = material_ids.get(e).unwrap();
+                        let mat = materials.get_mut(mat_id).unwrap();
+                        if dir == "<" {
+                            let mut hsla: Hsla = mat.color.into();
+                            hsla.saturation = var.value();
+                            mat.color = hsla.into();
+                        } else if dir == ">" {
+                            let hsla: Hsla = mat.color.into();
+                            var.set(hsla.saturation);
+                        }
+                    }
+                    "l" => {
+                        let mat_id = material_ids.get(e).unwrap();
+                        let mat = materials.get_mut(mat_id).unwrap();
+                        if dir == "<" {
+                            let mut hsla: Hsla = mat.color.into();
+                            hsla.lightness = var.value();
+                            mat.color = hsla.into();
+                        } else if dir == ">" {
+                            let hsla: Hsla = mat.color.into();
+                            var.set(hsla.lightness);
+                        }
+                    }
+                    "a" => {
+                        let mat_id = material_ids.get(e).unwrap();
+                        let mat = materials.get_mut(mat_id).unwrap();
+                        if dir == "<" {
+                            let mut hsla: Hsla = mat.color.into();
+                            hsla.alpha = var.value();
+                            mat.color = hsla.into();
+                        } else if dir == ">" {
+                            let hsla: Hsla = mat.color.into();
+                            var.set(hsla.alpha);
+                        }
+                    }
                     _ => {}
                 }
-                //TODO
-                //h hue
-                //s saturation
-                //l lightness
-                //a alpha
-                //sides
+                //TODO sides
             }
         }
     }
