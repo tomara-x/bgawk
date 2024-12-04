@@ -1,4 +1,4 @@
-use crate::{components::*, interaction::*, lapis::Lapis};
+use crate::{interaction::*, lapis::Lapis};
 use avian2d::prelude::*;
 use bevy::prelude::*;
 
@@ -12,6 +12,14 @@ impl Plugin for ObjectsPlugin {
             .add_systems(PostUpdate, sync_links);
     }
 }
+
+#[derive(Component, Reflect, Default)]
+#[reflect(Component)]
+pub struct Code(pub String);
+
+#[derive(Component, Reflect, Default)]
+#[reflect(Component)]
+pub struct Links(pub String);
 
 fn spawn(
     mut commands: Commands,

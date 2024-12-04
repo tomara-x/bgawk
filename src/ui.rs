@@ -1,5 +1,5 @@
 use crate::{
-    components::*,
+    objects::*,
     interaction::{DrawSettings, Selected},
     lapis::{Lapis, UpdateCode},
 };

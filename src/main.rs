@@ -10,7 +10,6 @@ use bevy::{
 };
 use bevy_pancam::*;
 
-mod components;
 mod interaction;
 mod lapis;
 mod objects;
