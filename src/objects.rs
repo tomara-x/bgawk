@@ -51,6 +51,9 @@ fn spawn(
             Code::default(),
             Collider::regular_polygon(1., settings.sides),
             CollisionLayers::from_bits(layer, layer),
+            Restitution::default(),
+            LinearDamping::default(),
+            AngularDamping::default(),
             Transform {
                 translation: cursor.i.extend(0.),
                 scale: Vec3::new(r, r, 1.),
@@ -108,17 +111,24 @@ fn sync_links(
     mut trans_query: Query<&mut Transform>,
     mut mass_query: Query<&mut Mass>,
     //mut collider_query: Query<&mut Collider>,
+    mut lin_velocity_query: Query<&mut LinearVelocity>,
+    mut ang_velocity_query: Query<&mut AngularVelocity>,
+    mut restitution_query: Query<&mut Restitution>,
+    mut lin_damp_query: Query<&mut LinearDamping>,
+    mut ang_damp_query: Query<&mut AngularDamping>,
+    mut inertia_query: Query<&mut AngularInertia>,
     lapis: Res<Lapis>,
 ) {
     for (e, Links(links)) in links_query.iter() {
         for link in links.lines() {
             // links are in the form "property > var" or "property < var"
             let mut link = link.split_ascii_whitespace();
-            let Some(property) = link.next() else {
+            let s0 = link.next();
+            let s1 = link.next();
+            let s2 = link.next();
+            let (Some(property), Some(dir), Some(var)) = (s0, s1, s2) else {
                 continue;
             };
-            let Some(dir) = link.next() else { continue };
-            let Some(var) = link.next() else { continue };
             if let Some(var) = lapis.smap.get(var) {
                 match property {
                     "x" => {
@@ -170,20 +180,70 @@ fn sync_links(
                             var.set(mass.value());
                         }
                     }
+                    "vx" => {
+                        let velocity = &mut lin_velocity_query.get_mut(e).unwrap();
+                        if dir == "<" {
+                            velocity.x = var.value();
+                        } else if dir == ">" {
+                            var.set(velocity.x);
+                        }
+                    }
+                    "vy" => {
+                        let velocity = &mut lin_velocity_query.get_mut(e).unwrap();
+                        if dir == "<" {
+                            velocity.y = var.value();
+                        } else if dir == ">" {
+                            var.set(velocity.y);
+                        }
+                    }
+                    "va" => {
+                        let velocity = &mut ang_velocity_query.get_mut(e).unwrap();
+                        if dir == "<" {
+                            velocity.0 = var.value();
+                        } else if dir == ">" {
+                            var.set(velocity.0);
+                        }
+                    }
+                    "restitution" => {
+                        let restitution = &mut restitution_query.get_mut(e).unwrap();
+                        if dir == "<" {
+                            restitution.coefficient = var.value();
+                        } else if dir == ">" {
+                            var.set(restitution.coefficient);
+                        }
+                    }
+                    "lindamp" => {
+                        let damp = &mut lin_damp_query.get_mut(e).unwrap();
+                        if dir == "<" {
+                            damp.0 = var.value();
+                        } else if dir == ">" {
+                            var.set(damp.0);
+                        }
+                    }
+                    "angdamp" => {
+                        let damp = &mut ang_damp_query.get_mut(e).unwrap();
+                        if dir == "<" {
+                            damp.0 = var.value();
+                        } else if dir == ">" {
+                            var.set(damp.0);
+                        }
+                    }
+                    "inertia" => {
+                        let inertia = &mut inertia_query.get_mut(e).unwrap();
+                        if dir == "<" {
+                            inertia.set(var.value());
+                        } else if dir == ">" {
+                            var.set(inertia.value());
+                        }
+                    }
                     _ => {}
                 }
+                //TODO
                 //h hue
                 //s saturation
                 //l lightness
                 //a alpha
                 //sides
-                //vx
-                //vy
-                //va (angular velocity)
-                //restitution
-                //lindamp
-                //angdamp
-                //inertia
             }
         }
     }

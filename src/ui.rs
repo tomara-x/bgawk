@@ -1,7 +1,7 @@
 use crate::{
-    objects::*,
     interaction::{DrawSettings, Selected},
     lapis::{Lapis, UpdateCode},
+    objects::*,
 };
 use avian2d::prelude::*;
 use bevy::{
@@ -64,14 +64,28 @@ fn egui_ui(
                         .layouter(&mut layouter),
                 )
                 .on_hover_text(
-                    "link a propery of this entity to a shared var.\n\
+                    "link a propery of this entity to a shared var\n\n\
                 every line should follow the form:\n\
                 property > variable\n\
-                to make the variable update based on the property value; or:\n\
+                to set the variable to the property's value\n\
+                or\n\
                 property < variable\n\
-                to set the property based on the variable's value.\n\
+                to set the property to the variable's value\n\n\
                 property list:\n\
-                x, y, rx (x radius), ry (y radius), rot, mass, ...\n\
+                x\n\
+                y\n\
+                rx (x radius)\n\
+                ry\n\
+                rot (rotation)\n\
+                mass\n\
+                vx (x velocity)\n\
+                vy\n\
+                va (angular velocity)\n\
+                restitution\n\
+                lindamp (linear damping)\n\
+                angdamp (angular damping)\n\
+                inertia\n\
+                ...\
                 ",
                 );
                 // TODO rest of the properties
@@ -87,7 +101,7 @@ fn egui_ui(
                         .layouter(&mut layouter),
                 )
                 .on_hover_text(
-                    "code that will execute on collision.\n\
+                    "code that will execute on collision\n\
                 these placeholders will be substituted:\n\
                 {r} for this entity's radius\n\
                 {x} for x position\n\
