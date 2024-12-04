@@ -1,6 +1,6 @@
 use crate::{interaction::*, lapis::Lapis};
 use avian2d::prelude::*;
-use bevy::prelude::*;
+use bevy::{prelude::*, sprite::AlphaMode2d};
 
 pub struct ObjectsPlugin;
 
@@ -38,10 +38,13 @@ fn spawn(
         && !egui_focused.is_changed()
     {
         let r = cursor.f.distance(cursor.i).max(1.0);
-        let color = Srgba::from_f32_array(settings.color);
+        let material = ColorMaterial {
+            color: Srgba::from_f32_array(settings.color).into(),
+            alpha_mode: AlphaMode2d::Blend,
+            ..default()
+        };
         let mesh_handle = meshes.add(RegularPolygon::new(1., settings.sides));
-        // TODO the alpha blending thingy
-        let mat_handle = materials.add(ColorMaterial::from_color(color));
+        let mat_handle = materials.add(material);
         let layer = 1 << settings.collision_layer;
         commands.spawn((
             Mesh2d(mesh_handle),
