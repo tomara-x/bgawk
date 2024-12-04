@@ -64,14 +64,14 @@ fn egui_ui(
                         .layouter(&mut layouter),
                 )
                 .on_hover_text(
-                    "link a propery of this entity to a shared var\n\n\
+                    "link a property of this entity to a shared var\n\n\
                 every line should follow the form:\n\
                 property > variable\n\
                 to set the variable to the property's value\n\
                 or\n\
                 property < variable\n\
                 to set the property to the variable's value\n\n\
-                property list:\n\
+                properties list:\n\
                 x\n\
                 y\n\
                 rx (x radius)\n\
@@ -85,10 +85,12 @@ fn egui_ui(
                 lindamp (linear damping)\n\
                 angdamp (angular damping)\n\
                 inertia\n\
-                ...\
-                ",
+                h (hue)\n\
+                s (saturation)\n\
+                l (lightness)\n\
+                a (alpha)\n\
+                sides",
                 );
-                // TODO rest of the properties
             });
             ui.horizontal(|ui| {
                 ui.label("code");
