@@ -70,9 +70,9 @@ impl Lapis {
     pub fn eval(&mut self, input: &str) {
         if !input.is_empty() {
             self.buffer.push('\n');
+            self.buffer.push_str(input);
             match parse_str::<Stmt>(input) {
                 Ok(stmt) => {
-                    self.buffer.push_str(input);
                     eval_stmt(stmt, self, false);
                 }
                 Err(err) => {
