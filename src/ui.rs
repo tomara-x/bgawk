@@ -1,7 +1,7 @@
 use crate::{
     components::*,
     interaction::{DrawSettings, Selected},
-    lapis::Lapis,
+    lapis::{Lapis, UpdateCode},
 };
 use avian2d::prelude::*;
 use bevy::{
@@ -26,6 +26,7 @@ fn egui_ui(
     mut settings: ResMut<DrawSettings>,
     mut gravity: ResMut<Gravity>,
     mut selected: Query<(&mut Code, &mut Links), With<Selected>>,
+    mut update_code: ResMut<UpdateCode>,
 ) {
     let ctx = contexts.ctx_mut();
     let theme = CodeTheme::from_memory(ctx, &ctx.style());
@@ -41,6 +42,15 @@ fn egui_ui(
             ui.add(DragValue::new(&mut gravity.0.x));
             ui.add(DragValue::new(&mut gravity.0.y));
         });
+        ui.add(
+            TextEdit::multiline(&mut update_code.0)
+                .hint_text("code here will be evaluated every frame")
+                .font(TextStyle::Monospace)
+                .code_editor()
+                .lock_focus(true)
+                .layouter(&mut layouter),
+        );
+        lapis.eval(&update_code.0);
         if let Ok((mut code, mut links)) = selected.get_single_mut() {
             ui.horizontal(|ui| {
                 ui.label("links");

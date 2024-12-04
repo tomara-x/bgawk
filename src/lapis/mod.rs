@@ -40,6 +40,10 @@ pub struct Lapis {
     pub receivers: (Receiver<f32>, Receiver<f32>),
 }
 
+#[derive(Resource, Reflect, Default)]
+#[reflect(Resource)]
+pub struct UpdateCode(pub String);
+
 impl Lapis {
     pub fn new() -> Self {
         let (slot, slot_back) = Slot::new(Box::new(dc(0.) | dc(0.)));
@@ -64,14 +68,16 @@ impl Lapis {
         }
     }
     pub fn eval(&mut self, input: &str) {
-        self.buffer.push('\n');
-        match parse_str::<Stmt>(input) {
-            Ok(stmt) => {
-                self.buffer.push_str(input);
-                eval_stmt(stmt, self);
-            }
-            Err(err) => {
-                self.buffer.push_str(&format!("\n// error: {}", err));
+        if !input.is_empty() {
+            self.buffer.push('\n');
+            match parse_str::<Stmt>(input) {
+                Ok(stmt) => {
+                    self.buffer.push_str(input);
+                    eval_stmt(stmt, self);
+                }
+                Err(err) => {
+                    self.buffer.push_str(&format!("\n// error: {}", err));
+                }
             }
         }
     }

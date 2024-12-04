@@ -77,17 +77,15 @@ fn eval_collisions(
         if contacts.collision_started() {
             for e in [contacts.entity1, contacts.entity2] {
                 if let Ok(c) = code.get(e) {
-                    if !c.0.is_empty() {
-                        // TODO better checking than this
-                        if c.0.contains('{') {
-                            let trans = trans_query.get(e).unwrap();
-                            let r = trans.scale.x;
-                            //TODO placeholders for x, y, rotation, sides, etc
-                            let code = c.0.replace("{r}", &format!("{r}"));
-                            lapis.eval(&code);
-                        } else {
-                            lapis.eval(&c.0);
-                        }
+                    // TODO better checking than this
+                    if c.0.contains('{') {
+                        let trans = trans_query.get(e).unwrap();
+                        let r = trans.scale.x;
+                        //TODO placeholders for x, y, rotation, sides, etc
+                        let code = c.0.replace("{r}", &format!("{r}"));
+                        lapis.eval(&code);
+                    } else {
+                        lapis.eval(&c.0);
                     }
                 }
             }

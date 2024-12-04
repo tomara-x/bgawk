@@ -38,6 +38,7 @@ fn main() {
     .add_systems(Startup, setup)
     .add_systems(Update, toggle_pan)
     .insert_resource(Lapis::new())
+    .insert_resource(UpdateCode::default())
     .run();
 }
 
