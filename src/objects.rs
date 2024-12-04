@@ -9,7 +9,7 @@ impl Plugin for ObjectsPlugin {
         app.add_systems(Update, spawn.run_if(resource_equals(EguiFocused(false))))
             .add_systems(PhysicsSchedule, attract.in_set(PhysicsStepSet::First))
             .add_systems(Update, eval_collisions)
-            .add_systems(Update, sync_links);
+            .add_systems(PostUpdate, sync_links);
     }
 }
 
