@@ -36,7 +36,6 @@ fn main() {
     .insert_resource(ClearColor(Color::BLACK))
     .insert_resource(Gravity::ZERO)
     .add_systems(Startup, setup)
-    .add_systems(Update, toggle_pan)
     .insert_resource(Lapis::new())
     .insert_resource(UpdateCode::default())
     .run();
@@ -64,8 +63,4 @@ fn setup(mut commands: Commands) {
             ..default()
         },
     ));
-}
-
-fn toggle_pan(mut query: Query<&mut PanCam>, keyboard_input: Res<ButtonInput<KeyCode>>) {
-    query.single_mut().enabled = keyboard_input.pressed(KeyCode::Space);
 }

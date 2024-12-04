@@ -1,5 +1,6 @@
 use avian2d::prelude::*;
 use bevy::{prelude::*, render::view::VisibleEntities};
+use bevy_pancam::*;
 
 pub struct InteractionPlugin;
 
@@ -9,6 +10,7 @@ impl Plugin for InteractionPlugin {
             .insert_resource(ClickedOnSpace(true))
             .insert_resource(EguiFocused(false))
             .insert_resource(DrawSettings::default())
+            .add_systems(Update, toggle_pan)
             .add_systems(Update, check_egui_focus)
             .add_systems(Update, update_cursor_info)
             .add_systems(
@@ -240,6 +242,14 @@ fn move_selected(
             t.translation.y += cursor.d.y;
         }
     }
+}
+
+fn toggle_pan(
+    mut query: Query<&mut PanCam>,
+    keyboard_input: Res<ButtonInput<KeyCode>>,
+    egui_focused: Res<EguiFocused>,
+) {
+    query.single_mut().enabled = keyboard_input.pressed(KeyCode::Space) && !egui_focused.0;
 }
 
 // this system was stolen from bevy_pancam
