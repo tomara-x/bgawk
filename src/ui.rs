@@ -44,13 +44,13 @@ fn egui_ui(
         });
         ui.add(
             TextEdit::multiline(&mut update_code.0)
-                .hint_text("code here will be evaluated every frame")
+                .hint_text("code here will be quietly evaluated every frame")
                 .font(TextStyle::Monospace)
                 .code_editor()
                 .lock_focus(true)
                 .layouter(&mut layouter),
         );
-        lapis.eval(&update_code.0);
+        lapis.quiet_eval(&update_code.0);
         ui.label("selected:");
         if let Ok((mut code, mut links)) = selected.get_single_mut() {
             ui.horizontal(|ui| {

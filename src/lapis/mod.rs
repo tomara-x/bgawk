@@ -73,7 +73,7 @@ impl Lapis {
             match parse_str::<Stmt>(input) {
                 Ok(stmt) => {
                     self.buffer.push_str(input);
-                    eval_stmt(stmt, self);
+                    eval_stmt(stmt, self, false);
                 }
                 Err(err) => {
                     self.buffer.push_str(&format!("\n// error: {}", err));
@@ -81,9 +81,15 @@ impl Lapis {
             }
         }
     }
+    pub fn quiet_eval(&mut self, input: &str) {
+        if let Ok(stmt) = parse_str::<Stmt>(input) {
+            eval_stmt(stmt, self, true);
+        }
+    }
 }
 
-fn eval_stmt(s: Stmt, lapis: &mut Lapis) {
+// TODO clean this up
+fn eval_stmt(s: Stmt, lapis: &mut Lapis, quiet: bool) {
     match s {
         Stmt::Local(expr) => {
             if let Some(k) = pat_ident(&expr.pat) {
@@ -168,7 +174,7 @@ fn eval_stmt(s: Stmt, lapis: &mut Lapis) {
                                 *var = output;
                             }
                         }
-                    } else {
+                    } else if !quiet {
                         lapis.buffer.push_str(&format!("\n// {:?}", output));
                     }
                 }
@@ -197,6 +203,9 @@ fn eval_stmt(s: Stmt, lapis: &mut Lapis) {
                     }
                 }
                 "error" => {
+                    if quiet {
+                        return;
+                    }
                     if let Some(k) = nth_path_ident(&method.receiver, 0) {
                         if let Some(g) = &mut lapis.gmap.get_mut(&k) {
                             lapis.buffer.push_str(&format!("\n// {:?}", g.error()));
@@ -204,6 +213,9 @@ fn eval_stmt(s: Stmt, lapis: &mut Lapis) {
                     }
                 }
                 "source" => {
+                    if quiet {
+                        return;
+                    }
                     if let Some(k) = nth_path_ident(&method.receiver, 0) {
                         if let Some(g) = &mut lapis.gmap.get(&k) {
                             let arg0 = method.args.first();
@@ -223,6 +235,9 @@ fn eval_stmt(s: Stmt, lapis: &mut Lapis) {
                     }
                 }
                 "output_source" => {
+                    if quiet {
+                        return;
+                    }
                     if let Some(k) = nth_path_ident(&method.receiver, 0) {
                         if let Some(g) = &mut lapis.gmap.get(&k) {
                             let arg0 = method.args.first();
@@ -238,25 +253,27 @@ fn eval_stmt(s: Stmt, lapis: &mut Lapis) {
                     }
                 }
                 _ => {
-                    if let Some(n) = method_call_float(method, lapis) {
-                        lapis.buffer.push_str(&format!("\n// {:?}", n));
-                        return;
-                    } else if let Some(arr) = method_call_vec_ref(method, lapis) {
-                        lapis.buffer.push_str(&format!("\n// {:?}", arr));
-                        return;
-                    } else if let Some(nodeid) = method_nodeid(&expr, lapis) {
-                        lapis.buffer.push_str(&format!("\n// {:?}", nodeid));
-                        return;
-                    } else if let Some(event) = method_eventid(&expr, lapis) {
-                        lapis.buffer.push_str(&format!("\n// {:?}", event));
-                        return;
-                    } else if let Some(mut g) = method_net(method, lapis) {
-                        let info = g.display().replace('\n', "\n// ");
-                        lapis.buffer.push_str(&format!("\n// {}", info));
-                        lapis
-                            .buffer
-                            .push_str(&format!("Size           : {}", g.size()));
-                        return;
+                    if !quiet {
+                        if let Some(n) = method_call_float(method, lapis) {
+                            lapis.buffer.push_str(&format!("\n// {:?}", n));
+                            return;
+                        } else if let Some(arr) = method_call_vec_ref(method, lapis) {
+                            lapis.buffer.push_str(&format!("\n// {:?}", arr));
+                            return;
+                        } else if let Some(nodeid) = method_nodeid(&expr, lapis) {
+                            lapis.buffer.push_str(&format!("\n// {:?}", nodeid));
+                            return;
+                        } else if let Some(event) = method_eventid(&expr, lapis) {
+                            lapis.buffer.push_str(&format!("\n// {:?}", event));
+                            return;
+                        } else if let Some(mut g) = method_net(method, lapis) {
+                            let info = g.display().replace('\n', "\n// ");
+                            lapis.buffer.push_str(&format!("\n// {}", info));
+                            lapis
+                                .buffer
+                                .push_str(&format!("Size           : {}", g.size()));
+                            return;
+                        }
                     }
                     wave_methods(method, lapis);
                     net_methods(method, lapis);
@@ -330,14 +347,14 @@ fn eval_stmt(s: Stmt, lapis: &mut Lapis) {
                     for i in r0..r1 {
                         lapis.fmap.insert(ident.clone(), i as f32);
                         for stmt in &expr.body.stmts {
-                            eval_stmt(stmt.clone(), lapis);
+                            eval_stmt(stmt.clone(), lapis, quiet);
                         }
                     }
                 } else if let Some(arr) = arr {
                     for i in arr {
                         lapis.fmap.insert(ident.clone(), i);
                         for stmt in &expr.body.stmts {
-                            eval_stmt(stmt.clone(), lapis);
+                            eval_stmt(stmt.clone(), lapis, quiet);
                         }
                     }
                 }
@@ -355,18 +372,21 @@ fn eval_stmt(s: Stmt, lapis: &mut Lapis) {
                             label: None,
                             block: expr.then_branch,
                         });
-                        eval_stmt(Stmt::Expr(expr, None), lapis);
+                        eval_stmt(Stmt::Expr(expr, None), lapis, quiet);
                     } else if let Some((_, else_branch)) = expr.else_branch {
-                        eval_stmt(Stmt::Expr(*else_branch, None), lapis);
+                        eval_stmt(Stmt::Expr(*else_branch, None), lapis, quiet);
                     }
                 }
             }
             Expr::Block(expr) => {
                 for stmt in expr.block.stmts {
-                    eval_stmt(stmt, lapis);
+                    eval_stmt(stmt, lapis, quiet);
                 }
             }
             _ => {
+                if quiet {
+                    return;
+                }
                 if let Some(n) = eval_float(&expr, lapis) {
                     lapis.buffer.push_str(&format!("\n// {:?}", n));
                 } else if let Some(arr) = eval_vec_ref(&expr, lapis) {
