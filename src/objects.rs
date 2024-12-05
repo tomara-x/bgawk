@@ -91,17 +91,39 @@ fn eval_collisions(
     code: Query<&Code>,
     mut lapis: ResMut<Lapis>,
     trans_query: Query<&Transform>,
+    lin_velocity_query: Query<&LinearVelocity>,
+    ang_velocity_query: Query<&AngularVelocity>,
+    mass_query: Query<&Mass>,
+    inertia_query: Query<&AngularInertia>,
 ) {
     for Collision(contacts) in collision_event_reader.read() {
         if contacts.collision_started() {
             for e in [contacts.entity1, contacts.entity2] {
                 if let Ok(c) = code.get(e) {
-                    // TODO better checking than this
-                    if c.0.contains('{') {
+                    if c.0.contains('$') {
                         let trans = trans_query.get(e).unwrap();
-                        let r = trans.scale.x;
-                        //TODO placeholders for x, y, rotation, sides, etc
-                        let code = c.0.replace("{r}", &format!("{r}"));
+                        let lin_v = lin_velocity_query.get(e).unwrap();
+                        let x = trans.translation.x;
+                        let y = trans.translation.y;
+                        let rx = trans.scale.x;
+                        let ry = trans.scale.x;
+                        let rot = trans.rotation.to_euler(EulerRot::XYZ).2;
+                        let vx = lin_v.x;
+                        let vy = lin_v.y;
+                        let va = ang_velocity_query.get(e).unwrap().0;
+                        let mass = mass_query.get(e).unwrap().value();
+                        let inertia = inertia_query.get(e).unwrap().value();
+                        let code =
+                            c.0.replace("$x", &format!("{x}"))
+                                .replace("$y", &format!("{y}"))
+                                .replace("$rx", &format!("{rx}"))
+                                .replace("$ry", &format!("{ry}"))
+                                .replace("$rot", &format!("{rot}"))
+                                .replace("$vx", &format!("{vx}"))
+                                .replace("$vy", &format!("{vy}"))
+                                .replace("$va", &format!("{va}"))
+                                .replace("$mass", &format!("{mass}"))
+                                .replace("$inertia", &format!("{inertia}"));
                         lapis.eval(&code);
                     } else {
                         lapis.eval(&c.0);

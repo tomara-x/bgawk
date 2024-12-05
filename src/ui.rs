@@ -105,12 +105,17 @@ fn egui_ui(
                 .on_hover_text(
                     "code that will execute on collision\n\
                 these placeholders will be substituted:\n\
-                {r} for this entity's radius\n\
-                {x} for x position\n\
-                {y} for y position\n\
-                ",
+                $x for this entity's x position\n\
+                $y for y position\n\
+                $rx for x radius\n\
+                $ry for y radius\n\
+                $rot for rotation\n\
+                $vx for x velocity\n\
+                $vy for y velocity\n\
+                $va for angular velocity\n\
+                $mass for.. well the mass\n\
+                $inertia for angular inertia",
                 );
-                //TODO rest of the placeholders
             });
         }
     });
