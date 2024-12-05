@@ -14,7 +14,8 @@ impl Plugin for ObjectsPlugin {
         )
         .add_systems(PhysicsSchedule, attract.in_set(PhysicsStepSet::First))
         .add_systems(Update, eval_collisions)
-        .add_systems(PostUpdate, sync_links);
+        .add_systems(PostUpdate, sync_links)
+        .insert_resource(AttractionFactor(0.1));
     }
 }
 
@@ -29,6 +30,10 @@ pub struct Links(pub String);
 #[derive(Component, Reflect)]
 #[reflect(Component)]
 pub struct Sides(pub u32);
+
+#[derive(Resource, Reflect)]
+#[reflect(Resource)]
+pub struct AttractionFactor(pub f32);
 
 fn spawn(
     mut commands: Commands,
@@ -79,7 +84,11 @@ fn spawn(
 fn attract(
     layers: Query<(Entity, &CollisionLayers)>,
     mut query: Query<(&Mass, &Position, &mut LinearVelocity)>,
+    factor: Res<AttractionFactor>,
 ) {
+    if !factor.0.is_normal() {
+        return;
+    }
     for (e1, l1) in layers.iter() {
         for (e2, l2) in layers.iter() {
             if l1 == l2 && e1 != e2 {
@@ -89,8 +98,8 @@ fn attract(
                 let p1 = e1.1 .0;
                 let p2 = e2.1 .0;
                 let r = p1.distance(p2);
-                e1.2 .0 += (p2 - p1) * (m2 / r.powf(2.)) * 0.1;
-                e2.2 .0 += (p1 - p2) * (m1 / r.powf(2.)) * 0.1;
+                e1.2 .0 += (p2 - p1) * (m2 / r.powf(2.)) * factor.0;
+                e2.2 .0 += (p1 - p2) * (m1 / r.powf(2.)) * factor.0;
             }
         }
     }

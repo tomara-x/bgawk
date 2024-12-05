@@ -28,6 +28,7 @@ fn egui_ui(
     mut selected: Query<(&mut Code, &mut Links), With<Selected>>,
     mut update_code: ResMut<UpdateCode>,
     mut mode: ResMut<Mode>,
+    mut attraction_factor: ResMut<AttractionFactor>,
 ) {
     let ctx = contexts.ctx_mut();
     let theme = CodeTheme::from_memory(ctx, &ctx.style());
@@ -69,6 +70,10 @@ fn egui_ui(
                 ui.label("gravity");
                 ui.add(DragValue::new(&mut gravity.0.x));
                 ui.add(DragValue::new(&mut gravity.0.y));
+            });
+            ui.horizontal(|ui| {
+                ui.label("attraction");
+                ui.add(DragValue::new(&mut attraction_factor.0).speed(0.01));
             });
             ui.add(
                 TextEdit::multiline(&mut update_code.0)
