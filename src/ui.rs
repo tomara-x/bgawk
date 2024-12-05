@@ -1,5 +1,5 @@
 use crate::{
-    interaction::{DrawSettings, Selected},
+    interaction::{DrawSettings, Mode, Selected},
     lapis::{Lapis, UpdateCode},
     objects::*,
 };
@@ -27,6 +27,7 @@ fn egui_ui(
     mut gravity: ResMut<Gravity>,
     mut selected: Query<(&mut Code, &mut Links), With<Selected>>,
     mut update_code: ResMut<UpdateCode>,
+    mut mode: ResMut<Mode>,
 ) {
     let ctx = contexts.ctx_mut();
     let theme = CodeTheme::from_memory(ctx, &ctx.style());
@@ -36,112 +37,125 @@ fn egui_ui(
         ui.fonts(|f| f.layout_job(layout_job))
     };
     Window::new("settings").show(ctx, |ui| {
-        ui.checkbox(&mut settings.draw, "draw");
-        ui.horizontal(|ui| {
-            ui.label("gravity");
-            ui.add(DragValue::new(&mut gravity.0.x));
-            ui.add(DragValue::new(&mut gravity.0.y));
-        });
-        ui.add(
-            TextEdit::multiline(&mut update_code.0)
-                .hint_text("code here will be quietly evaluated every frame")
-                .font(TextStyle::Monospace)
-                .code_editor()
-                .lock_focus(true)
-                .layouter(&mut layouter),
-        );
-        lapis.quiet_eval(&update_code.0);
-        ui.label("selected:");
-        if let Ok((mut code, mut links)) = selected.get_single_mut() {
-            ui.horizontal(|ui| {
-                ui.label("links");
+        egui::ComboBox::from_label("mode")
+            .selected_text(format!("{:?}", *mode))
+            .show_ui(ui, |ui| {
+                ui.selectable_value(&mut *mode, Mode::Edit, "Edit");
+                ui.selectable_value(&mut *mode, Mode::Draw, "Draw");
+                ui.selectable_value(&mut *mode, Mode::Joint, "Joint");
+            });
+        match *mode {
+            Mode::Draw => {
+                ui.horizontal(|ui| {
+                    ui.add(DragValue::new(&mut settings.sides).range(3..=128));
+                    ui.label("sides");
+                });
+                ui.horizontal(|ui| {
+                    ui.color_edit_button_rgba_unmultiplied(&mut settings.color);
+                    ui.label("color");
+                });
+                egui::ComboBox::from_label("rigid body")
+                    .selected_text(format!("{:?}", settings.rigid_body))
+                    .show_ui(ui, |ui| {
+                        ui.selectable_value(&mut settings.rigid_body, RigidBody::Static, "Static");
+                        ui.selectable_value(
+                            &mut settings.rigid_body,
+                            RigidBody::Dynamic,
+                            "Dynamic",
+                        );
+                    });
+                // TODO move to edit
+                ui.horizontal(|ui| {
+                    ui.add(DragValue::new(&mut settings.collision_layer).range(0..=31));
+                    ui.label("collision layer");
+                });
+            }
+            Mode::Edit => {
+                ui.horizontal(|ui| {
+                    ui.label("gravity");
+                    ui.add(DragValue::new(&mut gravity.0.x));
+                    ui.add(DragValue::new(&mut gravity.0.y));
+                });
                 ui.add(
-                    TextEdit::multiline(&mut links.0)
+                    TextEdit::multiline(&mut update_code.0)
+                        .hint_text("code here will be quietly evaluated every frame")
                         .font(TextStyle::Monospace)
                         .code_editor()
-                        .desired_rows(1)
                         .lock_focus(true)
                         .layouter(&mut layouter),
-                )
-                .on_hover_text(
-                    "link a property of this entity to a shared var\n\n\
-                every line should follow the form:\n\
-                property > variable\n\
-                to set the variable to the property's value\n\
-                or\n\
-                property < variable\n\
-                to set the property to the variable's value\n\n\
-                properties list:\n\
-                x\n\
-                y\n\
-                rx (x radius)\n\
-                ry\n\
-                rot (rotation)\n\
-                mass\n\
-                vx (x velocity)\n\
-                vy\n\
-                va (angular velocity)\n\
-                restitution\n\
-                lindamp (linear damping)\n\
-                angdamp (angular damping)\n\
-                inertia\n\
-                h (hue)\n\
-                s (saturation)\n\
-                l (lightness)\n\
-                a (alpha)\n\
-                sides",
                 );
-            });
-            ui.horizontal(|ui| {
-                ui.label("code");
-                ui.add(
-                    TextEdit::multiline(&mut code.0)
-                        .font(TextStyle::Monospace)
-                        .code_editor()
-                        .desired_rows(1)
-                        .lock_focus(true)
-                        .layouter(&mut layouter),
-                )
-                .on_hover_text(
-                    "code that will execute on collision\n\
-                these placeholders will be substituted:\n\
-                $x for this entity's x position\n\
-                $y for y position\n\
-                $rx for x radius\n\
-                $ry for y radius\n\
-                $rot for rotation\n\
-                $vx for x velocity\n\
-                $vy for y velocity\n\
-                $va for angular velocity\n\
-                $mass for.. well the mass\n\
-                $inertia for angular inertia",
-                );
-            });
+                lapis.quiet_eval(&update_code.0);
+                ui.label("selected:");
+                if let Ok((mut code, mut links)) = selected.get_single_mut() {
+                    ui.horizontal(|ui| {
+                        ui.label("links");
+                        ui.add(
+                            TextEdit::multiline(&mut links.0)
+                                .font(TextStyle::Monospace)
+                                .code_editor()
+                                .desired_rows(1)
+                                .lock_focus(true)
+                                .layouter(&mut layouter),
+                        )
+                        .on_hover_text(
+                            "link a property of this entity to a shared var\n\n\
+                        every line should follow the form:\n\
+                        property > variable\n\
+                        to set the variable to the property's value\n\
+                        or\n\
+                        property < variable\n\
+                        to set the property to the variable's value\n\n\
+                        properties list:\n\
+                        x\n\
+                        y\n\
+                        rx (x radius)\n\
+                        ry\n\
+                        rot (rotation)\n\
+                        mass\n\
+                        vx (x velocity)\n\
+                        vy\n\
+                        va (angular velocity)\n\
+                        restitution\n\
+                        lindamp (linear damping)\n\
+                        angdamp (angular damping)\n\
+                        inertia\n\
+                        h (hue)\n\
+                        s (saturation)\n\
+                        l (lightness)\n\
+                        a (alpha)\n\
+                        sides",
+                        );
+                    });
+                    ui.horizontal(|ui| {
+                        ui.label("code");
+                        ui.add(
+                            TextEdit::multiline(&mut code.0)
+                                .font(TextStyle::Monospace)
+                                .code_editor()
+                                .desired_rows(1)
+                                .lock_focus(true)
+                                .layouter(&mut layouter),
+                        )
+                        .on_hover_text(
+                            "code that will execute on collision\n\
+                        these placeholders will be substituted:\n\
+                        $x for this entity's x position\n\
+                        $y for y position\n\
+                        $rx for x radius\n\
+                        $ry for y radius\n\
+                        $rot for rotation\n\
+                        $vx for x velocity\n\
+                        $vy for y velocity\n\
+                        $va for angular velocity\n\
+                        $mass for.. well the mass\n\
+                        $inertia for angular inertia",
+                        );
+                    });
+                }
+            }
+            Mode::Joint => {}
         }
     });
-    if settings.draw {
-        Window::new("draw settings").show(ctx, |ui| {
-            ui.horizontal(|ui| {
-                ui.add(DragValue::new(&mut settings.sides).range(3..=128));
-                ui.label("sides");
-            });
-            ui.horizontal(|ui| {
-                ui.color_edit_button_rgba_unmultiplied(&mut settings.color);
-                ui.label("color");
-            });
-            egui::ComboBox::from_label("rigid body")
-                .selected_text(format!("{:?}", settings.rigid_body))
-                .show_ui(ui, |ui| {
-                    ui.selectable_value(&mut settings.rigid_body, RigidBody::Static, "Static");
-                    ui.selectable_value(&mut settings.rigid_body, RigidBody::Dynamic, "Dynamic");
-                });
-            // TODO move to edit
-            ui.horizontal(|ui| {
-                ui.add(DragValue::new(&mut settings.collision_layer).range(0..=31));
-                ui.label("collision layer");
-            });
-        });
-    }
     Window::new("lapis output")
         // TODO why pivot doesn't work?
         .default_pos(Pos2::new(1000., 0.))

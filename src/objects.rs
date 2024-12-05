@@ -6,10 +6,15 @@ pub struct ObjectsPlugin;
 
 impl Plugin for ObjectsPlugin {
     fn build(&self, app: &mut App) {
-        app.add_systems(Update, spawn.run_if(resource_equals(EguiFocused(false))))
-            .add_systems(PhysicsSchedule, attract.in_set(PhysicsStepSet::First))
-            .add_systems(Update, eval_collisions)
-            .add_systems(PostUpdate, sync_links);
+        app.add_systems(
+            Update,
+            spawn
+                .run_if(resource_equals(EguiFocused(false)))
+                .run_if(resource_equals(Mode::Draw)),
+        )
+        .add_systems(PhysicsSchedule, attract.in_set(PhysicsStepSet::First))
+        .add_systems(Update, eval_collisions)
+        .add_systems(PostUpdate, sync_links);
     }
 }
 
@@ -37,7 +42,6 @@ fn spawn(
 ) {
     if !keyboard_input.pressed(KeyCode::Space)
         && mouse_button_input.just_released(MouseButton::Left)
-        && settings.draw
         // avoid spawning when dragging outside of egui
         && !egui_focused.is_changed()
     {

@@ -2,14 +2,16 @@ use avian2d::prelude::*;
 use bevy::{prelude::*, render::view::VisibleEntities};
 use bevy_pancam::*;
 
-pub struct InteractionPlugin;
+pub struct InteractPlugin;
 
-impl Plugin for InteractionPlugin {
+impl Plugin for InteractPlugin {
     fn build(&self, app: &mut App) {
         app.insert_resource(CursorInfo::default())
+            .init_resource::<Mode>()
             .insert_resource(ClickedOnSpace(true))
             .insert_resource(EguiFocused(false))
             .insert_resource(DrawSettings::default())
+            .insert_resource(Mode::default())
             .add_systems(Update, toggle_pan)
             .add_systems(Update, check_egui_focus)
             .add_systems(Update, update_cursor_info)
@@ -17,13 +19,15 @@ impl Plugin for InteractionPlugin {
                 Update,
                 update_selection
                     .after(update_cursor_info)
-                    .run_if(resource_equals(EguiFocused(false))),
+                    .run_if(resource_equals(EguiFocused(false)))
+                    .run_if(resource_equals(Mode::Edit)),
             )
             .add_systems(
                 Update,
                 move_selected
                     .after(update_selection)
-                    .run_if(resource_equals(EguiFocused(false))),
+                    .run_if(resource_equals(EguiFocused(false)))
+                    .run_if(resource_equals(Mode::Edit)),
             )
             .add_systems(
                 Update,
@@ -34,11 +38,17 @@ impl Plugin for InteractionPlugin {
     }
 }
 
+#[derive(Clone, Copy, PartialEq, Eq, Hash, Debug, Default, Resource)]
+pub enum Mode {
+    #[default]
+    Edit,
+    Draw,
+    Joint,
+}
+
 #[derive(Resource, Reflect)]
 #[reflect(Resource)]
 pub struct DrawSettings {
-    // TODO move this to separate resource? maybe a state?
-    pub draw: bool,
     pub sides: u32,
     pub color: [f32; 4],
     pub rigid_body: RigidBody,
@@ -48,7 +58,6 @@ pub struct DrawSettings {
 impl Default for DrawSettings {
     fn default() -> Self {
         DrawSettings {
-            draw: false,
             sides: 8,
             color: [1.0, 0.675, 0.671, 1.],
             rigid_body: RigidBody::Dynamic,
@@ -112,21 +121,27 @@ fn update_indicator(
     clicked_on_space: Res<ClickedOnSpace>,
     mut gizmos: Gizmos,
     settings: Res<DrawSettings>,
+    mode: Res<Mode>,
 ) {
     if mouse_button_input.pressed(MouseButton::Left)
         && !mouse_button_input.just_pressed(MouseButton::Left)
         && !keyboard_input.pressed(KeyCode::Space)
     {
-        if settings.draw {
-            let iso = Isometry2d::from_translation(cursor.i);
-            let rad = cursor.i.distance(cursor.f);
-            gizmos
-                .circle_2d(iso, rad, Color::WHITE)
-                .resolution(settings.sides);
-        } else if clicked_on_space.0 {
-            let iso = Isometry2d::from_translation((cursor.i + cursor.f) / 2.);
-            let size = (cursor.f - cursor.i).abs();
-            gizmos.rect_2d(iso, size, Color::WHITE);
+        match *mode {
+            Mode::Draw => {
+                let iso = Isometry2d::from_translation(cursor.i);
+                let rad = cursor.i.distance(cursor.f);
+                gizmos
+                    .circle_2d(iso, rad, Color::WHITE)
+                    .resolution(settings.sides);
+            }
+            Mode::Edit if clicked_on_space.0 => {
+                let iso = Isometry2d::from_translation((cursor.i + cursor.f) / 2.);
+                let size = (cursor.f - cursor.i).abs();
+                gizmos.rect_2d(iso, size, Color::WHITE);
+            }
+            Mode::Joint => {}
+            _ => {}
         }
     }
 }
@@ -161,9 +176,8 @@ fn update_selection(
     keyboard_input: Res<ButtonInput<KeyCode>>,
     mut clicked_entity: Local<Option<Entity>>,
     mut clicked_on_space: ResMut<ClickedOnSpace>,
-    settings: Res<DrawSettings>,
 ) {
-    if keyboard_input.pressed(KeyCode::Space) || settings.draw {
+    if keyboard_input.pressed(KeyCode::Space) {
         return;
     }
     let shift = keyboard_input.any_pressed([KeyCode::ShiftLeft, KeyCode::ShiftRight]);
@@ -228,11 +242,8 @@ fn move_selected(
     cursor: Res<CursorInfo>,
     mut selected_query: Query<&mut Transform, With<Selected>>,
     keyboard_input: Res<ButtonInput<KeyCode>>,
-    settings: Res<DrawSettings>,
 ) {
-    if settings.draw
-        || keyboard_input.pressed(KeyCode::Space)
-        || mouse_button_input.just_pressed(MouseButton::Left)
+    if keyboard_input.pressed(KeyCode::Space) || mouse_button_input.just_pressed(MouseButton::Left)
     {
         return;
     }
