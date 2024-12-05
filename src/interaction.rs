@@ -15,6 +15,7 @@ impl Plugin for InteractPlugin {
             .add_systems(Update, toggle_pan)
             .add_systems(Update, check_egui_focus)
             .add_systems(Update, update_cursor_info)
+            .add_systems(Update, switch_modes)
             .add_systems(
                 Update,
                 update_selection
@@ -81,6 +82,18 @@ pub struct CursorInfo {
     pub i: Vec2,
     pub f: Vec2,
     pub d: Vec2,
+}
+
+fn switch_modes(keyboard_input: Res<ButtonInput<KeyCode>>, mut mode: ResMut<Mode>) {
+    if keyboard_input.any_pressed([KeyCode::ControlLeft, KeyCode::ControlRight]) {
+        if keyboard_input.just_pressed(KeyCode::Digit1) {
+            *mode = Mode::Edit;
+        } else if keyboard_input.just_pressed(KeyCode::Digit2) {
+            *mode = Mode::Draw;
+        } else if keyboard_input.just_pressed(KeyCode::Digit3) {
+            *mode = Mode::Joint;
+        }
+    }
 }
 
 pub fn update_cursor_info(

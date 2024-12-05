@@ -80,6 +80,7 @@ fn egui_ui(
             );
             lapis.quiet_eval(&update_code.0);
             ui.label("selected:");
+            // TODO multiple selected entities?
             if let Ok((mut code, mut links)) = selected.get_single_mut() {
                 ui.horizontal(|ui| {
                     ui.label("links");
