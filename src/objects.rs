@@ -75,18 +75,24 @@ fn spawn(
     }
 }
 
-// TODO only work on dynamic objects
-// TODO separate layers
-fn attract(mut query: Query<(&mut Mass, &Position, &mut LinearVelocity)>) {
-    let mut combinations = query.iter_combinations_mut();
-    while let Some([mut e1, mut e2]) = combinations.fetch_next() {
-        let m1 = e1.0.value();
-        let m2 = e2.0.value();
-        let p1 = e1.1 .0;
-        let p2 = e2.1 .0;
-        let r = p1.distance(p2);
-        e1.2 .0 += (p2 - p1) * (m2 / r.powf(2.)) * 0.1;
-        e2.2 .0 += (p1 - p2) * (m1 / r.powf(2.)) * 0.1;
+// TODO only work on dynamic objects (optimization)
+fn attract(
+    layers: Query<(Entity, &CollisionLayers)>,
+    mut query: Query<(&Mass, &Position, &mut LinearVelocity)>,
+) {
+    for (e1, l1) in layers.iter() {
+        for (e2, l2) in layers.iter() {
+            if l1 == l2 && e1 != e2 {
+                let [mut e1, mut e2] = query.many_mut([e1, e2]);
+                let m1 = e1.0.value();
+                let m2 = e2.0.value();
+                let p1 = e1.1 .0;
+                let p2 = e2.1 .0;
+                let r = p1.distance(p2);
+                e1.2 .0 += (p2 - p1) * (m2 / r.powf(2.)) * 0.1;
+                e2.2 .0 += (p1 - p2) * (m1 / r.powf(2.)) * 0.1;
+            }
+        }
     }
 }
 
