@@ -2,7 +2,7 @@ use crate::{interaction::*, lapis::*, objects::*};
 use avian2d::prelude::*;
 use bevy::{
     app::{App, Plugin, Update},
-    prelude::{Query, ResMut, With},
+    prelude::{Query, ResMut, With, Time, Virtual},
 };
 use bevy_egui::{EguiContexts, EguiPlugin};
 use egui::*;
@@ -26,6 +26,7 @@ fn egui_ui(
     mut mode: ResMut<Mode>,
     mut attraction_factor: ResMut<AttractionFactor>,
     mut joint: ResMut<JointSettings>,
+    mut time: ResMut<Time<Virtual>>,
 ) {
     let ctx = contexts.ctx_mut();
     let theme = CodeTheme::from_memory(ctx, &ctx.style());
@@ -84,6 +85,15 @@ fn egui_ui(
                     .layouter(&mut layouter),
             );
             lapis.quiet_eval(&update_code.0);
+            if time.is_paused() {
+                if ui.button("resume").clicked() {
+                    time.unpause();
+                }
+            } else {
+                if ui.button("pause").clicked() {
+                    time.pause();
+                }
+            }
             ui.label("selected:");
             // TODO multiple selected entities?
             if let Ok((mut code, mut links)) = selected.get_single_mut() {
@@ -147,7 +157,7 @@ fn egui_ui(
                     $vx for x velocity\n\
                     $vy for y velocity\n\
                     $va for angular velocity\n\
-                    $mass for.. well the mass\n\
+                    $mass for.. well, the mass\n\
                     $inertia for angular inertia",
                     );
                 });
