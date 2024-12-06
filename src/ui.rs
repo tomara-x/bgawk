@@ -2,7 +2,7 @@ use crate::{interaction::*, lapis::*, objects::*};
 use avian2d::prelude::*;
 use bevy::{
     app::{App, Plugin, Update},
-    prelude::{Query, ResMut, With, Time, Virtual},
+    prelude::{Query, ResMut, Time, Virtual, With},
 };
 use bevy_egui::{EguiContexts, EguiPlugin};
 use egui::*;
@@ -68,13 +68,13 @@ fn egui_ui(
             ui.checkbox(&mut draw.sensor, "sensor");
         } else if *mode == Mode::Edit {
             ui.horizontal(|ui| {
-                ui.label("gravity");
                 ui.add(DragValue::new(&mut gravity.0.x));
                 ui.add(DragValue::new(&mut gravity.0.y));
+                ui.label("gravity");
             });
             ui.horizontal(|ui| {
-                ui.label("attraction");
                 ui.add(DragValue::new(&mut attraction_factor.0).speed(0.01));
+                ui.label("attraction");
             });
             ui.add(
                 TextEdit::multiline(&mut update_code.0)
@@ -89,10 +89,8 @@ fn egui_ui(
                 if ui.button("resume").clicked() {
                     time.unpause();
                 }
-            } else {
-                if ui.button("pause").clicked() {
-                    time.pause();
-                }
+            } else if ui.button("pause").clicked() {
+                time.pause();
             }
             ui.label("selected:");
             // TODO multiple selected entities?
@@ -172,17 +170,16 @@ fn egui_ui(
                     ui.selectable_value(&mut joint.joint_type, JointType::Revolute, "Revolute");
                 });
             ui.horizontal(|ui| {
-                ui.label("stiffness");
                 ui.add(
                     DragValue::new(&mut joint.stiffness)
                         .range(0.0..=f32::INFINITY)
                         .speed(0.01),
                 );
+                ui.label("stiffness");
             });
             match joint.joint_type {
                 JointType::Distance => {
                     ui.horizontal(|ui| {
-                        ui.label("limits");
                         ui.add(
                             DragValue::new(&mut joint.dist_limits.0)
                                 .range(0.0..=f32::INFINITY)
@@ -193,33 +190,34 @@ fn egui_ui(
                                 .range(0.0..=f32::INFINITY)
                                 .speed(0.01),
                         );
+                        ui.label("limits");
                     });
                     ui.horizontal(|ui| {
-                        ui.label("rest length");
                         ui.add(
                             DragValue::new(&mut joint.dist_rest)
                                 .range(0.0..=f32::INFINITY)
                                 .speed(0.01),
                         );
+                        ui.label("rest length");
                     });
                 }
                 JointType::Prismatic => {
                     ui.horizontal(|ui| {
-                        ui.label("limits");
                         ui.add(DragValue::new(&mut joint.prismatic_limits.0).speed(0.01));
                         ui.add(DragValue::new(&mut joint.prismatic_limits.1).speed(0.01));
+                        ui.label("limits");
                     });
                     ui.horizontal(|ui| {
-                        ui.label("free axis");
                         ui.add(DragValue::new(&mut joint.prismatic_axis.x).speed(0.01));
                         ui.add(DragValue::new(&mut joint.prismatic_axis.y).speed(0.01));
+                        ui.label("free axis");
                     });
                 }
                 JointType::Revolute => {
                     ui.horizontal(|ui| {
-                        ui.label("limits");
                         ui.add(DragValue::new(&mut joint.angle_limits.0).speed(0.01));
                         ui.add(DragValue::new(&mut joint.angle_limits.1).speed(0.01));
+                        ui.label("limits");
                     });
                 }
                 _ => {}
