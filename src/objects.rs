@@ -52,7 +52,7 @@ fn spawn(
     {
         let r = cursor.f.distance(cursor.i).max(1.0);
         let material = ColorMaterial {
-            color: Srgba::from_f32_array(settings.color).into(),
+            color: Srgba::from_u8_array(settings.color).into(),
             alpha_mode: AlphaMode2d::Blend,
             ..default()
         };

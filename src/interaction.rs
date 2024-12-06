@@ -51,7 +51,7 @@ pub enum Mode {
 #[reflect(Resource)]
 pub struct DrawSettings {
     pub sides: u32,
-    pub color: [f32; 4],
+    pub color: [u8; 4],
     pub rigid_body: RigidBody,
     pub collision_layer: u32,
     pub sensor: bool,
@@ -61,7 +61,7 @@ impl Default for DrawSettings {
     fn default() -> Self {
         DrawSettings {
             sides: 8,
-            color: [1.0, 0.675, 0.671, 1.],
+            color: [255, 172, 171, 255],
             rigid_body: RigidBody::Dynamic,
             collision_layer: 0,
             sensor: false,

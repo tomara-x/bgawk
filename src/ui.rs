@@ -52,7 +52,7 @@ fn egui_ui(
                 ui.label("sides");
             });
             ui.horizontal(|ui| {
-                ui.color_edit_button_rgba_unmultiplied(&mut settings.color);
+                ui.color_edit_button_srgba_unmultiplied(&mut settings.color);
                 ui.label("color");
             });
             egui::ComboBox::from_label("rigid body")
