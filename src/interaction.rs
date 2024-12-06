@@ -54,6 +54,7 @@ pub struct DrawSettings {
     pub color: [f32; 4],
     pub rigid_body: RigidBody,
     pub collision_layer: u32,
+    pub sensor: bool,
 }
 
 impl Default for DrawSettings {
@@ -63,6 +64,7 @@ impl Default for DrawSettings {
             color: [1.0, 0.675, 0.671, 1.],
             rigid_body: RigidBody::Dynamic,
             collision_layer: 0,
+            sensor: false,
         }
     }
 }

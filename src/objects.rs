@@ -59,7 +59,7 @@ fn spawn(
         let mesh_handle = meshes.add(RegularPolygon::new(1., settings.sides));
         let mat_handle = materials.add(material);
         let layer = 1 << settings.collision_layer;
-        commands.spawn((
+        let mut e = commands.spawn((
             Mesh2d(mesh_handle),
             MeshMaterial2d(mat_handle),
             settings.rigid_body,
@@ -77,6 +77,9 @@ fn spawn(
             },
             Sides(settings.sides),
         ));
+        if settings.sensor {
+            e.insert(Sensor);
+        }
     }
 }
 

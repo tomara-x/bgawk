@@ -44,7 +44,8 @@ fn egui_ui(
                 ui.selectable_value(&mut *mode, Mode::Edit, "Edit");
                 ui.selectable_value(&mut *mode, Mode::Draw, "Draw");
                 ui.selectable_value(&mut *mode, Mode::Joint, "Joint");
-            });
+            })
+            .response.on_hover_text("ctrl+1/2/3");
         if *mode == Mode::Draw {
             ui.horizontal(|ui| {
                 ui.add(DragValue::new(&mut settings.sides).range(3..=128));
@@ -60,11 +61,12 @@ fn egui_ui(
                     ui.selectable_value(&mut settings.rigid_body, RigidBody::Static, "Static");
                     ui.selectable_value(&mut settings.rigid_body, RigidBody::Dynamic, "Dynamic");
                 });
-            // TODO move to edit
+            // TODO move to edit?
             ui.horizontal(|ui| {
                 ui.add(DragValue::new(&mut settings.collision_layer).range(0..=31));
                 ui.label("collision layer");
             });
+            ui.checkbox(&mut settings.sensor, "sensor");
         } else if *mode == Mode::Edit {
             ui.horizontal(|ui| {
                 ui.label("gravity");
