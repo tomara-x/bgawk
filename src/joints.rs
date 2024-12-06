@@ -9,6 +9,7 @@ impl Plugin for JointsPlugin {
         app.add_systems(
             Update,
             spawn_joint
+                .after(update_cursor_info)
                 .run_if(resource_equals(EguiFocused(false)))
                 .run_if(resource_equals(Mode::Joint)),
         );
@@ -24,24 +25,29 @@ fn spawn_joint(
     keyboard_input: Res<ButtonInput<KeyCode>>,
     egui_focused: Res<EguiFocused>,
     settings: Res<JointSettings>,
+    mut src: Local<Option<Entity>>,
 ) {
-    if !keyboard_input.pressed(KeyCode::Space)
-        && mouse_button_input.just_released(MouseButton::Left)
-        && !egui_focused.is_changed()
-    {
-        let mut src = None;
-        let mut snk = None;
+    if keyboard_input.pressed(KeyCode::Space) || egui_focused.is_changed() {
+        return;
+    }
+    if mouse_button_input.just_pressed(MouseButton::Left) {
         for e in visible.single().get::<With<Mesh2d>>() {
             let t = trans_query.get(*e).unwrap();
             if cursor.i.distance_squared(t.translation.xy()) < t.scale.x * t.scale.x {
-                src = Some(*e);
+                *src = Some(*e);
                 continue;
-            } else if cursor.f.distance_squared(t.translation.xy()) < t.scale.x * t.scale.x {
+            }
+        }
+    } else if mouse_button_input.just_released(MouseButton::Left) {
+        let mut snk = None;
+        for e in visible.single().get::<With<Mesh2d>>() {
+            let t = trans_query.get(*e).unwrap();
+            if cursor.f.distance_squared(t.translation.xy()) < t.scale.x * t.scale.x {
                 snk = Some(*e);
                 continue;
             }
         }
-        if let (Some(src), Some(snk)) = (src, snk) {
+        if let (Some(src), Some(snk)) = (*src, snk) {
             let compliance = (settings.stiffness * 100.).recip();
             match settings.joint_type {
                 JointType::Fixed => {
