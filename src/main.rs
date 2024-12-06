@@ -11,10 +11,11 @@ use bevy::{
 use bevy_pancam::*;
 
 mod interaction;
+mod joints;
 mod lapis;
 mod objects;
 mod ui;
-use {interaction::*, lapis::*, objects::*, ui::*};
+use {interaction::*, joints::*, lapis::*, objects::*, ui::*};
 
 fn main() {
     App::new()
@@ -28,6 +29,7 @@ fn main() {
         .add_plugins(PanCamPlugin)
         .add_plugins(InteractPlugin)
         .add_plugins(ObjectsPlugin)
+        .add_plugins(JointsPlugin)
         .add_plugins(UiPlugin)
         .add_plugins(PhysicsPlugins::default().with_length_unit(100.0))
         //.add_plugins(PhysicsDebugPlugin::default())

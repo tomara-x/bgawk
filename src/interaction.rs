@@ -11,6 +11,7 @@ impl Plugin for InteractPlugin {
             .insert_resource(ClickedOnSpace(true))
             .insert_resource(EguiFocused(false))
             .insert_resource(DrawSettings::default())
+            .insert_resource(JointSettings::default())
             .insert_resource(Mode::default())
             .add_systems(Update, toggle_pan)
             .add_systems(Update, check_egui_focus)
@@ -65,6 +66,40 @@ impl Default for DrawSettings {
             rigid_body: RigidBody::Dynamic,
             collision_layer: 0,
             sensor: false,
+        }
+    }
+}
+
+#[derive(PartialEq, Debug, Reflect)]
+pub enum JointType {
+    Fixed,
+    Distance,
+    Prismatic,
+    Revolute,
+}
+
+#[derive(Resource, Reflect)]
+#[reflect(Resource)]
+pub struct JointSettings {
+    pub joint_type: JointType,
+    pub stiffness: f32,
+    pub dist_limits: (f32, f32),
+    pub dist_rest: f32,
+    pub prismatic_axis: Vec2,
+    pub prismatic_limits: (f32, f32),
+    pub angle_limits: (f32, f32),
+}
+
+impl Default for JointSettings {
+    fn default() -> Self {
+        JointSettings {
+            joint_type: JointType::Fixed,
+            stiffness: f32::INFINITY,
+            dist_limits: (0., f32::INFINITY),
+            dist_rest: 0.,
+            prismatic_axis: Vec2::new(1., 0.),
+            prismatic_limits: (f32::NEG_INFINITY, f32::INFINITY),
+            angle_limits: (f32::NEG_INFINITY, f32::INFINITY),
         }
     }
 }
@@ -155,7 +190,7 @@ fn update_indicator(
                 let size = (cursor.f - cursor.i).abs();
                 gizmos.rect_2d(iso, size, Color::WHITE);
             }
-            Mode::Joint => {}
+            Mode::Joint => gizmos.line_2d(cursor.i, cursor.f, Color::WHITE),
             _ => {}
         }
     }

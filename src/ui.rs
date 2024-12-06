@@ -1,8 +1,4 @@
-use crate::{
-    interaction::{DrawSettings, Mode, Selected},
-    lapis::{Lapis, UpdateCode},
-    objects::*,
-};
+use crate::{interaction::*, lapis::*, objects::*};
 use avian2d::prelude::*;
 use bevy::{
     app::{App, Plugin, Update},
@@ -23,12 +19,13 @@ impl Plugin for UiPlugin {
 fn egui_ui(
     mut contexts: EguiContexts,
     mut lapis: ResMut<Lapis>,
-    mut settings: ResMut<DrawSettings>,
+    mut draw: ResMut<DrawSettings>,
     mut gravity: ResMut<Gravity>,
     mut selected: Query<(&mut Code, &mut Links), With<Selected>>,
     mut update_code: ResMut<UpdateCode>,
     mut mode: ResMut<Mode>,
     mut attraction_factor: ResMut<AttractionFactor>,
+    mut joint: ResMut<JointSettings>,
 ) {
     let ctx = contexts.ctx_mut();
     let theme = CodeTheme::from_memory(ctx, &ctx.style());
@@ -45,28 +42,29 @@ fn egui_ui(
                 ui.selectable_value(&mut *mode, Mode::Draw, "Draw");
                 ui.selectable_value(&mut *mode, Mode::Joint, "Joint");
             })
-            .response.on_hover_text("ctrl+1/2/3");
+            .response
+            .on_hover_text("ctrl+1/2/3");
         if *mode == Mode::Draw {
             ui.horizontal(|ui| {
-                ui.add(DragValue::new(&mut settings.sides).range(3..=128));
+                ui.add(DragValue::new(&mut draw.sides).range(3..=128));
                 ui.label("sides");
             });
             ui.horizontal(|ui| {
-                ui.color_edit_button_srgba_unmultiplied(&mut settings.color);
+                ui.color_edit_button_srgba_unmultiplied(&mut draw.color);
                 ui.label("color");
             });
             egui::ComboBox::from_label("rigid body")
-                .selected_text(format!("{:?}", settings.rigid_body))
+                .selected_text(format!("{:?}", draw.rigid_body))
                 .show_ui(ui, |ui| {
-                    ui.selectable_value(&mut settings.rigid_body, RigidBody::Static, "Static");
-                    ui.selectable_value(&mut settings.rigid_body, RigidBody::Dynamic, "Dynamic");
+                    ui.selectable_value(&mut draw.rigid_body, RigidBody::Static, "Static");
+                    ui.selectable_value(&mut draw.rigid_body, RigidBody::Dynamic, "Dynamic");
                 });
             // TODO move to edit?
             ui.horizontal(|ui| {
-                ui.add(DragValue::new(&mut settings.collision_layer).range(0..=31));
+                ui.add(DragValue::new(&mut draw.collision_layer).range(0..=31));
                 ui.label("collision layer");
             });
-            ui.checkbox(&mut settings.sensor, "sensor");
+            ui.checkbox(&mut draw.sensor, "sensor");
         } else if *mode == Mode::Edit {
             ui.horizontal(|ui| {
                 ui.label("gravity");
@@ -155,6 +153,67 @@ fn egui_ui(
                 });
             }
         } else if *mode == Mode::Joint {
+            egui::ComboBox::from_label("joint type")
+                .selected_text(format!("{:?}", joint.joint_type))
+                .show_ui(ui, |ui| {
+                    ui.selectable_value(&mut joint.joint_type, JointType::Fixed, "Fixed");
+                    ui.selectable_value(&mut joint.joint_type, JointType::Distance, "Distance");
+                    ui.selectable_value(&mut joint.joint_type, JointType::Prismatic, "Prismatic");
+                    ui.selectable_value(&mut joint.joint_type, JointType::Revolute, "Revolute");
+                });
+            ui.horizontal(|ui| {
+                ui.label("stiffness");
+                ui.add(
+                    DragValue::new(&mut joint.stiffness)
+                        .range(0.0..=f32::INFINITY)
+                        .speed(0.01),
+                );
+            });
+            match joint.joint_type {
+                JointType::Distance => {
+                    ui.horizontal(|ui| {
+                        ui.label("limits");
+                        ui.add(
+                            DragValue::new(&mut joint.dist_limits.0)
+                                .range(0.0..=f32::INFINITY)
+                                .speed(0.01),
+                        );
+                        ui.add(
+                            DragValue::new(&mut joint.dist_limits.1)
+                                .range(0.0..=f32::INFINITY)
+                                .speed(0.01),
+                        );
+                    });
+                    ui.horizontal(|ui| {
+                        ui.label("rest length");
+                        ui.add(
+                            DragValue::new(&mut joint.dist_rest)
+                                .range(0.0..=f32::INFINITY)
+                                .speed(0.01),
+                        );
+                    });
+                }
+                JointType::Prismatic => {
+                    ui.horizontal(|ui| {
+                        ui.label("limits");
+                        ui.add(DragValue::new(&mut joint.prismatic_limits.0).speed(0.01));
+                        ui.add(DragValue::new(&mut joint.prismatic_limits.1).speed(0.01));
+                    });
+                    ui.horizontal(|ui| {
+                        ui.label("free axis");
+                        ui.add(DragValue::new(&mut joint.prismatic_axis.x).speed(0.01));
+                        ui.add(DragValue::new(&mut joint.prismatic_axis.y).speed(0.01));
+                    });
+                }
+                JointType::Revolute => {
+                    ui.horizontal(|ui| {
+                        ui.label("limits");
+                        ui.add(DragValue::new(&mut joint.angle_limits.0).speed(0.01));
+                        ui.add(DragValue::new(&mut joint.angle_limits.1).speed(0.01));
+                    });
+                }
+                _ => {}
+            }
         }
     });
     Window::new("lapis output")
