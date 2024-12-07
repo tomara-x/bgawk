@@ -66,6 +66,25 @@ fn egui_ui(
                 ui.label("collision layer");
             });
             ui.checkbox(&mut draw.sensor, "sensor");
+            ui.horizontal(|ui| {
+                ui.label("links");
+                ui.add(
+                    TextEdit::multiline(&mut draw.links)
+                        .code_editor()
+                        .desired_rows(1),
+                )
+                .on_hover_text(LINKS_TOOLTIP);
+            });
+            ui.horizontal(|ui| {
+                ui.label("code");
+                ui.add(
+                    TextEdit::multiline(&mut draw.code)
+                        .code_editor()
+                        .desired_rows(1)
+                        .layouter(&mut layouter),
+                )
+                .on_hover_text(CODE_TOOLTIP);
+            });
         } else if *mode == Mode::Edit {
             ui.horizontal(|ui| {
                 ui.add(DragValue::new(&mut gravity.0.x));
@@ -79,9 +98,7 @@ fn egui_ui(
             ui.add(
                 TextEdit::multiline(&mut update_code.0)
                     .hint_text("code here will be quietly evaluated every frame")
-                    .font(TextStyle::Monospace)
                     .code_editor()
-                    .lock_focus(true)
                     .layouter(&mut layouter),
             );
             lapis.quiet_eval(&update_code.0);
@@ -99,67 +116,20 @@ fn egui_ui(
                     ui.label("links");
                     ui.add(
                         TextEdit::multiline(&mut links.0)
-                            .font(TextStyle::Monospace)
                             .code_editor()
-                            .desired_rows(1)
-                            .lock_focus(true)
-                            .layouter(&mut layouter),
+                            .desired_rows(1),
                     )
-                    .on_hover_text(
-                        "link a property of this entity to a shared var\n\n\
-                    every line should follow the form:\n\
-                    property > variable\n\
-                    to set the variable to the property's value\n\
-                    or\n\
-                    property < variable\n\
-                    to set the property to the variable's value\n\n\
-                    properties list:\n\
-                    x\n\
-                    y\n\
-                    rx (x radius)\n\
-                    ry\n\
-                    rot (rotation)\n\
-                    mass\n\
-                    vx (x velocity)\n\
-                    vy\n\
-                    va (angular velocity)\n\
-                    restitution\n\
-                    lindamp (linear damping)\n\
-                    angdamp (angular damping)\n\
-                    inertia\n\
-                    h (hue)\n\
-                    s (saturation)\n\
-                    l (lightness)\n\
-                    a (alpha)\n\
-                    sides\n\
-                    cmx (center of mass x)\n\
-                    cmy (center of mass y)",
-                    );
+                    .on_hover_text(LINKS_TOOLTIP);
                 });
                 ui.horizontal(|ui| {
                     ui.label("code");
                     ui.add(
                         TextEdit::multiline(&mut code.0)
-                            .font(TextStyle::Monospace)
                             .code_editor()
                             .desired_rows(1)
-                            .lock_focus(true)
                             .layouter(&mut layouter),
                     )
-                    .on_hover_text(
-                        "code that will execute on collision\n\
-                    these placeholders will be substituted:\n\
-                    $x for this entity's x position\n\
-                    $y for y position\n\
-                    $rx for x radius\n\
-                    $ry for y radius\n\
-                    $rot for rotation\n\
-                    $vx for x velocity\n\
-                    $vy for y velocity\n\
-                    $va for angular velocity\n\
-                    $mass for.. well, the mass\n\
-                    $inertia for angular inertia",
-                    );
+                    .on_hover_text(CODE_TOOLTIP);
                 });
             }
         } else if *mode == Mode::Joint {
@@ -243,10 +213,8 @@ fn egui_ui(
             ScrollArea::vertical().stick_to_bottom(true).show(ui, |ui| {
                 ui.add(
                     TextEdit::multiline(&mut lapis.buffer)
-                        .font(TextStyle::Monospace)
                         .code_editor()
                         .desired_rows(1)
-                        .lock_focus(true)
                         .desired_width(f32::INFINITY)
                         .layouter(&mut layouter),
                 );
@@ -263,10 +231,8 @@ fn egui_ui(
                             .add(
                                 TextEdit::multiline(&mut lapis.input)
                                     .hint_text("type a statement then press ctrl+enter")
-                                    .font(TextStyle::Monospace)
                                     .code_editor()
                                     .desired_rows(5)
-                                    .lock_focus(true)
                                     .desired_width(f32::INFINITY)
                                     .layouter(&mut layouter),
                             )
@@ -283,3 +249,45 @@ fn egui_ui(
             });
         });
 }
+
+const LINKS_TOOLTIP: &str = "link a property of this entity to a shared var\n
+every line should follow the form:
+property > variable
+to set the variable to the property's value
+or
+property < variable
+to set the property to the variable's value\n
+properties list:
+x
+y
+rx (x radius)
+ry
+rot (rotation)
+mass
+vx (x velocity)
+vy
+va (angular velocity)
+restitution
+lindamp (linear damping)
+angdamp (angular damping)
+inertia
+h (hue)
+s (saturation)
+l (lightness)
+a (alpha)
+sides
+cmx (center of mass x)
+cmy (center of mass y)";
+
+const CODE_TOOLTIP: &str = "code that will execute on collision
+these placeholders will be substituted:
+$x for this entity's x position
+$y for y position
+$rx for x radius
+$ry for y radius
+$rot for rotation
+$vx for x velocity
+$vy for y velocity
+$va for angular velocity
+$mass for.. well, the mass
+$inertia for angular inertia";

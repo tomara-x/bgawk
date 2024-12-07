@@ -59,6 +59,8 @@ pub struct DrawSettings {
     pub rigid_body: RigidBody,
     pub collision_layer: u32,
     pub sensor: bool,
+    pub links: String,
+    pub code: String,
 }
 
 impl Default for DrawSettings {
@@ -69,6 +71,8 @@ impl Default for DrawSettings {
             rigid_body: RigidBody::Dynamic,
             collision_layer: 0,
             sensor: false,
+            links: String::new(),
+            code: String::new(),
         }
     }
 }
