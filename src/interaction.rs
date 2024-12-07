@@ -36,7 +36,10 @@ impl Plugin for InteractPlugin {
                 update_indicator.run_if(resource_equals(EguiFocused(false))),
             )
             .add_systems(Update, highlight_selected)
-            .add_systems(Update, delete_selected);
+            .add_systems(
+                Update,
+                delete_selected.run_if(resource_equals(EguiFocused(false))),
+            );
     }
 }
 
