@@ -86,6 +86,8 @@ pub enum JointType {
 pub struct JointSettings {
     pub joint_type: JointType,
     pub stiffness: f32,
+    pub local_anchor_1: Vec2,
+    pub local_anchor_2: Vec2,
     pub dist_limits: (f32, f32),
     pub dist_rest: f32,
     pub prismatic_axis: Vec2,
@@ -98,6 +100,8 @@ impl Default for JointSettings {
         JointSettings {
             joint_type: JointType::Fixed,
             stiffness: f32::INFINITY,
+            local_anchor_1: Vec2::new(0., 0.),
+            local_anchor_2: Vec2::new(0., 0.),
             dist_limits: (0., f32::INFINITY),
             dist_rest: 0.,
             prismatic_axis: Vec2::new(1., 0.),

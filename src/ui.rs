@@ -177,6 +177,16 @@ fn egui_ui(
                 );
                 ui.label("stiffness");
             });
+            ui.horizontal(|ui| {
+                ui.add(DragValue::new(&mut joint.local_anchor_1.x).speed(0.01));
+                ui.add(DragValue::new(&mut joint.local_anchor_1.y).speed(0.01));
+                ui.label("local anchor 1");
+            });
+            ui.horizontal(|ui| {
+                ui.add(DragValue::new(&mut joint.local_anchor_2.x).speed(0.01));
+                ui.add(DragValue::new(&mut joint.local_anchor_2.y).speed(0.01));
+                ui.label("local anchor 2");
+            });
             match joint.joint_type {
                 JointType::Distance => {
                     ui.horizontal(|ui| {

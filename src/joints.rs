@@ -51,12 +51,19 @@ fn spawn_joint(
             let compliance = (settings.stiffness * 100.).recip();
             match settings.joint_type {
                 JointType::Fixed => {
-                    commands.spawn(FixedJoint::new(src, snk).with_compliance(compliance));
+                    commands.spawn(
+                        FixedJoint::new(src, snk)
+                            .with_compliance(compliance)
+                            .with_local_anchor_1(settings.local_anchor_1)
+                            .with_local_anchor_2(settings.local_anchor_2),
+                    );
                 }
                 JointType::Distance => {
                     commands.spawn(
                         DistanceJoint::new(src, snk)
                             .with_compliance(compliance)
+                            .with_local_anchor_1(settings.local_anchor_1)
+                            .with_local_anchor_2(settings.local_anchor_2)
                             .with_limits(settings.dist_limits.0, settings.dist_limits.1)
                             .with_rest_length(settings.dist_rest),
                     );
@@ -65,6 +72,8 @@ fn spawn_joint(
                     commands.spawn(
                         PrismaticJoint::new(src, snk)
                             .with_compliance(compliance)
+                            .with_local_anchor_1(settings.local_anchor_1)
+                            .with_local_anchor_2(settings.local_anchor_2)
                             .with_free_axis(settings.prismatic_axis)
                             .with_limits(settings.prismatic_limits.0, settings.prismatic_limits.1),
                     );
@@ -73,6 +82,8 @@ fn spawn_joint(
                     commands.spawn(
                         RevoluteJoint::new(src, snk)
                             .with_compliance(compliance)
+                            .with_local_anchor_1(settings.local_anchor_1)
+                            .with_local_anchor_2(settings.local_anchor_2)
                             .with_angle_limits(settings.angle_limits.0, settings.angle_limits.1),
                     );
                 }
