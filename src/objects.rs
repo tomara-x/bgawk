@@ -12,7 +12,7 @@ impl Plugin for ObjectsPlugin {
                 .run_if(resource_equals(EguiFocused(false)))
                 .run_if(resource_equals(Mode::Draw)),
         )
-        .add_systems(PhysicsSchedule, attract.in_set(PhysicsStepSet::First))
+        .add_systems(PhysicsSchedule, attract.in_set(PhysicsStepSet::Last))
         .add_systems(Update, eval_collisions)
         .add_systems(PostUpdate, sync_links)
         .insert_resource(AttractionFactor(0.1));
@@ -65,6 +65,9 @@ fn spawn(
             settings.rigid_body,
             Links::default(),
             Code::default(),
+            Mass(r * 100.),
+            AngularInertia(r * 100.),
+            CenterOfMass(Vec2::new(0., 0.)),
             Collider::regular_polygon(1., settings.sides),
             CollisionLayers::from_bits(layer, layer),
             Restitution::default(),
@@ -96,8 +99,8 @@ fn attract(
         for (e2, l2) in layers.iter() {
             if l1 == l2 && e1 != e2 {
                 let [mut e1, mut e2] = query.many_mut([e1, e2]);
-                let m1 = e1.0.value();
-                let m2 = e2.0.value();
+                let m1 = e1.0 .0;
+                let m2 = e2.0 .0;
                 let p1 = e1.1 .0;
                 let p2 = e2.1 .0;
                 let r = p1.distance_squared(p2);
@@ -133,8 +136,8 @@ fn eval_collisions(
                         let vx = lin_v.x;
                         let vy = lin_v.y;
                         let va = ang_velocity_query.get(e).unwrap().0;
-                        let mass = mass_query.get(e).unwrap().value();
-                        let inertia = inertia_query.get(e).unwrap().value();
+                        let mass = mass_query.get(e).unwrap().0;
+                        let inertia = inertia_query.get(e).unwrap().0;
                         let code =
                             c.0.replace("$x", &format!("{x}"))
                                 .replace("$y", &format!("{y}"))
@@ -166,12 +169,15 @@ fn sync_links(
     mut lin_damp_query: Query<&mut LinearDamping>,
     mut ang_damp_query: Query<&mut AngularDamping>,
     mut inertia_query: Query<&mut AngularInertia>,
-    material_ids: Query<&MeshMaterial2d<ColorMaterial>>,
-    mut materials: ResMut<Assets<ColorMaterial>>,
-    mesh_ids: Query<&Mesh2d>,
-    mut meshes: ResMut<Assets<Mesh>>,
+    (material_ids, mut materials, mesh_ids, mut meshes): (
+        Query<&MeshMaterial2d<ColorMaterial>>,
+        ResMut<Assets<ColorMaterial>>,
+        Query<&Mesh2d>,
+        ResMut<Assets<Mesh>>,
+    ),
     mut collider_query: Query<&mut Collider>,
     sides_query: Query<&Sides>,
+    mut cm_query: Query<&mut CenterOfMass>,
     lapis: Res<Lapis>,
 ) {
     for (e, Links(links)) in links_query.iter() {
@@ -187,7 +193,7 @@ fn sync_links(
             if let Some(var) = lapis.smap.get(var) {
                 match property {
                     "x" => {
-                        let trans = &mut trans_query.get_mut(e).unwrap();
+                        let mut trans = trans_query.get_mut(e).unwrap();
                         if dir == "<" {
                             trans.translation.x = var.value();
                         } else if dir == ">" {
@@ -195,7 +201,7 @@ fn sync_links(
                         }
                     }
                     "y" => {
-                        let trans = &mut trans_query.get_mut(e).unwrap();
+                        let mut trans = trans_query.get_mut(e).unwrap();
                         if dir == "<" {
                             trans.translation.y = var.value();
                         } else if dir == ">" {
@@ -203,7 +209,7 @@ fn sync_links(
                         }
                     }
                     "rx" => {
-                        let trans = &mut trans_query.get_mut(e).unwrap();
+                        let mut trans = trans_query.get_mut(e).unwrap();
                         if dir == "<" {
                             trans.scale.x = var.value();
                         } else if dir == ">" {
@@ -211,7 +217,7 @@ fn sync_links(
                         }
                     }
                     "ry" => {
-                        let trans = &mut trans_query.get_mut(e).unwrap();
+                        let mut trans = trans_query.get_mut(e).unwrap();
                         if dir == "<" {
                             trans.scale.y = var.value();
                         } else if dir == ">" {
@@ -219,7 +225,7 @@ fn sync_links(
                         }
                     }
                     "rot" => {
-                        let trans = &mut trans_query.get_mut(e).unwrap();
+                        let mut trans = trans_query.get_mut(e).unwrap();
                         if dir == "<" {
                             trans.rotation = Quat::from_rotation_z(var.value());
                         } else if dir == ">" {
@@ -228,15 +234,15 @@ fn sync_links(
                         }
                     }
                     "mass" => {
-                        let mass = &mut mass_query.get_mut(e).unwrap();
+                        let mut mass = mass_query.get_mut(e).unwrap();
                         if dir == "<" {
-                            mass.set(var.value());
+                            mass.0 = var.value();
                         } else if dir == ">" {
-                            var.set(mass.value());
+                            var.set(mass.0);
                         }
                     }
                     "vx" => {
-                        let velocity = &mut lin_velocity_query.get_mut(e).unwrap();
+                        let mut velocity = lin_velocity_query.get_mut(e).unwrap();
                         if dir == "<" {
                             velocity.x = var.value();
                         } else if dir == ">" {
@@ -244,7 +250,7 @@ fn sync_links(
                         }
                     }
                     "vy" => {
-                        let velocity = &mut lin_velocity_query.get_mut(e).unwrap();
+                        let mut velocity = lin_velocity_query.get_mut(e).unwrap();
                         if dir == "<" {
                             velocity.y = var.value();
                         } else if dir == ">" {
@@ -252,7 +258,7 @@ fn sync_links(
                         }
                     }
                     "va" => {
-                        let velocity = &mut ang_velocity_query.get_mut(e).unwrap();
+                        let mut velocity = ang_velocity_query.get_mut(e).unwrap();
                         if dir == "<" {
                             velocity.0 = var.value();
                         } else if dir == ">" {
@@ -260,7 +266,7 @@ fn sync_links(
                         }
                     }
                     "restitution" => {
-                        let restitution = &mut restitution_query.get_mut(e).unwrap();
+                        let mut restitution = restitution_query.get_mut(e).unwrap();
                         if dir == "<" {
                             restitution.coefficient = var.value();
                         } else if dir == ">" {
@@ -268,7 +274,7 @@ fn sync_links(
                         }
                     }
                     "lindamp" => {
-                        let damp = &mut lin_damp_query.get_mut(e).unwrap();
+                        let mut damp = lin_damp_query.get_mut(e).unwrap();
                         if dir == "<" {
                             damp.0 = var.value();
                         } else if dir == ">" {
@@ -276,7 +282,7 @@ fn sync_links(
                         }
                     }
                     "angdamp" => {
-                        let damp = &mut ang_damp_query.get_mut(e).unwrap();
+                        let mut damp = ang_damp_query.get_mut(e).unwrap();
                         if dir == "<" {
                             damp.0 = var.value();
                         } else if dir == ">" {
@@ -284,11 +290,11 @@ fn sync_links(
                         }
                     }
                     "inertia" => {
-                        let inertia = &mut inertia_query.get_mut(e).unwrap();
+                        let mut inertia = inertia_query.get_mut(e).unwrap();
                         if dir == "<" {
-                            inertia.set(var.value());
+                            inertia.0 = var.value();
                         } else if dir == ">" {
-                            var.set(inertia.value());
+                            var.set(inertia.0);
                         }
                     }
                     "h" => {
@@ -350,6 +356,22 @@ fn sync_links(
                         } else if dir == ">" {
                             let sides = sides_query.get(e).unwrap();
                             var.set(sides.0 as f32);
+                        }
+                    }
+                    "cmx" => {
+                        let mut cm = cm_query.get_mut(e).unwrap();
+                        if dir == "<" {
+                            cm.0.x = var.value();
+                        } else if dir == ">" {
+                            var.set(cm.0.x);
+                        }
+                    }
+                    "cmy" => {
+                        let mut cm = cm_query.get_mut(e).unwrap();
+                        if dir == "<" {
+                            cm.0.y = var.value();
+                        } else if dir == ">" {
+                            var.set(cm.0.y);
                         }
                     }
                     _ => {}

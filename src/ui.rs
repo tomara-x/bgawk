@@ -131,7 +131,9 @@ fn egui_ui(
                     s (saturation)\n\
                     l (lightness)\n\
                     a (alpha)\n\
-                    sides",
+                    sides\n\
+                    cmx (center of mass x)\n\
+                    cmy (center of mass y)",
                     );
                 });
                 ui.horizontal(|ui| {
