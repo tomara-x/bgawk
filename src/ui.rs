@@ -64,21 +64,15 @@ fn egui_ui(
                 ui.label("color");
                 ui.color_edit_button_srgba_unmultiplied(&mut draw.color);
             });
-            ui.toggle_value(&mut draw.sensor, "sensor?")
-                .on_hover_text("allows other bodies to pass through");
             ui.horizontal(|ui| {
                 ui.toggle_value(&mut draw.custom_mass, "custom mass?")
                     .on_hover_text("if not selected, mass = radius * 100");
-                if draw.custom_mass {
-                    ui.add(DragValue::new(&mut draw.mass));
-                }
+                ui.add_enabled(draw.custom_mass, DragValue::new(&mut draw.mass));
             });
             ui.horizontal(|ui| {
                 ui.toggle_value(&mut draw.custom_inertia, "custom inertia?")
                     .on_hover_text("if not selected, inertia = radius * 100");
-                if draw.custom_inertia {
-                    ui.add(DragValue::new(&mut draw.inertia));
-                }
+                ui.add_enabled(draw.custom_inertia, DragValue::new(&mut draw.inertia));
             });
             ui.horizontal(|ui| {
                 ui.label("center of mass");
@@ -89,6 +83,8 @@ fn egui_ui(
                 ui.label("restitution");
                 ui.add(DragValue::new(&mut draw.restitution).speed(0.01));
             });
+            ui.toggle_value(&mut draw.sensor, "sensor?")
+                .on_hover_text("allows other bodies to pass through");
             ui.horizontal(|ui| {
                 ui.label("linear damping");
                 ui.add(DragValue::new(&mut draw.lin_damp).speed(0.01));
