@@ -173,11 +173,11 @@ fn egui_ui(
                 ui.selectable_value(&mut joint.joint_type, JointType::Revolute, "Revolute");
             });
             ui.horizontal(|ui| {
-                ui.label("stiffness");
+                ui.label("compliance");
                 ui.add(
-                    DragValue::new(&mut joint.stiffness)
+                    DragValue::new(&mut joint.compliance)
                         .range(0.0..=f32::INFINITY)
-                        .speed(0.01),
+                        .speed(0.00001),
                 );
             });
             ui.horizontal(|ui| {

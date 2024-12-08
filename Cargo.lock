@@ -325,7 +325,7 @@ checksum = "ace50bade8e6234aa140d9a2f552bbee1db4d353f69b8217bc503490fc1a9f26"
 [[package]]
 name = "avian2d"
 version = "0.1.2"
-source = "git+https://github.com/Jondolf/avian?branch=main#5b8e64c6fdf7aca0854d7d25da1a3a3fd8152df3"
+source = "git+https://github.com/Jondolf/avian?branch=main#114554bf61320e03d778c5d8ca67e9ae381476c5"
 dependencies = [
  "avian_derive",
  "bevy",
@@ -345,7 +345,7 @@ dependencies = [
 [[package]]
 name = "avian_derive"
 version = "0.1.0"
-source = "git+https://github.com/Jondolf/avian?branch=main#5b8e64c6fdf7aca0854d7d25da1a3a3fd8152df3"
+source = "git+https://github.com/Jondolf/avian?branch=main#114554bf61320e03d778c5d8ca67e9ae381476c5"
 dependencies = [
  "proc-macro-error",
  "proc-macro2",
@@ -2094,9 +2094,9 @@ dependencies = [
 
 [[package]]
 name = "fastrand"
-version = "2.2.0"
+version = "2.3.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "486f806e73c5707928240ddc295403b1b93c96a02038563881c4a2fd84b81ac4"
+checksum = "37909eebbb50d72f9059c3b6d82c0463f2ff062c9e95845c43a6c9c0355411be"
 
 [[package]]
 name = "fdeflate"

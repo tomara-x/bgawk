@@ -48,7 +48,7 @@ fn spawn_joint(
             }
         }
         if let (Some(src), Some(snk)) = (*src, snk) {
-            let compliance = (settings.stiffness * 100.).recip();
+            let compliance = settings.compliance / 1000.;
             match settings.joint_type {
                 JointType::Fixed => {
                     commands.spawn(

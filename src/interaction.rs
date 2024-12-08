@@ -105,7 +105,7 @@ pub enum JointType {
 #[reflect(Resource)]
 pub struct JointSettings {
     pub joint_type: JointType,
-    pub stiffness: f32,
+    pub compliance: f32,
     pub local_anchor_1: Vec2,
     pub local_anchor_2: Vec2,
     pub dist_limits: (f32, f32),
@@ -119,7 +119,7 @@ impl Default for JointSettings {
     fn default() -> Self {
         JointSettings {
             joint_type: JointType::Fixed,
-            stiffness: f32::INFINITY,
+            compliance: 0.,
             local_anchor_1: Vec2::new(0., 0.),
             local_anchor_2: Vec2::new(0., 0.),
             dist_limits: (0., f32::INFINITY),
