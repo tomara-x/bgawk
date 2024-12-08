@@ -67,12 +67,12 @@ fn spawn(
             Code(settings.code.clone()),
             Mass(r * 100.),
             AngularInertia(r * 100.),
-            CenterOfMass(Vec2::new(0., 0.)),
+            CenterOfMass(settings.center_of_mass),
             Collider::regular_polygon(1., settings.sides),
             CollisionLayers::from_bits(layer, layer),
-            Restitution::default(),
-            LinearDamping::default(),
-            AngularDamping::default(),
+            Restitution::new(settings.restitution),
+            LinearDamping(settings.lin_damp),
+            AngularDamping(settings.ang_damp),
             Transform {
                 translation: cursor.i.extend(0.),
                 scale: Vec3::new(r, r, 1.),
@@ -82,6 +82,12 @@ fn spawn(
         ));
         if settings.sensor {
             e.insert(Sensor);
+        }
+        if settings.custom_mass {
+            e.insert(Mass(settings.mass));
+        }
+        if settings.custom_inertia {
+            e.insert(AngularInertia(settings.inertia));
         }
     }
 }
@@ -159,6 +165,7 @@ fn eval_collisions(
     }
 }
 
+#[allow(clippy::type_complexity)]
 fn sync_links(
     links_query: Query<(Entity, &Links)>,
     mut trans_query: Query<&mut Transform>,

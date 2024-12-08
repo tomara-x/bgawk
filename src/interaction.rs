@@ -61,18 +61,34 @@ pub struct DrawSettings {
     pub sensor: bool,
     pub links: String,
     pub code: String,
+    pub custom_mass: bool,
+    pub mass: f32,
+    pub custom_inertia: bool,
+    pub inertia: f32,
+    pub center_of_mass: Vec2,
+    pub restitution: f32,
+    pub lin_damp: f32,
+    pub ang_damp: f32,
 }
 
 impl Default for DrawSettings {
     fn default() -> Self {
         DrawSettings {
-            sides: 8,
+            sides: 32,
             color: [255, 172, 171, 255],
             rigid_body: RigidBody::Dynamic,
             collision_layer: 0,
             sensor: false,
             links: String::new(),
             code: String::new(),
+            custom_mass: false,
+            mass: 1000.,
+            custom_inertia: false,
+            inertia: 1000.,
+            center_of_mass: Vec2::new(0., 0.),
+            restitution: 0.5,
+            lin_damp: 0.,
+            ang_damp: 0.,
         }
     }
 }

@@ -85,6 +85,37 @@ fn egui_ui(
                 )
                 .on_hover_text(CODE_TOOLTIP);
             });
+            ui.horizontal(|ui| {
+                ui.checkbox(&mut draw.custom_mass, "custom mass")
+                    .on_hover_text("if not selected, mass = radius * 100");
+                if draw.custom_mass {
+                    ui.add(DragValue::new(&mut draw.mass));
+                }
+            });
+            ui.horizontal(|ui| {
+                ui.checkbox(&mut draw.custom_inertia, "custom inertia")
+                    .on_hover_text("if not selected, inertia = radius * 100");
+                if draw.custom_inertia {
+                    ui.add(DragValue::new(&mut draw.inertia));
+                }
+            });
+            ui.horizontal(|ui| {
+                ui.add(DragValue::new(&mut draw.center_of_mass.x));
+                ui.add(DragValue::new(&mut draw.center_of_mass.y));
+                ui.label("center of mass");
+            });
+            ui.horizontal(|ui| {
+                ui.add(DragValue::new(&mut draw.restitution).speed(0.01));
+                ui.label("restitution");
+            });
+            ui.horizontal(|ui| {
+                ui.add(DragValue::new(&mut draw.lin_damp).speed(0.01));
+                ui.label("linear damping");
+            });
+            ui.horizontal(|ui| {
+                ui.add(DragValue::new(&mut draw.ang_damp).speed(0.01));
+                ui.label("angular damping");
+            });
         } else if *mode == Mode::Edit {
             ui.horizontal(|ui| {
                 ui.add(DragValue::new(&mut gravity.0.x));
