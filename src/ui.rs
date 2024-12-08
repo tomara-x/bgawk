@@ -47,14 +47,6 @@ fn egui_ui(
         ui.separator();
         if *mode == Mode::Draw {
             ui.horizontal(|ui| {
-                ui.label("sides");
-                ui.add(DragValue::new(&mut draw.sides).range(3..=128));
-            });
-            ui.horizontal(|ui| {
-                ui.label("color");
-                ui.color_edit_button_srgba_unmultiplied(&mut draw.color);
-            });
-            ui.horizontal(|ui| {
                 ui.label("rigid body");
                 ui.selectable_value(&mut draw.rigid_body, RigidBody::Static, "Static");
                 ui.selectable_value(&mut draw.rigid_body, RigidBody::Dynamic, "Dynamic");
@@ -64,35 +56,25 @@ fn egui_ui(
                 ui.label("collision layer");
                 ui.add(DragValue::new(&mut draw.collision_layer).range(0..=31));
             });
-            ui.checkbox(&mut draw.sensor, "sensor");
             ui.horizontal(|ui| {
-                ui.label("links");
-                ui.add(
-                    TextEdit::multiline(&mut draw.links)
-                        .code_editor()
-                        .desired_rows(1),
-                )
-                .on_hover_text(LINKS_TOOLTIP);
+                ui.label("sides");
+                ui.add(DragValue::new(&mut draw.sides).range(3..=128));
             });
             ui.horizontal(|ui| {
-                ui.label("code");
-                ui.add(
-                    TextEdit::multiline(&mut draw.code)
-                        .code_editor()
-                        .desired_rows(1)
-                        .layouter(&mut layouter),
-                )
-                .on_hover_text(CODE_TOOLTIP);
+                ui.label("color");
+                ui.color_edit_button_srgba_unmultiplied(&mut draw.color);
             });
+            ui.toggle_value(&mut draw.sensor, "sensor?")
+                .on_hover_text("allows other bodies to pass through");
             ui.horizontal(|ui| {
-                ui.checkbox(&mut draw.custom_mass, "custom mass")
+                ui.toggle_value(&mut draw.custom_mass, "custom mass?")
                     .on_hover_text("if not selected, mass = radius * 100");
                 if draw.custom_mass {
                     ui.add(DragValue::new(&mut draw.mass));
                 }
             });
             ui.horizontal(|ui| {
-                ui.checkbox(&mut draw.custom_inertia, "custom inertia")
+                ui.toggle_value(&mut draw.custom_inertia, "custom inertia?")
                     .on_hover_text("if not selected, inertia = radius * 100");
                 if draw.custom_inertia {
                     ui.add(DragValue::new(&mut draw.inertia));
@@ -115,6 +97,27 @@ fn egui_ui(
                 ui.label("angular damping");
                 ui.add(DragValue::new(&mut draw.ang_damp).speed(0.01));
             });
+            ui.horizontal(|ui| {
+                ui.label("links");
+                ui.add(
+                    TextEdit::multiline(&mut draw.links)
+                        .code_editor()
+                        .desired_rows(1)
+                        .desired_width(f32::INFINITY),
+                )
+                .on_hover_text(LINKS_TOOLTIP);
+            });
+            ui.horizontal(|ui| {
+                ui.label("code");
+                ui.add(
+                    TextEdit::multiline(&mut draw.code)
+                        .code_editor()
+                        .desired_rows(1)
+                        .desired_width(f32::INFINITY)
+                        .layouter(&mut layouter),
+                )
+                .on_hover_text(CODE_TOOLTIP);
+            });
         } else if *mode == Mode::Edit {
             ui.horizontal(|ui| {
                 ui.label("gravity");
@@ -129,6 +132,7 @@ fn egui_ui(
                 TextEdit::multiline(&mut update_code.0)
                     .hint_text("code here will be quietly evaluated every frame")
                     .code_editor()
+                    .desired_width(f32::INFINITY)
                     .layouter(&mut layouter),
             );
             lapis.quiet_eval(&update_code.0);
@@ -147,7 +151,8 @@ fn egui_ui(
                     ui.add(
                         TextEdit::multiline(&mut links.0)
                             .code_editor()
-                            .desired_rows(1),
+                            .desired_rows(1)
+                            .desired_width(f32::INFINITY),
                     )
                     .on_hover_text(LINKS_TOOLTIP);
                 });
@@ -157,6 +162,7 @@ fn egui_ui(
                         TextEdit::multiline(&mut code.0)
                             .code_editor()
                             .desired_rows(1)
+                            .desired_width(f32::INFINITY)
                             .layouter(&mut layouter),
                     )
                     .on_hover_text(CODE_TOOLTIP);
