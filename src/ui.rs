@@ -27,6 +27,7 @@ fn egui_ui(
     mut attraction_factor: ResMut<AttractionFactor>,
     mut joint: ResMut<JointSettings>,
     mut time: ResMut<Time<Virtual>>,
+    mut quiet: ResMut<QuietCollisionEval>,
 ) {
     let ctx = contexts.ctx_mut();
     let theme = CodeTheme::from_memory(ctx, &ctx.style());
@@ -241,6 +242,8 @@ fn egui_ui(
         // TODO why pivot doesn't work?
         .default_pos(Pos2::new(1000., 0.))
         .show(ctx, |ui| {
+            ui.toggle_value(&mut quiet.0, "quiet?")
+                .on_hover_text("don't log collision evaluation");
             ScrollArea::vertical().stick_to_bottom(true).show(ui, |ui| {
                 ui.add(
                     TextEdit::multiline(&mut lapis.buffer)
