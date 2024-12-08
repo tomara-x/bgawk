@@ -133,42 +133,52 @@ fn eval_collisions(
     inertia_query: Query<&AngularInertia>,
     quiet: Res<QuietCollisionEval>,
 ) {
-    for Collision(contacts) in collision_event_reader.read() {
-        if contacts.collision_started() {
-            for e in [contacts.entity1, contacts.entity2] {
-                let c = code.get(e).unwrap();
-                if c.0.contains('$') {
-                    let trans = trans_query.get(e).unwrap();
-                    let x = trans.translation.x;
-                    let y = trans.translation.y;
-                    let rx = trans.scale.x;
-                    let ry = trans.scale.x;
-                    let rot = trans.rotation.to_euler(EulerRot::XYZ).2;
-                    let lin_v = lin_velocity_query.get(e).unwrap();
-                    let vx = lin_v.x;
-                    let vy = lin_v.y;
-                    let va = ang_velocity_query.get(e).unwrap().0;
-                    let mass = mass_query.get(e).unwrap().0;
-                    let inertia = inertia_query.get(e).unwrap().0;
-                    let code =
-                        c.0.replace("$x", &format!("{x}"))
-                            .replace("$y", &format!("{y}"))
-                            .replace("$rx", &format!("{rx}"))
-                            .replace("$ry", &format!("{ry}"))
-                            .replace("$rot", &format!("{rot}"))
-                            .replace("$vx", &format!("{vx}"))
-                            .replace("$vy", &format!("{vy}"))
-                            .replace("$va", &format!("{va}"))
-                            .replace("$mass", &format!("{mass}"))
-                            .replace("$inertia", &format!("{inertia}"));
-                    if quiet.0 {
+    let search_and_replace = |code: &str, e| {
+        let trans = trans_query.get(e).unwrap();
+        let x = trans.translation.x;
+        let y = trans.translation.y;
+        let rx = trans.scale.x;
+        let ry = trans.scale.x;
+        let rot = trans.rotation.to_euler(EulerRot::XYZ).2;
+        let lin_v = lin_velocity_query.get(e).unwrap();
+        let vx = lin_v.x;
+        let vy = lin_v.y;
+        let va = ang_velocity_query.get(e).unwrap().0;
+        let mass = mass_query.get(e).unwrap().0;
+        let inertia = inertia_query.get(e).unwrap().0;
+        code.replace("$x", &format!("{x}"))
+            .replace("$y", &format!("{y}"))
+            .replace("$rx", &format!("{rx}"))
+            .replace("$ry", &format!("{ry}"))
+            .replace("$rot", &format!("{rot}"))
+            .replace("$vx", &format!("{vx}"))
+            .replace("$vy", &format!("{vy}"))
+            .replace("$va", &format!("{va}"))
+            .replace("$mass", &format!("{mass}"))
+            .replace("$inertia", &format!("{inertia}"))
+    };
+    if quiet.0 {
+        for Collision(contacts) in collision_event_reader.read() {
+            if contacts.collision_started() {
+                for e in [contacts.entity1, contacts.entity2] {
+                    let c = code.get(e).unwrap();
+                    if c.0.contains('$') {
+                        let code = search_and_replace(&c.0, e);
                         lapis.quiet_eval(&code);
                     } else {
-                        lapis.eval(&code);
-                    }
-                } else {
-                    if quiet.0 {
                         lapis.quiet_eval(&c.0);
+                    }
+                }
+            }
+        }
+    } else {
+        for Collision(contacts) in collision_event_reader.read() {
+            if contacts.collision_started() {
+                for e in [contacts.entity1, contacts.entity2] {
+                    let c = code.get(e).unwrap();
+                    if c.0.contains('$') {
+                        let code = search_and_replace(&c.0, e);
+                        lapis.eval(&code);
                     } else {
                         lapis.eval(&c.0);
                     }
