@@ -36,34 +36,33 @@ fn egui_ui(
         ui.fonts(|f| f.layout_job(layout_job))
     };
     Window::new("settings").show(ctx, |ui| {
-        egui::ComboBox::from_label("mode")
-            .selected_text(format!("{:?}", *mode))
-            .show_ui(ui, |ui| {
-                ui.selectable_value(&mut *mode, Mode::Edit, "Edit");
-                ui.selectable_value(&mut *mode, Mode::Draw, "Draw");
-                ui.selectable_value(&mut *mode, Mode::Joint, "Joint");
-            })
-            .response
-            .on_hover_text("ctrl+1/2/3");
+        ui.horizontal(|ui| {
+            ui.selectable_value(&mut *mode, Mode::Edit, "Edit")
+                .on_hover_text("ctrl+1");
+            ui.selectable_value(&mut *mode, Mode::Draw, "Draw")
+                .on_hover_text("ctrl+2");
+            ui.selectable_value(&mut *mode, Mode::Joint, "Joint")
+                .on_hover_text("ctrl+3");
+        });
+        ui.separator();
         if *mode == Mode::Draw {
             ui.horizontal(|ui| {
-                ui.add(DragValue::new(&mut draw.sides).range(3..=128));
                 ui.label("sides");
+                ui.add(DragValue::new(&mut draw.sides).range(3..=128));
             });
             ui.horizontal(|ui| {
-                ui.color_edit_button_srgba_unmultiplied(&mut draw.color);
                 ui.label("color");
+                ui.color_edit_button_srgba_unmultiplied(&mut draw.color);
             });
-            egui::ComboBox::from_label("rigid body")
-                .selected_text(format!("{:?}", draw.rigid_body))
-                .show_ui(ui, |ui| {
-                    ui.selectable_value(&mut draw.rigid_body, RigidBody::Static, "Static");
-                    ui.selectable_value(&mut draw.rigid_body, RigidBody::Dynamic, "Dynamic");
-                });
+            ui.horizontal(|ui| {
+                ui.label("rigid body");
+                ui.selectable_value(&mut draw.rigid_body, RigidBody::Static, "Static");
+                ui.selectable_value(&mut draw.rigid_body, RigidBody::Dynamic, "Dynamic");
+            });
             // TODO move to edit?
             ui.horizontal(|ui| {
-                ui.add(DragValue::new(&mut draw.collision_layer).range(0..=31));
                 ui.label("collision layer");
+                ui.add(DragValue::new(&mut draw.collision_layer).range(0..=31));
             });
             ui.checkbox(&mut draw.sensor, "sensor");
             ui.horizontal(|ui| {
@@ -100,31 +99,31 @@ fn egui_ui(
                 }
             });
             ui.horizontal(|ui| {
+                ui.label("center of mass");
                 ui.add(DragValue::new(&mut draw.center_of_mass.x));
                 ui.add(DragValue::new(&mut draw.center_of_mass.y));
-                ui.label("center of mass");
             });
             ui.horizontal(|ui| {
-                ui.add(DragValue::new(&mut draw.restitution).speed(0.01));
                 ui.label("restitution");
+                ui.add(DragValue::new(&mut draw.restitution).speed(0.01));
             });
             ui.horizontal(|ui| {
-                ui.add(DragValue::new(&mut draw.lin_damp).speed(0.01));
                 ui.label("linear damping");
+                ui.add(DragValue::new(&mut draw.lin_damp).speed(0.01));
             });
             ui.horizontal(|ui| {
-                ui.add(DragValue::new(&mut draw.ang_damp).speed(0.01));
                 ui.label("angular damping");
+                ui.add(DragValue::new(&mut draw.ang_damp).speed(0.01));
             });
         } else if *mode == Mode::Edit {
             ui.horizontal(|ui| {
+                ui.label("gravity");
                 ui.add(DragValue::new(&mut gravity.0.x));
                 ui.add(DragValue::new(&mut gravity.0.y));
-                ui.label("gravity");
             });
             ui.horizontal(|ui| {
-                ui.add(DragValue::new(&mut attraction_factor.0).speed(0.01));
                 ui.label("attraction");
+                ui.add(DragValue::new(&mut attraction_factor.0).speed(0.01));
             });
             ui.add(
                 TextEdit::multiline(&mut update_code.0)
@@ -164,35 +163,35 @@ fn egui_ui(
                 });
             }
         } else if *mode == Mode::Joint {
-            egui::ComboBox::from_label("joint type")
-                .selected_text(format!("{:?}", joint.joint_type))
-                .show_ui(ui, |ui| {
-                    ui.selectable_value(&mut joint.joint_type, JointType::Fixed, "Fixed");
-                    ui.selectable_value(&mut joint.joint_type, JointType::Distance, "Distance");
-                    ui.selectable_value(&mut joint.joint_type, JointType::Prismatic, "Prismatic");
-                    ui.selectable_value(&mut joint.joint_type, JointType::Revolute, "Revolute");
-                });
             ui.horizontal(|ui| {
+                ui.label("joint type");
+                ui.selectable_value(&mut joint.joint_type, JointType::Fixed, "Fixed");
+                ui.selectable_value(&mut joint.joint_type, JointType::Distance, "Distance");
+                ui.selectable_value(&mut joint.joint_type, JointType::Prismatic, "Prismatic");
+                ui.selectable_value(&mut joint.joint_type, JointType::Revolute, "Revolute");
+            });
+            ui.horizontal(|ui| {
+                ui.label("stiffness");
                 ui.add(
                     DragValue::new(&mut joint.stiffness)
                         .range(0.0..=f32::INFINITY)
                         .speed(0.01),
                 );
-                ui.label("stiffness");
             });
             ui.horizontal(|ui| {
+                ui.label("local anchor 1");
                 ui.add(DragValue::new(&mut joint.local_anchor_1.x).speed(0.01));
                 ui.add(DragValue::new(&mut joint.local_anchor_1.y).speed(0.01));
-                ui.label("local anchor 1");
             });
             ui.horizontal(|ui| {
+                ui.label("local anchor 2");
                 ui.add(DragValue::new(&mut joint.local_anchor_2.x).speed(0.01));
                 ui.add(DragValue::new(&mut joint.local_anchor_2.y).speed(0.01));
-                ui.label("local anchor 2");
             });
             match joint.joint_type {
                 JointType::Distance => {
                     ui.horizontal(|ui| {
+                        ui.label("limits");
                         ui.add(
                             DragValue::new(&mut joint.dist_limits.0)
                                 .range(0.0..=f32::INFINITY)
@@ -203,34 +202,33 @@ fn egui_ui(
                                 .range(0.0..=f32::INFINITY)
                                 .speed(0.01),
                         );
-                        ui.label("limits");
                     });
                     ui.horizontal(|ui| {
+                        ui.label("rest length");
                         ui.add(
                             DragValue::new(&mut joint.dist_rest)
                                 .range(0.0..=f32::INFINITY)
                                 .speed(0.01),
                         );
-                        ui.label("rest length");
                     });
                 }
                 JointType::Prismatic => {
                     ui.horizontal(|ui| {
+                        ui.label("limits");
                         ui.add(DragValue::new(&mut joint.prismatic_limits.0).speed(0.01));
                         ui.add(DragValue::new(&mut joint.prismatic_limits.1).speed(0.01));
-                        ui.label("limits");
                     });
                     ui.horizontal(|ui| {
+                        ui.label("free axis");
                         ui.add(DragValue::new(&mut joint.prismatic_axis.x).speed(0.01));
                         ui.add(DragValue::new(&mut joint.prismatic_axis.y).speed(0.01));
-                        ui.label("free axis");
                     });
                 }
                 JointType::Revolute => {
                     ui.horizontal(|ui| {
+                        ui.label("limits");
                         ui.add(DragValue::new(&mut joint.angle_limits.0).speed(0.01));
                         ui.add(DragValue::new(&mut joint.angle_limits.1).speed(0.01));
-                        ui.label("limits");
                     });
                 }
                 _ => {}
