@@ -253,27 +253,35 @@ fn eval_stmt(s: Stmt, lapis: &mut Lapis, quiet: bool) {
                     }
                 }
                 _ => {
-                    if !quiet {
-                        if let Some(n) = method_call_float(method, lapis) {
+                    if let Some(n) = method_call_float(method, lapis) {
+                        if !quiet {
                             lapis.buffer.push_str(&format!("\n// {:?}", n));
-                            return;
-                        } else if let Some(arr) = method_call_vec_ref(method, lapis) {
+                        }
+                        return;
+                    } else if let Some(arr) = method_call_vec_ref(method, lapis) {
+                        if !quiet {
                             lapis.buffer.push_str(&format!("\n// {:?}", arr));
-                            return;
-                        } else if let Some(nodeid) = method_nodeid(&expr, lapis) {
+                        }
+                        return;
+                    } else if let Some(nodeid) = method_nodeid(&expr, lapis) {
+                        if !quiet {
                             lapis.buffer.push_str(&format!("\n// {:?}", nodeid));
-                            return;
-                        } else if let Some(event) = method_eventid(&expr, lapis) {
+                        }
+                        return;
+                    } else if let Some(event) = method_eventid(&expr, lapis) {
+                        if !quiet {
                             lapis.buffer.push_str(&format!("\n// {:?}", event));
-                            return;
-                        } else if let Some(mut g) = method_net(method, lapis) {
+                        }
+                        return;
+                    } else if let Some(mut g) = method_net(method, lapis) {
+                        if !quiet {
                             let info = g.display().replace('\n', "\n// ");
                             lapis.buffer.push_str(&format!("\n// {}", info));
                             lapis
                                 .buffer
                                 .push_str(&format!("Size           : {}", g.size()));
-                            return;
                         }
+                        return;
                     }
                     wave_methods(method, lapis);
                     net_methods(method, lapis);
