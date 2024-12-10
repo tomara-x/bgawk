@@ -69,6 +69,7 @@ pub struct DrawSettings {
     pub restitution: f32,
     pub lin_damp: f32,
     pub ang_damp: f32,
+    pub friction: f32,
 }
 
 impl Default for DrawSettings {
@@ -89,6 +90,7 @@ impl Default for DrawSettings {
             restitution: 0.5,
             lin_damp: 0.,
             ang_damp: 0.,
+            friction: 0.5,
         }
     }
 }

@@ -81,6 +81,10 @@ fn egui_ui(
                 ui.add(DragValue::new(&mut draw.center_of_mass.y));
             });
             ui.horizontal(|ui| {
+                ui.label("friction");
+                ui.add(DragValue::new(&mut draw.friction).speed(0.01));
+            });
+            ui.horizontal(|ui| {
                 ui.label("restitution");
                 ui.add(DragValue::new(&mut draw.restitution).speed(0.01));
             });
@@ -311,7 +315,8 @@ l (lightness)
 a (alpha)
 sides
 cmx (center of mass x)
-cmy (center of mass y)";
+cmy (center of mass y)
+friction";
 
 const CODE_TOOLTIP: &str = "code that will execute on collision
 these placeholders will be substituted:

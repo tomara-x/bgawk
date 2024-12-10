@@ -15,7 +15,7 @@ impl Plugin for ObjectsPlugin {
         .add_systems(PhysicsSchedule, attract.in_set(PhysicsStepSet::Last))
         .add_systems(Update, eval_collisions)
         .add_systems(PostUpdate, sync_links)
-        .insert_resource(AttractionFactor(0.1))
+        .insert_resource(AttractionFactor(0.01))
         .insert_resource(QuietCollisionEval(false));
     }
 }
@@ -75,9 +75,12 @@ fn spawn(
             CenterOfMass(settings.center_of_mass),
             Collider::regular_polygon(1., settings.sides),
             CollisionLayers::from_bits(layer, layer),
-            Restitution::new(settings.restitution),
-            LinearDamping(settings.lin_damp),
-            AngularDamping(settings.ang_damp),
+            (
+                LinearDamping(settings.lin_damp),
+                AngularDamping(settings.ang_damp),
+                Restitution::new(settings.restitution),
+                Friction::new(settings.friction),
+            ),
             Transform {
                 translation: cursor.i.extend(0.),
                 scale: Vec3::new(r, r, 1.),
@@ -208,6 +211,7 @@ fn sync_links(
     mut collider_query: Query<&mut Collider>,
     sides_query: Query<&Sides>,
     mut cm_query: Query<&mut CenterOfMass>,
+    mut friction_query: Query<&mut Friction>,
     lapis: Res<Lapis>,
 ) {
     for (e, Links(links)) in links_query.iter() {
@@ -402,6 +406,15 @@ fn sync_links(
                             cm.0.y = var.value();
                         } else if dir == ">" {
                             var.set(cm.0.y);
+                        }
+                    }
+                    "friction" => {
+                        let mut fric = friction_query.get_mut(e).unwrap();
+                        if dir == "<" {
+                            fric.dynamic_coefficient = var.value();
+                            fric.static_coefficient = var.value();
+                        } else if dir == ">" {
+                            var.set(fric.dynamic_coefficient);
                         }
                     }
                     _ => {}
