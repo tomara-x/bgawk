@@ -319,17 +319,18 @@ fn update_selection(
 fn move_selected(
     mouse_button_input: Res<ButtonInput<MouseButton>>,
     cursor: Res<CursorInfo>,
-    mut selected_query: Query<&mut Transform, With<Selected>>,
+    mut selected_query: Query<(&mut Position, &mut LinearVelocity), With<Selected>>,
     keyboard_input: Res<ButtonInput<KeyCode>>,
 ) {
-    if keyboard_input.pressed(KeyCode::Space) || mouse_button_input.just_pressed(MouseButton::Left)
+    if !keyboard_input.pressed(KeyCode::Space)
+        && !mouse_button_input.just_pressed(MouseButton::Left)
+        && mouse_button_input.pressed(MouseButton::Left)
     {
-        return;
-    }
-    if mouse_button_input.pressed(MouseButton::Left) {
-        for mut t in selected_query.iter_mut() {
-            t.translation.x += cursor.d.x;
-            t.translation.y += cursor.d.y;
+        for (mut p, mut v) in selected_query.iter_mut() {
+            v.x = 0.;
+            v.y = 0.;
+            p.x += cursor.d.x;
+            p.y += cursor.d.y;
         }
     }
 }
