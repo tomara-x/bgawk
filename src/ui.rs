@@ -7,6 +7,7 @@ use bevy::{
 use bevy_egui::{EguiContexts, EguiPlugin};
 use egui::*;
 use egui_extras::syntax_highlighting::*;
+use std::sync::Arc;
 
 pub struct UiPlugin;
 
@@ -107,27 +108,8 @@ fn egui_ui(
                 ui.label("angular damping");
                 ui.add(DragValue::new(&mut draw.ang_damp).speed(0.01));
             });
-            ui.horizontal(|ui| {
-                ui.label("links");
-                ui.add(
-                    TextEdit::multiline(&mut draw.links)
-                        .code_editor()
-                        .desired_rows(1)
-                        .desired_width(f32::INFINITY),
-                )
-                .on_hover_text(LINKS_TOOLTIP);
-            });
-            ui.horizontal(|ui| {
-                ui.label("code");
-                ui.add(
-                    TextEdit::multiline(&mut draw.code)
-                        .code_editor()
-                        .desired_rows(1)
-                        .desired_width(f32::INFINITY)
-                        .layouter(&mut layouter),
-                )
-                .on_hover_text(CODE_TOOLTIP);
-            });
+            links_line(ui, &mut draw.links);
+            code_line(ui, &mut draw.code, &mut layouter);
         } else if *mode == Mode::Edit {
             ui.horizontal(|ui| {
                 ui.label("gravity");
@@ -155,55 +137,21 @@ fn egui_ui(
             }
             let n = selected.iter().len();
             ui.label(format!("selected: {}", n));
-            if n == 1 {
-                let (mut code, mut links) = selected.single_mut();
-                ui.horizontal(|ui| {
-                    ui.label("links");
-                    ui.add(
-                        TextEdit::multiline(&mut links.0)
-                            .code_editor()
-                            .desired_rows(1)
-                            .desired_width(f32::INFINITY),
-                    )
-                    .on_hover_text(LINKS_TOOLTIP);
-                });
-                ui.horizontal(|ui| {
-                    ui.label("code");
-                    ui.add(
-                        TextEdit::multiline(&mut code.0)
-                            .code_editor()
-                            .desired_rows(1)
-                            .desired_width(f32::INFINITY)
-                            .layouter(&mut layouter),
-                    )
-                    .on_hover_text(CODE_TOOLTIP);
-                });
-            } else if n > 1 {
-                ui.horizontal(|ui| {
-                    ui.label("links");
-                    ui.add(
-                        TextEdit::multiline(&mut insert.links)
-                            .code_editor()
-                            .desired_rows(1)
-                            .desired_width(f32::INFINITY),
-                    )
-                    .on_hover_text(LINKS_TOOLTIP);
-                });
-                ui.horizontal(|ui| {
-                    ui.label("code");
-                    ui.add(
-                        TextEdit::multiline(&mut insert.code)
-                            .code_editor()
-                            .desired_rows(1)
-                            .desired_width(f32::INFINITY)
-                            .layouter(&mut layouter),
-                    )
-                    .on_hover_text(CODE_TOOLTIP);
-                });
-                if ui.button("apply to selected").clicked() {
-                    for (mut code, mut links) in selected.iter_mut() {
-                        code.0 = insert.code.clone();
-                        links.0 = insert.links.clone();
+            match n {
+                0 => {}
+                1 => {
+                    let (mut code, mut links) = selected.single_mut();
+                    links_line(ui, &mut links.0);
+                    code_line(ui, &mut code.0, &mut layouter);
+                }
+                _ => {
+                    links_line(ui, &mut insert.links);
+                    code_line(ui, &mut insert.code, &mut layouter);
+                    if ui.button("apply to selected").clicked() {
+                        for (mut code, mut links) in selected.iter_mut() {
+                            code.0 = insert.code.clone();
+                            links.0 = insert.links.clone();
+                        }
                     }
                 }
             }
@@ -324,6 +272,37 @@ fn egui_ui(
                 });
             });
         });
+}
+
+fn links_line(ui: &mut Ui, buffer: &mut String) {
+    ui.horizontal(|ui| {
+        ui.label("links");
+        ui.add(
+            TextEdit::multiline(buffer)
+                .code_editor()
+                .desired_rows(1)
+                .desired_width(f32::INFINITY),
+        )
+        .on_hover_text(LINKS_TOOLTIP);
+    });
+}
+
+fn code_line(
+    ui: &mut Ui,
+    buffer: &mut String,
+    layouter: &mut dyn FnMut(&Ui, &str, f32) -> Arc<Galley>,
+) {
+    ui.horizontal(|ui| {
+        ui.label("code");
+        ui.add(
+            TextEdit::multiline(buffer)
+                .code_editor()
+                .desired_rows(1)
+                .desired_width(f32::INFINITY)
+                .layouter(layouter),
+        )
+        .on_hover_text(CODE_TOOLTIP);
+    });
 }
 
 const LINKS_TOOLTIP: &str = "link a property of this entity to a shared var\n
