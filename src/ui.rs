@@ -2,7 +2,7 @@ use crate::{interaction::*, lapis::*, objects::*};
 use avian2d::prelude::*;
 use bevy::{
     app::{App, Plugin, Update},
-    prelude::{Query, ResMut, Time, Virtual, With},
+    prelude::{Query, ResMut, Time, Virtual, With, Resource},
 };
 use bevy_egui::{EguiContexts, EguiPlugin};
 use egui::*;
@@ -12,8 +12,16 @@ pub struct UiPlugin;
 
 impl Plugin for UiPlugin {
     fn build(&self, app: &mut App) {
-        app.add_plugins(EguiPlugin).add_systems(Update, egui_ui);
+        app.add_plugins(EguiPlugin)
+            .init_resource::<InsertComponents>()
+            .add_systems(Update, egui_ui);
     }
+}
+
+#[derive(Resource, Default)]
+struct InsertComponents {
+    links: String,
+    code: String,
 }
 
 fn egui_ui(
@@ -28,6 +36,7 @@ fn egui_ui(
     mut joint: ResMut<JointSettings>,
     mut time: ResMut<Time<Virtual>>,
     mut quiet: ResMut<QuietCollisionEval>,
+    mut insert: ResMut<InsertComponents>,
 ) {
     let ctx = contexts.ctx_mut();
     let theme = CodeTheme::from_memory(ctx, &ctx.style());
@@ -144,9 +153,10 @@ fn egui_ui(
             } else if ui.button("pause").clicked() {
                 time.pause();
             }
-            ui.label("selected:");
-            // TODO multiple selected entities?
-            if let Ok((mut code, mut links)) = selected.get_single_mut() {
+            let n = selected.iter().len();
+            ui.label(format!("selected: {}", n));
+            if n == 1 {
+                let (mut code, mut links) = selected.single_mut();
                 ui.horizontal(|ui| {
                     ui.label("links");
                     ui.add(
@@ -168,6 +178,34 @@ fn egui_ui(
                     )
                     .on_hover_text(CODE_TOOLTIP);
                 });
+            } else if n > 1 {
+                ui.horizontal(|ui| {
+                    ui.label("links");
+                    ui.add(
+                        TextEdit::multiline(&mut insert.links)
+                            .code_editor()
+                            .desired_rows(1)
+                            .desired_width(f32::INFINITY),
+                    )
+                    .on_hover_text(LINKS_TOOLTIP);
+                });
+                ui.horizontal(|ui| {
+                    ui.label("code");
+                    ui.add(
+                        TextEdit::multiline(&mut insert.code)
+                            .code_editor()
+                            .desired_rows(1)
+                            .desired_width(f32::INFINITY)
+                            .layouter(&mut layouter),
+                    )
+                    .on_hover_text(CODE_TOOLTIP);
+                });
+                if ui.button("apply to selected").clicked() {
+                    for (mut code, mut links) in selected.iter_mut() {
+                        code.0 = insert.code.clone();
+                        links.0 = insert.links.clone();
+                    }
+                }
             }
         } else if *mode == Mode::Joint {
             ui.horizontal(|ui| {
