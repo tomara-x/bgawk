@@ -2,7 +2,7 @@ use crate::{interaction::*, lapis::*, objects::*};
 use avian2d::prelude::*;
 use bevy::{
     app::{App, Plugin, Update},
-    prelude::{Query, ResMut, Time, Virtual, With, Resource},
+    prelude::{Query, ResMut, Resource, Time, Virtual, With},
 };
 use bevy_egui::{EguiContexts, EguiPlugin};
 use egui::*;
@@ -76,12 +76,12 @@ fn egui_ui(
             });
             ui.horizontal(|ui| {
                 ui.toggle_value(&mut draw.custom_mass, "custom mass?")
-                    .on_hover_text("if not selected, mass = radius * 100");
+                    .on_hover_text("if not selected, mass = radius ^ 3");
                 ui.add_enabled(draw.custom_mass, DragValue::new(&mut draw.mass));
             });
             ui.horizontal(|ui| {
                 ui.toggle_value(&mut draw.custom_inertia, "custom inertia?")
-                    .on_hover_text("if not selected, inertia = radius * 100");
+                    .on_hover_text("if not selected, inertia = radius ^ 3");
                 ui.add_enabled(draw.custom_inertia, DragValue::new(&mut draw.inertia));
             });
             ui.horizontal(|ui| {
@@ -356,9 +356,9 @@ cmx (center of mass x)
 cmy (center of mass y)
 friction";
 
-const CODE_TOOLTIP: &str = "code that will execute on collision
+const CODE_TOOLTIP: &str = "code to evaluate when this object collides with another\n
 these placeholders will be substituted:
-$x for this entity's x position
+$x for this object's x position
 $y for y position
 $rx for x radius
 $ry for y radius

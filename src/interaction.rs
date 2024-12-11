@@ -12,7 +12,6 @@ impl Plugin for InteractPlugin {
             .insert_resource(EguiFocused(false))
             .insert_resource(DrawSettings::default())
             .insert_resource(JointSettings::default())
-            .insert_resource(Mode::default())
             .add_systems(Update, toggle_pan)
             .add_systems(Update, check_egui_focus)
             .add_systems(Update, update_cursor_info)
