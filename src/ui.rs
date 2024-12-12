@@ -2,7 +2,7 @@ use crate::{interaction::*, lapis::*, objects::*};
 use avian2d::prelude::*;
 use bevy::{
     app::{App, Plugin, Update},
-    prelude::{Query, ResMut, Resource, Time, Virtual, With},
+    prelude::{Query, Res, ResMut, Resource, Time, Virtual, With},
 };
 use bevy_egui::{EguiContexts, EguiPlugin};
 use egui::*;
@@ -38,6 +38,7 @@ fn egui_ui(
     mut time: ResMut<Time<Virtual>>,
     mut quiet: ResMut<QuietCollisionEval>,
     mut insert: ResMut<InsertComponents>,
+    cursor: Res<CursorInfo>,
 ) {
     let ctx = contexts.ctx_mut();
     let theme = CodeTheme::from_memory(ctx, &ctx.style());
@@ -271,6 +272,14 @@ fn egui_ui(
                     });
                 });
             });
+        });
+    Window::new("info")
+        .default_open(false)
+        .default_pos(Pos2::new(0., 1000.))
+        .show(ctx, |ui| {
+            ui.label(format!("i: ({}, {})", cursor.i.x, cursor.i.y));
+            ui.label(format!("f: ({}, {})", cursor.f.x, cursor.f.y));
+            ui.label(format!("distance: {}", cursor.i.distance(cursor.f)));
         });
 }
 
