@@ -112,6 +112,13 @@ fn egui_ui(
             links_line(ui, &mut draw.links);
             code_line(ui, &mut draw.code, &mut layouter);
         } else if *mode == Mode::Edit {
+            if time.is_paused() {
+                if ui.button("resume").clicked() {
+                    time.unpause();
+                }
+            } else if ui.button("pause").clicked() {
+                time.pause();
+            }
             ui.horizontal(|ui| {
                 ui.label("gravity");
                 ui.add(DragValue::new(&mut gravity.0.x));
@@ -121,21 +128,6 @@ fn egui_ui(
                 ui.label("attraction");
                 ui.add(DragValue::new(&mut attraction_factor.0).speed(0.01));
             });
-            ui.add(
-                TextEdit::multiline(&mut update_code.0)
-                    .hint_text("code here will be quietly evaluated every frame")
-                    .code_editor()
-                    .desired_width(f32::INFINITY)
-                    .layouter(&mut layouter),
-            );
-            lapis.quiet_eval(&update_code.0);
-            if time.is_paused() {
-                if ui.button("resume").clicked() {
-                    time.unpause();
-                }
-            } else if ui.button("pause").clicked() {
-                time.pause();
-            }
             let n = selected.iter().len();
             ui.label(format!("selected: {}", n));
             match n {
@@ -248,6 +240,16 @@ fn egui_ui(
     Window::new("lapis input")
         .default_pos(Pos2::new(1000., 1000.))
         .show(ctx, |ui| {
+            ui.collapsing("update code", |ui| {
+                ui.add(
+                    TextEdit::multiline(&mut update_code.0)
+                        .hint_text("code here will be quietly evaluated every frame")
+                        .code_editor()
+                        .desired_width(f32::INFINITY)
+                        .layouter(&mut layouter),
+                );
+            });
+            lapis.quiet_eval(&update_code.0);
             ScrollArea::vertical().show(ui, |ui| {
                 ui.horizontal(|ui| {
                     ui.with_layout(Layout::right_to_left(Align::TOP), |ui| {
