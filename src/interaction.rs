@@ -288,7 +288,7 @@ fn update_selection(
             clicked_on_space.0 = true;
         }
     } else if mouse_button_input.just_released(MouseButton::Left) && clicked_entity.is_none() {
-        if !shift {
+        if !(shift || ctrl) {
             for entity in selected.iter() {
                 commands.entity(entity).remove::<Selected>();
             }
@@ -308,7 +308,11 @@ fn update_selection(
                 if (min_x < t.translation.x && t.translation.x < max_x)
                     && (min_y < t.translation.y && t.translation.y < max_y)
                 {
-                    commands.entity(*e).insert(Selected);
+                    if ctrl {
+                        commands.entity(*e).remove::<Selected>();
+                    } else {
+                        commands.entity(*e).insert(Selected);
+                    }
                 }
             }
         }
@@ -323,6 +327,8 @@ fn move_selected(
 ) {
     if !keyboard_input.pressed(KeyCode::Space)
         && !mouse_button_input.just_pressed(MouseButton::Left)
+        && !keyboard_input.any_pressed([KeyCode::ShiftLeft, KeyCode::ShiftRight])
+        && !keyboard_input.any_pressed([KeyCode::ControlLeft, KeyCode::ControlRight])
         && mouse_button_input.pressed(MouseButton::Left)
     {
         for (mut p, mut v) in selected_query.iter_mut() {

@@ -12,16 +12,11 @@ default-features = false
 features = [
     "multi_threaded",
     "bevy_asset",
-    "bevy_scene",
-    "bevy_state",
     "bevy_winit",
     "bevy_render",
     "bevy_core_pipeline",
     "bevy_sprite",
-    "bevy_text",
-    "bevy_ui",
     "tonemapping_luts",
-    "default_font",
     "x11",
 ]
 
