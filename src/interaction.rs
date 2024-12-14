@@ -4,6 +4,7 @@ use bevy::{
     prelude::*,
     render::view::VisibleEntities,
 };
+use bevy_egui::EguiContexts;
 use bevy_pancam::*;
 
 pub struct InteractPlugin;
@@ -379,20 +380,12 @@ fn toggle_pan(
     query.single_mut().enabled = keyboard_input.pressed(KeyCode::Space) && !egui_focused.0;
 }
 
-// this system was stolen from bevy_pancam
+// this system was stolen from bevy_pancam (then refactored)
 #[derive(Resource, Deref, DerefMut, PartialEq, Default)]
 pub struct EguiFocused(pub bool);
 
-fn check_egui_focus(
-    mut contexts: Query<&mut bevy_egui::EguiContext>,
-    mut egui_focused: ResMut<EguiFocused>,
-) {
-    let ctx = contexts.iter_mut().next();
-    let focused = if let Some(ctx) = ctx {
-        let ctx = ctx.into_inner().get_mut();
-        ctx.wants_pointer_input() || ctx.wants_keyboard_input()
-    } else {
-        false
-    };
+fn check_egui_focus(mut contexts: EguiContexts, mut egui_focused: ResMut<EguiFocused>) {
+    let ctx = contexts.ctx_mut();
+    let focused = ctx.wants_pointer_input() || ctx.wants_keyboard_input();
     egui_focused.set_if_neq(EguiFocused(focused));
 }
