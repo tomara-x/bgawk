@@ -353,7 +353,7 @@ fn update_selection(
 fn move_selected(
     mouse_button_input: Res<ButtonInput<MouseButton>>,
     cursor: Res<CursorInfo>,
-    mut selected_query: Query<(&mut Position, &mut LinearVelocity), With<Selected>>,
+    mut selected_query: Query<(&mut Transform, &mut LinearVelocity), With<Selected>>,
     keyboard_input: Res<ButtonInput<KeyCode>>,
 ) {
     if mouse_button_input.pressed(MouseButton::Left)
@@ -362,11 +362,11 @@ fn move_selected(
         && !keyboard_input.any_pressed([KeyCode::ShiftLeft, KeyCode::ShiftRight])
         && !keyboard_input.any_pressed([KeyCode::ControlLeft, KeyCode::ControlRight])
     {
-        for (mut p, mut v) in selected_query.iter_mut() {
+        for (mut t, mut v) in selected_query.iter_mut() {
             v.x = 0.;
             v.y = 0.;
-            p.x += cursor.d.x;
-            p.y += cursor.d.y;
+            t.translation.x += cursor.d.x;
+            t.translation.y += cursor.d.y;
         }
     }
 }
