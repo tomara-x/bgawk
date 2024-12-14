@@ -47,7 +47,7 @@ fn egui_ui(
         layout_job.wrap.max_width = wrap_width;
         ui.fonts(|f| f.layout_job(layout_job))
     };
-    Window::new("settings").show(ctx, |ui| {
+    Window::new("mode").show(ctx, |ui| {
         ui.horizontal(|ui| {
             ui.selectable_value(&mut *mode, Mode::Edit, "Edit")
                 .on_hover_text("ctrl+1");
@@ -128,6 +128,7 @@ fn egui_ui(
                 ui.label("attraction");
                 ui.add(DragValue::new(&mut attraction_factor.0).speed(0.01));
             });
+            ui.separator();
             let n = selected.iter().len();
             ui.label(format!("selected: {}", n));
             match n {
