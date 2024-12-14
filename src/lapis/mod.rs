@@ -88,7 +88,7 @@ impl Lapis {
     }
 }
 
-// TODO clean this up
+#[allow(clippy::map_entry)]
 fn eval_stmt(s: Stmt, lapis: &mut Lapis, quiet: bool) {
     match s {
         Stmt::Local(expr) => {

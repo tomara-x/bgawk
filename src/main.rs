@@ -1,4 +1,4 @@
-#![allow(clippy::too_many_arguments, clippy::map_entry)]
+#![allow(clippy::too_many_arguments)]
 
 use avian2d::prelude::*;
 use bevy::{
