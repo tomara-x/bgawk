@@ -1,5 +1,9 @@
 use avian2d::prelude::*;
-use bevy::{prelude::*, render::view::VisibleEntities};
+use bevy::{
+    color::palettes::tailwind::{GRAY_50, GREEN_500, RED_500},
+    prelude::*,
+    render::view::VisibleEntities,
+};
 use bevy_pancam::*;
 
 pub struct InteractPlugin;
@@ -222,7 +226,13 @@ fn update_indicator(
             Mode::Edit if clicked_on_space.0 => {
                 let iso = Isometry2d::from_translation((cursor.i + cursor.f) / 2.);
                 let size = (cursor.f - cursor.i).abs();
-                gizmos.rect_2d(iso, size, Color::WHITE);
+                if keyboard_input.any_pressed([KeyCode::ControlLeft, KeyCode::ControlRight]) {
+                    gizmos.rect_2d(iso, size, RED_500);
+                } else if keyboard_input.any_pressed([KeyCode::ShiftLeft, KeyCode::ShiftRight]) {
+                    gizmos.rect_2d(iso, size, GREEN_500);
+                } else {
+                    gizmos.rect_2d(iso, size, GRAY_50);
+                };
             }
             Mode::Joint => gizmos.line_2d(cursor.i, cursor.f, Color::WHITE),
             _ => {}
