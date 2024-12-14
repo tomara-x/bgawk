@@ -18,6 +18,12 @@ impl Plugin for InteractPlugin {
             .add_systems(Update, switch_modes)
             .add_systems(
                 Update,
+                select_all
+                    .run_if(resource_equals(EguiFocused(false)))
+                    .run_if(resource_equals(Mode::Edit)),
+            )
+            .add_systems(
+                Update,
                 update_selection
                     .after(update_cursor_info)
                     .run_if(resource_equals(EguiFocused(false)))
@@ -244,6 +250,19 @@ fn delete_selected(
     }
 }
 
+fn select_all(
+    keyboard_input: Res<ButtonInput<KeyCode>>,
+    all: Query<Entity, With<Mesh2d>>,
+    mut commands: Commands,
+) {
+    let ctrl = keyboard_input.any_pressed([KeyCode::ControlLeft, KeyCode::ControlRight]);
+    if ctrl && keyboard_input.just_pressed(KeyCode::KeyA) {
+        for e in all.iter() {
+            commands.entity(e).insert(Selected);
+        }
+    }
+}
+
 fn update_selection(
     mut commands: Commands,
     mouse_button_input: Res<ButtonInput<MouseButton>>,
@@ -258,9 +277,9 @@ fn update_selection(
     if keyboard_input.pressed(KeyCode::Space) {
         return;
     }
-    let shift = keyboard_input.any_pressed([KeyCode::ShiftLeft, KeyCode::ShiftRight]);
-    let ctrl = keyboard_input.any_pressed([KeyCode::ControlLeft, KeyCode::ControlRight]);
     if mouse_button_input.just_pressed(MouseButton::Left) {
+        let shift = keyboard_input.any_pressed([KeyCode::ShiftLeft, KeyCode::ShiftRight]);
+        let ctrl = keyboard_input.any_pressed([KeyCode::ControlLeft, KeyCode::ControlRight]);
         *clicked_entity = None;
         for e in visible.single().get::<With<Mesh2d>>() {
             if let Ok(t) = trans_query.get(*e) {
@@ -288,6 +307,8 @@ fn update_selection(
             clicked_on_space.0 = true;
         }
     } else if mouse_button_input.just_released(MouseButton::Left) && clicked_entity.is_none() {
+        let shift = keyboard_input.any_pressed([KeyCode::ShiftLeft, KeyCode::ShiftRight]);
+        let ctrl = keyboard_input.any_pressed([KeyCode::ControlLeft, KeyCode::ControlRight]);
         if !(shift || ctrl) {
             for entity in selected.iter() {
                 commands.entity(entity).remove::<Selected>();
@@ -325,11 +346,11 @@ fn move_selected(
     mut selected_query: Query<(&mut Position, &mut LinearVelocity), With<Selected>>,
     keyboard_input: Res<ButtonInput<KeyCode>>,
 ) {
-    if !keyboard_input.pressed(KeyCode::Space)
+    if mouse_button_input.pressed(MouseButton::Left)
         && !mouse_button_input.just_pressed(MouseButton::Left)
+        && !keyboard_input.pressed(KeyCode::Space)
         && !keyboard_input.any_pressed([KeyCode::ShiftLeft, KeyCode::ShiftRight])
         && !keyboard_input.any_pressed([KeyCode::ControlLeft, KeyCode::ControlRight])
-        && mouse_button_input.pressed(MouseButton::Left)
     {
         for (mut p, mut v) in selected_query.iter_mut() {
             v.x = 0.;
