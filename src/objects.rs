@@ -22,7 +22,7 @@ impl Plugin for ObjectsPlugin {
 
 #[derive(Component, Reflect, Default)]
 #[reflect(Component)]
-pub struct Code(pub String);
+pub struct Code(pub String, pub String);
 
 #[derive(Component, Reflect, Default)]
 #[reflect(Component)]
@@ -69,7 +69,7 @@ fn spawn(
             MeshMaterial2d(mat_handle),
             settings.rigid_body,
             Links(settings.links.clone()),
-            Code(settings.code.clone()),
+            Code(settings.code.0.clone(), settings.code.1.clone()),
             Mass(r * r * r),
             AngularInertia(r * r * r),
             CenterOfMass(settings.center_of_mass),
@@ -126,7 +126,6 @@ fn attract(
 }
 
 fn eval_collisions(
-    mut collision_event_reader: EventReader<Collision>,
     code: Query<&Code>,
     mut lapis: ResMut<Lapis>,
     trans_query: Query<&Transform>,
@@ -135,6 +134,8 @@ fn eval_collisions(
     mass_query: Query<&Mass>,
     inertia_query: Query<&AngularInertia>,
     quiet: Res<QuietCollisionEval>,
+    mut started: EventReader<CollisionStarted>,
+    mut ended: EventReader<CollisionEnded>,
 ) {
     let search_and_replace = |code: &str, e| {
         let trans = trans_query.get(e).unwrap();
@@ -161,30 +162,48 @@ fn eval_collisions(
             .replace("$inertia", &format!("{inertia}"))
     };
     if quiet.0 {
-        for Collision(contacts) in collision_event_reader.read() {
-            if contacts.collision_started() {
-                for e in [contacts.entity1, contacts.entity2] {
-                    let c = code.get(e).unwrap();
-                    if c.0.contains('$') {
-                        let code = search_and_replace(&c.0, e);
-                        lapis.quiet_eval(&code);
-                    } else {
-                        lapis.quiet_eval(&c.0);
-                    }
+        for CollisionStarted(e1, e2) in started.read() {
+            for e in [e1, e2] {
+                let c = code.get(*e).unwrap();
+                if c.0.contains('$') {
+                    let code = search_and_replace(&c.0, *e);
+                    lapis.quiet_eval(&code);
+                } else {
+                    lapis.quiet_eval(&c.0);
+                }
+            }
+        }
+        for CollisionEnded(e1, e2) in ended.read() {
+            for e in [e1, e2] {
+                let c = code.get(*e).unwrap();
+                if c.1.contains('$') {
+                    let code = search_and_replace(&c.1, *e);
+                    lapis.quiet_eval(&code);
+                } else {
+                    lapis.quiet_eval(&c.1);
                 }
             }
         }
     } else {
-        for Collision(contacts) in collision_event_reader.read() {
-            if contacts.collision_started() {
-                for e in [contacts.entity1, contacts.entity2] {
-                    let c = code.get(e).unwrap();
-                    if c.0.contains('$') {
-                        let code = search_and_replace(&c.0, e);
-                        lapis.eval(&code);
-                    } else {
-                        lapis.eval(&c.0);
-                    }
+        for CollisionStarted(e1, e2) in started.read() {
+            for e in [e1, e2] {
+                let c = code.get(*e).unwrap();
+                if c.0.contains('$') {
+                    let code = search_and_replace(&c.0, *e);
+                    lapis.eval(&code);
+                } else {
+                    lapis.eval(&c.0);
+                }
+            }
+        }
+        for CollisionEnded(e1, e2) in ended.read() {
+            for e in [e1, e2] {
+                let c = code.get(*e).unwrap();
+                if c.1.contains('$') {
+                    let code = search_and_replace(&c.1, *e);
+                    lapis.eval(&code);
+                } else {
+                    lapis.eval(&c.1);
                 }
             }
         }

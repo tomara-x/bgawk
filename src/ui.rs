@@ -22,7 +22,7 @@ impl Plugin for UiPlugin {
 #[derive(Resource, Default)]
 struct InsertComponents {
     links: String,
-    code: String,
+    code: (String, String),
 }
 
 fn egui_ui(
@@ -110,7 +110,8 @@ fn egui_ui(
                 ui.add(DragValue::new(&mut draw.ang_damp).speed(0.01));
             });
             links_line(ui, &mut draw.links);
-            code_line(ui, &mut draw.code, &mut layouter);
+            code_line(ui, &mut draw.code.0, &mut layouter, "on collision start");
+            code_line(ui, &mut draw.code.1, &mut layouter, "on collision end");
         } else if *mode == Mode::Edit {
             if time.is_paused() {
                 if ui.button("resume").clicked() {
@@ -136,14 +137,17 @@ fn egui_ui(
                 1 => {
                     let (mut code, mut links) = selected.single_mut();
                     links_line(ui, &mut links.0);
-                    code_line(ui, &mut code.0, &mut layouter);
+                    code_line(ui, &mut code.0, &mut layouter, "on collision start");
+                    code_line(ui, &mut code.1, &mut layouter, "on collision end");
                 }
                 _ => {
                     links_line(ui, &mut insert.links);
-                    code_line(ui, &mut insert.code, &mut layouter);
+                    code_line(ui, &mut insert.code.0, &mut layouter, "on collision start");
+                    code_line(ui, &mut insert.code.1, &mut layouter, "on collision end");
                     if ui.button("apply to selected").clicked() {
                         for (mut code, mut links) in selected.iter_mut() {
-                            code.0 = insert.code.clone();
+                            code.0 = insert.code.0.clone();
+                            code.1 = insert.code.1.clone();
                             links.0 = insert.links.clone();
                         }
                     }
@@ -303,11 +307,13 @@ fn code_line(
     ui: &mut Ui,
     buffer: &mut String,
     layouter: &mut dyn FnMut(&Ui, &str, f32) -> Arc<Galley>,
+    hint: &str,
 ) {
     ui.horizontal(|ui| {
         ui.label("code");
         ui.add(
             TextEdit::multiline(buffer)
+                .hint_text(hint)
                 .code_editor()
                 .desired_rows(1)
                 .desired_width(f32::INFINITY)
@@ -347,7 +353,7 @@ cmx (center of mass x)
 cmy (center of mass y)
 friction";
 
-const CODE_TOOLTIP: &str = "code to evaluate when this object collides with another\n
+const CODE_TOOLTIP: &str = "evaluated when this object starts/stops colliding with another\n
 these placeholders will be substituted:
 $x for this object's x position
 $y for y position
