@@ -400,7 +400,7 @@ fn sync_links(
                     }
                     "sides" => {
                         if dir == "<" {
-                            let sides = (var.value() as u32).clamp(3, 128);
+                            let sides = (var.value() as u32).clamp(3, 512);
                             let mesh_id = mesh_ids.get(e).unwrap();
                             let mesh = meshes.get_mut(mesh_id).unwrap();
                             *mesh = RegularPolygon::new(1., sides).into();

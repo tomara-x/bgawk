@@ -70,7 +70,7 @@ fn egui_ui(
             });
             ui.horizontal(|ui| {
                 ui.label("sides");
-                ui.add(DragValue::new(&mut draw.sides).range(3..=128));
+                ui.add(DragValue::new(&mut draw.sides).range(3..=512));
             });
             ui.horizontal(|ui| {
                 ui.label("color");
