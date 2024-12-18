@@ -228,7 +228,7 @@ fn sync_links(
         ResMut<Assets<Mesh>>,
     ),
     mut collider_query: Query<&mut Collider>,
-    sides_query: Query<&Sides>,
+    mut sides_query: Query<&mut Sides>,
     mut cm_query: Query<&mut CenterOfMass>,
     mut friction_query: Query<&mut Friction>,
     lapis: Res<Lapis>,
@@ -406,6 +406,7 @@ fn sync_links(
                             *mesh = RegularPolygon::new(1., sides).into();
                             let mut collider = collider_query.get_mut(e).unwrap();
                             *collider = Collider::regular_polygon(1., sides);
+                            sides_query.get_mut(e).unwrap().0 = sides;
                         } else if dir == ">" {
                             let sides = sides_query.get(e).unwrap();
                             var.set(sides.0 as f32);
