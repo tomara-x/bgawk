@@ -175,12 +175,13 @@ fn eval_collisions(
         }
         for CollisionEnded(e1, e2) in ended.read() {
             for e in [e1, e2] {
-                let c = code.get(*e).unwrap();
-                if c.1.contains('$') {
-                    let code = search_and_replace(&c.1, *e);
-                    lapis.quiet_eval(&code);
-                } else {
-                    lapis.quiet_eval(&c.1);
+                if let Ok(c) = code.get(*e) {
+                    if c.1.contains('$') {
+                        let code = search_and_replace(&c.1, *e);
+                        lapis.quiet_eval(&code);
+                    } else {
+                        lapis.quiet_eval(&c.1);
+                    }
                 }
             }
         }
@@ -198,12 +199,13 @@ fn eval_collisions(
         }
         for CollisionEnded(e1, e2) in ended.read() {
             for e in [e1, e2] {
-                let c = code.get(*e).unwrap();
-                if c.1.contains('$') {
-                    let code = search_and_replace(&c.1, *e);
-                    lapis.eval(&code);
-                } else {
-                    lapis.eval(&c.1);
+                if let Ok(c) = code.get(*e) {
+                    if c.1.contains('$') {
+                        let code = search_and_replace(&c.1, *e);
+                        lapis.eval(&code);
+                    } else {
+                        lapis.eval(&c.1);
+                    }
                 }
             }
         }
