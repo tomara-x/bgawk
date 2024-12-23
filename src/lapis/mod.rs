@@ -96,6 +96,20 @@ impl Lapis {
             }
         }
     }
+    pub fn eval_input(&mut self) {
+        if !self.input.is_empty() {
+            match parse_str::<Stmt>(&format!("{{{}}}", self.input)) {
+                Ok(stmt) => {
+                    self.buffer.push('\n');
+                    self.buffer.push_str(&std::mem::take(&mut self.input));
+                    eval_stmt(stmt, self, false);
+                }
+                Err(err) => {
+                    self.buffer.push_str(&format!("\n// error: {}", err));
+                }
+            }
+        }
+    }
     pub fn quiet_eval(&mut self, input: &str) {
         if let Ok(stmt) = parse_str::<Stmt>(&format!("{{{}}}", input)) {
             eval_stmt(stmt, self, true);

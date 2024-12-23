@@ -273,8 +273,7 @@ fn egui_ui(
                         if input_focused && ctx.input_mut(|i| i.consume_shortcut(&shortcut))
                             || execute.clicked()
                         {
-                            let input = std::mem::take(&mut lapis.input);
-                            lapis.eval(&input);
+                            lapis.eval_input();
                         }
                     });
                 });
