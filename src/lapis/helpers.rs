@@ -1,20 +1,9 @@
 use crate::{
     lapis::*,
-    lapis::{floats::*, ints::*, nets::*},
+    lapis::{floats::*, ints::*},
 };
 use syn::punctuated::Punctuated;
 
-pub fn remove_from_all_maps(k: &String, lapis: &mut Lapis) {
-    lapis.fmap.remove(k);
-    lapis.vmap.remove(k);
-    lapis.gmap.remove(k);
-    lapis.idmap.remove(k);
-    lapis.bmap.remove(k);
-    lapis.smap.remove(k);
-    lapis.wmap.remove(k);
-    lapis.seqmap.remove(k);
-    lapis.eventmap.remove(k);
-}
 pub fn path_fade(expr: &Expr) -> Option<Fade> {
     let f = nth_path_ident(expr, 0)?;
     let c = nth_path_ident(expr, 1)?;
@@ -49,41 +38,6 @@ pub fn eval_meter(expr: &Expr, lapis: &Lapis) -> Option<Meter> {
             let seg1 = &expr.path.segments.get(1)?.ident;
             if seg0 == "Meter" && seg1 == "Sample" {
                 Some(Meter::Sample)
-            } else {
-                None
-            }
-        }
-        _ => None,
-    }
-}
-pub fn eval_source(expr: &Expr, lapis: &Lapis) -> Option<Source> {
-    match expr {
-        Expr::Call(expr) => {
-            let seg0 = nth_path_ident(&expr.func, 0)?;
-            let seg1 = nth_path_ident(&expr.func, 1)?;
-            if seg0 == "Source" {
-                if seg1 == "Local" {
-                    let arg0 = expr.args.first()?;
-                    let arg1 = expr.args.get(1)?;
-                    let id = path_nodeid(arg0, lapis)?;
-                    let index = eval_usize(arg1, lapis)?;
-                    Some(Source::Local(id, index))
-                } else if seg1 == "Global" {
-                    let arg0 = expr.args.first()?;
-                    let index = eval_usize(arg0, lapis)?;
-                    Some(Source::Global(index))
-                } else {
-                    None
-                }
-            } else {
-                None
-            }
-        }
-        Expr::Path(expr) => {
-            let seg0 = &expr.path.segments.first()?.ident;
-            let seg1 = &expr.path.segments.get(1)?.ident;
-            if seg0 == "Source" && seg1 == "Zero" {
-                Some(Source::Zero)
             } else {
                 None
             }

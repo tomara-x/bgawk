@@ -16,11 +16,12 @@ mod helpers;
 mod ints;
 mod nets;
 mod sequencers;
+mod sources;
 mod units;
 mod waves;
 use {
     arrays::*, atomics::*, bools::*, floats::*, helpers::*, ints::*, nets::*, sequencers::*,
-    waves::*,
+    sources::*, waves::*,
 };
 
 #[derive(Resource)]
@@ -36,6 +37,7 @@ pub struct Lapis {
     pub wmap: HashMap<String, Arc<Wave>>,
     pub seqmap: HashMap<String, Sequencer>,
     pub eventmap: HashMap<String, EventId>,
+    pub srcmap: HashMap<String, Source>,
     pub slot: Slot,
     pub receivers: (Receiver<f32>, Receiver<f32>),
 }
@@ -63,9 +65,22 @@ impl Lapis {
             wmap: HashMap::new(),
             seqmap: HashMap::new(),
             eventmap: HashMap::new(),
+            srcmap: HashMap::new(),
             slot,
             receivers: (lr, rr),
         }
+    }
+    pub fn drop(&mut self, k: &String) {
+        self.fmap.remove(k);
+        self.vmap.remove(k);
+        self.gmap.remove(k);
+        self.idmap.remove(k);
+        self.bmap.remove(k);
+        self.smap.remove(k);
+        self.wmap.remove(k);
+        self.seqmap.remove(k);
+        self.eventmap.remove(k);
+        self.srcmap.remove(k);
     }
     pub fn eval(&mut self, input: &str) {
         if !input.is_empty() {
@@ -95,36 +110,39 @@ fn eval_stmt(s: Stmt, lapis: &mut Lapis, quiet: bool) {
             if let Some(k) = pat_ident(&expr.pat) {
                 if let Some(expr) = expr.init {
                     if let Some(v) = eval_float(&expr.expr, lapis) {
-                        remove_from_all_maps(&k, lapis);
+                        lapis.drop(&k);
                         lapis.fmap.insert(k, v);
                     } else if let Some(v) = eval_net(&expr.expr, lapis) {
-                        remove_from_all_maps(&k, lapis);
+                        lapis.drop(&k);
                         lapis.gmap.insert(k, v);
                     } else if let Some(arr) = eval_vec(&expr.expr, lapis) {
-                        remove_from_all_maps(&k, lapis);
+                        lapis.drop(&k);
                         lapis.vmap.insert(k, arr);
                     } else if let Some(id) =
                         method_nodeid(&expr.expr, lapis).or(path_nodeid(&expr.expr, lapis))
                     {
-                        remove_from_all_maps(&k, lapis);
+                        lapis.drop(&k);
                         lapis.idmap.insert(k, id);
                     } else if let Some(b) = eval_bool(&expr.expr, lapis) {
-                        remove_from_all_maps(&k, lapis);
+                        lapis.drop(&k);
                         lapis.bmap.insert(k, b);
                     } else if let Some(s) = eval_shared(&expr.expr, lapis) {
-                        remove_from_all_maps(&k, lapis);
+                        lapis.drop(&k);
                         lapis.smap.insert(k, s);
                     } else if let Some(w) = eval_wave(&expr.expr, lapis) {
-                        remove_from_all_maps(&k, lapis);
+                        lapis.drop(&k);
                         let wave = Arc::new(w);
                         lapis.wmap.insert(k, wave);
                     } else if let Some(seq) = call_seq(&expr.expr, lapis) {
-                        remove_from_all_maps(&k, lapis);
+                        lapis.drop(&k);
                         lapis.seqmap.insert(k, seq);
+                    } else if let Some(source) = eval_source(&expr.expr, lapis) {
+                        lapis.drop(&k);
+                        lapis.srcmap.insert(k, source);
                     } else if let Some(event) =
                         method_eventid(&expr.expr, lapis).or(path_eventid(&expr.expr, lapis))
                     {
-                        remove_from_all_maps(&k, lapis);
+                        lapis.drop(&k);
                         lapis.eventmap.insert(k, event);
                     }
                 }
@@ -199,47 +217,13 @@ fn eval_stmt(s: Stmt, lapis: &mut Lapis, quiet: bool) {
                 }
                 "drop" => {
                     if let Some(k) = nth_path_ident(&method.receiver, 0) {
-                        remove_from_all_maps(&k, lapis);
+                        lapis.drop(&k);
                     }
                 }
                 "error" if !quiet => {
                     if let Some(k) = nth_path_ident(&method.receiver, 0) {
                         if let Some(g) = &mut lapis.gmap.get_mut(&k) {
                             lapis.buffer.push_str(&format!("\n// {:?}", g.error()));
-                        }
-                    }
-                }
-                "source" if !quiet => {
-                    if let Some(k) = nth_path_ident(&method.receiver, 0) {
-                        if let Some(g) = &mut lapis.gmap.get(&k) {
-                            let arg0 = method.args.first();
-                            let arg1 = method.args.get(1);
-                            if let (Some(arg0), Some(arg1)) = (arg0, arg1) {
-                                let id = path_nodeid(arg0, lapis);
-                                let chan = eval_usize(arg1, lapis);
-                                if let (Some(id), Some(chan)) = (id, chan) {
-                                    if g.contains(id) && chan < g.inputs_in(id) {
-                                        lapis
-                                            .buffer
-                                            .push_str(&format!("\n// {:?}", g.source(id, chan)));
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-                "output_source" if !quiet => {
-                    if let Some(k) = nth_path_ident(&method.receiver, 0) {
-                        if let Some(g) = &mut lapis.gmap.get(&k) {
-                            let arg0 = method.args.first();
-                            if let Some(arg0) = arg0 {
-                                let chan = eval_usize(arg0, lapis);
-                                if let Some(chan) = chan {
-                                    lapis
-                                        .buffer
-                                        .push_str(&format!("\n// {:?}", g.output_source(chan)));
-                                }
-                            }
                         }
                     }
                 }
@@ -271,6 +255,11 @@ fn eval_stmt(s: Stmt, lapis: &mut Lapis, quiet: bool) {
                             lapis
                                 .buffer
                                 .push_str(&format!("Size           : {}", g.size()));
+                        }
+                        return;
+                    } else if let Some(source) = method_source(method, lapis) {
+                        if !quiet {
+                            lapis.buffer.push_str(&format!("\n// {:?}", source));
                         }
                         return;
                     }
@@ -310,6 +299,10 @@ fn eval_stmt(s: Stmt, lapis: &mut Lapis, quiet: bool) {
                         }
                     } else if let Some(s) = eval_shared(&expr.right, lapis) {
                         if let Some(var) = lapis.smap.get_mut(&ident) {
+                            *var = s;
+                        }
+                    } else if let Some(s) = eval_source(&expr.right, lapis) {
+                        if let Some(var) = lapis.srcmap.get_mut(&ident) {
                             *var = s;
                         }
                     } else if let Some(event) =
@@ -428,6 +421,8 @@ fn eval_stmt(s: Stmt, lapis: &mut Lapis, quiet: bool) {
                         seq.replay_events()
                     );
                     lapis.buffer.push_str(&info);
+                } else if let Some(source) = eval_source(&expr, lapis) {
+                    lapis.buffer.push_str(&format!("\n// {:?}", source));
                 } else if let Some(event) = path_eventid(&expr, lapis) {
                     lapis.buffer.push_str(&format!("\n// {:?}", event));
                 }

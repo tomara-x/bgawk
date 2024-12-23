@@ -1,5 +1,5 @@
 use crate::lapis::{
-    arrays::*, atomics::*, bools::*, floats::*, helpers::*, ints::*, units::*, Lapis,
+    arrays::*, atomics::*, bools::*, floats::*, helpers::*, ints::*, sources::*, units::*, Lapis,
 };
 use fundsp::{hacker32::*, sound::*};
 use std::num::Wrapping;
