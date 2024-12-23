@@ -262,7 +262,7 @@ fn egui_ui(
                         let input_focused = ui
                             .add(
                                 TextEdit::multiline(&mut lapis.input)
-                                    .hint_text("type a statement then press ctrl+enter")
+                                    .hint_text("type code then press ctrl+enter")
                                     .code_editor()
                                     .desired_rows(5)
                                     .desired_width(f32::INFINITY)
