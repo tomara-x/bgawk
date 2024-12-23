@@ -202,20 +202,14 @@ fn eval_stmt(s: Stmt, lapis: &mut Lapis, quiet: bool) {
                         remove_from_all_maps(&k, lapis);
                     }
                 }
-                "error" => {
-                    if quiet {
-                        return;
-                    }
+                "error" if !quiet => {
                     if let Some(k) = nth_path_ident(&method.receiver, 0) {
                         if let Some(g) = &mut lapis.gmap.get_mut(&k) {
                             lapis.buffer.push_str(&format!("\n// {:?}", g.error()));
                         }
                     }
                 }
-                "source" => {
-                    if quiet {
-                        return;
-                    }
+                "source" if !quiet => {
                     if let Some(k) = nth_path_ident(&method.receiver, 0) {
                         if let Some(g) = &mut lapis.gmap.get(&k) {
                             let arg0 = method.args.first();
@@ -234,10 +228,7 @@ fn eval_stmt(s: Stmt, lapis: &mut Lapis, quiet: bool) {
                         }
                     }
                 }
-                "output_source" => {
-                    if quiet {
-                        return;
-                    }
+                "output_source" if !quiet => {
                     if let Some(k) = nth_path_ident(&method.receiver, 0) {
                         if let Some(g) = &mut lapis.gmap.get(&k) {
                             let arg0 = method.args.first();
@@ -391,10 +382,7 @@ fn eval_stmt(s: Stmt, lapis: &mut Lapis, quiet: bool) {
                     eval_stmt(stmt, lapis, quiet);
                 }
             }
-            _ => {
-                if quiet {
-                    return;
-                }
+            _ if !quiet => {
                 if let Some(n) = eval_float(&expr, lapis) {
                     lapis.buffer.push_str(&format!("\n// {:?}", n));
                 } else if let Some(arr) = eval_vec_ref(&expr, lapis) {
@@ -444,6 +432,7 @@ fn eval_stmt(s: Stmt, lapis: &mut Lapis, quiet: bool) {
                     lapis.buffer.push_str(&format!("\n// {:?}", event));
                 }
             }
+            _ => {}
         },
         _ => {}
     }
