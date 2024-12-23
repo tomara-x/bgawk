@@ -71,7 +71,7 @@ impl Lapis {
         if !input.is_empty() {
             self.buffer.push('\n');
             self.buffer.push_str(input);
-            match parse_str::<Stmt>(input) {
+            match parse_str::<Stmt>(&format!("{{{}}}", input)) {
                 Ok(stmt) => {
                     eval_stmt(stmt, self, false);
                 }
@@ -82,7 +82,7 @@ impl Lapis {
         }
     }
     pub fn quiet_eval(&mut self, input: &str) {
-        if let Ok(stmt) = parse_str::<Stmt>(input) {
+        if let Ok(stmt) = parse_str::<Stmt>(&format!("{{{}}}", input)) {
             eval_stmt(stmt, self, true);
         }
     }
