@@ -246,22 +246,18 @@ fn eval_stmt(s: Stmt, lapis: &mut Lapis, quiet: bool) {
                         if !quiet {
                             lapis.buffer.push_str(&format!("\n// {:?}", n));
                         }
-                        return;
                     } else if let Some(arr) = method_call_vec_ref(method, lapis) {
                         if !quiet {
                             lapis.buffer.push_str(&format!("\n// {:?}", arr));
                         }
-                        return;
                     } else if let Some(nodeid) = method_nodeid(&expr, lapis) {
                         if !quiet {
                             lapis.buffer.push_str(&format!("\n// {:?}", nodeid));
                         }
-                        return;
                     } else if let Some(event) = method_eventid(&expr, lapis) {
                         if !quiet {
                             lapis.buffer.push_str(&format!("\n// {:?}", event));
                         }
-                        return;
                     } else if let Some(mut g) = method_net(method, lapis) {
                         if !quiet {
                             let info = g.display().replace('\n', "\n// ");
@@ -270,18 +266,17 @@ fn eval_stmt(s: Stmt, lapis: &mut Lapis, quiet: bool) {
                                 .buffer
                                 .push_str(&format!("Size           : {}", g.size()));
                         }
-                        return;
                     } else if let Some(source) = method_source(method, lapis) {
                         if !quiet {
                             lapis.buffer.push_str(&format!("\n// {:?}", source));
                         }
-                        return;
+                    } else {
+                        wave_methods(method, lapis);
+                        net_methods(method, lapis);
+                        vec_methods(method, lapis);
+                        shared_methods(method, lapis);
+                        seq_methods(method, lapis);
                     }
-                    wave_methods(method, lapis);
-                    net_methods(method, lapis);
-                    vec_methods(method, lapis);
-                    shared_methods(method, lapis);
-                    seq_methods(method, lapis);
                 }
             },
             Expr::Assign(expr) => match *expr.left {
