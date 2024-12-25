@@ -130,15 +130,15 @@ pub struct JointSettings {
 impl Default for JointSettings {
     fn default() -> Self {
         JointSettings {
-            joint_type: JointType::Fixed,
+            joint_type: JointType::Distance,
             compliance: 0.,
             local_anchor_1: Vec2::new(0., 0.),
             local_anchor_2: Vec2::new(0., 0.),
-            dist_limits: (0., f32::INFINITY),
-            dist_rest: 0.,
+            dist_limits: (0., 200.),
+            dist_rest: 150.,
             prismatic_axis: Vec2::new(1., 0.),
-            prismatic_limits: (f32::NEG_INFINITY, f32::INFINITY),
-            angle_limits: (f32::NEG_INFINITY, f32::INFINITY),
+            prismatic_limits: (100., 500.),
+            angle_limits: (-std::f32::consts::TAU, std::f32::consts::TAU),
         }
     }
 }

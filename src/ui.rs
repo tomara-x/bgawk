@@ -157,10 +157,10 @@ fn egui_ui(
         } else if *mode == Mode::Joint {
             ui.horizontal(|ui| {
                 ui.label("joint type");
-                ui.selectable_value(&mut joint.joint_type, JointType::Fixed, "Fixed");
                 ui.selectable_value(&mut joint.joint_type, JointType::Distance, "Distance");
                 ui.selectable_value(&mut joint.joint_type, JointType::Prismatic, "Prismatic");
                 ui.selectable_value(&mut joint.joint_type, JointType::Revolute, "Revolute");
+                ui.selectable_value(&mut joint.joint_type, JointType::Fixed, "Fixed");
             });
             ui.horizontal(|ui| {
                 ui.label("compliance");
