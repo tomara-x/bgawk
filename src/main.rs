@@ -32,16 +32,22 @@ fn main() {
         .add_plugins(JointsPlugin)
         .add_plugins(UiPlugin)
         .add_plugins(PhysicsPlugins::default().with_length_unit(100.0))
-        //.add_plugins(PhysicsDebugPlugin::default())
+        .add_plugins(PhysicsDebugPlugin::default())
         .insert_resource(ClearColor(Color::BLACK))
         .insert_resource(Gravity::ZERO)
+        .insert_resource(SleepingThreshold {
+            linear: -1.,
+            angular: -1.,
+        })
         .add_systems(Startup, setup)
         .insert_resource(Lapis::new())
         .insert_resource(UpdateCode::default())
         .run();
 }
 
-fn setup(mut commands: Commands) {
+fn setup(mut commands: Commands, mut config_store: ResMut<GizmoConfigStore>) {
+    let (conf, _) = config_store.config_mut::<PhysicsGizmos>();
+    conf.enabled = false;
     commands.spawn((
         Camera {
             hdr: true,
