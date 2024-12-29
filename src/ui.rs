@@ -137,6 +137,19 @@ fn egui_ui(
                 ui.add(DragValue::new(&mut attraction_factor.0).speed(0.01))
                     .on_hover_text("how much objects gravitate towards each other");
             });
+            ui.collapsing("ui settings", |ui| {
+                ui.horizontal(|ui| {
+                    ui.label("zoom factor");
+                    let factor = ui.add(
+                        DragValue::new(&mut zoom_factor.0)
+                            .range(0.5..=4.)
+                            .speed(0.1),
+                    );
+                    if factor.changed() {
+                        win.single_mut().resolution.set_scale_factor(zoom_factor.0);
+                    }
+                });
+            });
             ui.separator();
             let n = selected.iter().len();
             ui.label(format!("selected: {}", n));
@@ -297,17 +310,6 @@ fn egui_ui(
             ui.label(format!("i: ({}, {})", cursor.i.x, cursor.i.y));
             ui.label(format!("f: ({}, {})", cursor.f.x, cursor.f.y));
             ui.label(format!("distance: {}", cursor.i.distance(cursor.f)));
-            ui.horizontal(|ui| {
-                ui.label("zoom factor");
-                let factor = ui.add(
-                    DragValue::new(&mut zoom_factor.0)
-                        .range(0.5..=4.)
-                        .speed(0.1),
-                );
-                if factor.changed() {
-                    win.single_mut().resolution.set_scale_factor(zoom_factor.0);
-                }
-            });
         });
 }
 
