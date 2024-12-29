@@ -187,7 +187,7 @@ fn egui_ui(
                 ui.add(
                     DragValue::new(&mut joint.compliance)
                         .range(0.0..=f32::INFINITY)
-                        .speed(0.00001),
+                        .speed(0.001),
                 );
             });
             ui.horizontal(|ui| {
