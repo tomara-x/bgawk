@@ -242,7 +242,7 @@ fn egui_ui(
     });
     Window::new("lapis output")
         // TODO why pivot doesn't work?
-        .default_pos(Pos2::new(1000., 0.))
+        .default_pos([900., 10.])
         .show(ctx, |ui| {
             ui.toggle_value(&mut quiet.0, "quiet?")
                 .on_hover_text("don't log collision evaluation");
@@ -257,7 +257,7 @@ fn egui_ui(
             });
         });
     Window::new("lapis input")
-        .default_pos(Pos2::new(1000., 1000.))
+        .default_pos([900., 560.])
         .show(ctx, |ui| {
             ui.collapsing("update code", |ui| {
                 ui.add(
@@ -295,7 +295,7 @@ fn egui_ui(
         });
     Window::new("info")
         .default_open(false)
-        .default_pos(Pos2::new(0., 1000.))
+        .default_pos([10., 580.])
         .show(ctx, |ui| {
             let (conf, _) = config_store.config_mut::<PhysicsGizmos>();
             ui.toggle_value(&mut conf.enabled, "debug");
