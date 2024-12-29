@@ -262,7 +262,7 @@ fn egui_ui(
             ui.collapsing("update code", |ui| {
                 ui.add(
                     TextEdit::multiline(&mut update_code.0)
-                        .hint_text("code here will be quietly evaluated every frame")
+                        .hint_text("code here is quietly evaluated every frame")
                         .code_editor()
                         .desired_width(f32::INFINITY)
                         .layouter(&mut layouter),
