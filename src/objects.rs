@@ -158,8 +158,11 @@ fn eval_collisions(
             .replace("$vx", &format!("{vx}"))
             .replace("$vy", &format!("{vy}"))
             .replace("$va", &format!("{va}"))
+            .replace("$vm", &format!("{}", vx.hypot(vy)))
+            .replace("$vp", &format!("{}", vy.atan2(vx)))
             .replace("$mass", &format!("{mass}"))
             .replace("$inertia", &format!("{inertia}"))
+            .replace("$id", &format!("{}", e))
     };
     if quiet.0 {
         for CollisionStarted(e1, e2) in started.read() {
@@ -318,6 +321,28 @@ fn sync_links(
                             velocity.0 = var.value();
                         } else if dir == ">" {
                             var.set(velocity.0);
+                        }
+                    }
+                    "vm" => {
+                        let mut v = lin_velocity_query.get_mut(e).unwrap();
+                        if dir == "<" {
+                            let m = var.value();
+                            let p = v.y.atan2(v.x);
+                            v.x = m * p.cos();
+                            v.y = m * p.sin();
+                        } else {
+                            var.set(v.x.hypot(v.y));
+                        }
+                    }
+                    "vp" => {
+                        let mut v = lin_velocity_query.get_mut(e).unwrap();
+                        if dir == "<" {
+                            let m = v.x.hypot(v.y);
+                            let p = var.value();
+                            v.x = m * p.cos();
+                            v.y = m * p.sin();
+                        } else {
+                            var.set(v.y.atan2(v.x));
                         }
                     }
                     "restitution" => {

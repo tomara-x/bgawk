@@ -134,7 +134,8 @@ fn egui_ui(
             });
             ui.horizontal(|ui| {
                 ui.label("attraction");
-                ui.add(DragValue::new(&mut attraction_factor.0).speed(0.01));
+                ui.add(DragValue::new(&mut attraction_factor.0).speed(0.01))
+                    .on_hover_text("how much objects gravitate towards each other");
             });
             ui.separator();
             let n = selected.iter().len();
@@ -291,7 +292,8 @@ fn egui_ui(
         .default_pos([10., 580.])
         .show(ctx, |ui| {
             let (conf, _) = config_store.config_mut::<PhysicsGizmos>();
-            ui.toggle_value(&mut conf.enabled, "debug");
+            ui.toggle_value(&mut conf.enabled, "debug")
+                .on_hover_text("gizmos for objects/joints");
             ui.label(format!("i: ({}, {})", cursor.i.x, cursor.i.y));
             ui.label(format!("f: ({}, {})", cursor.f.x, cursor.f.y));
             ui.label(format!("distance: {}", cursor.i.distance(cursor.f)));
@@ -370,7 +372,9 @@ a (alpha)
 sides
 cmx (center of mass x)
 cmy (center of mass y)
-friction";
+friction
+vm (velocity magnitude) (polar)
+vp (velocity phase) (polar)";
 
 const CODE_TOOLTIP: &str = "evaluated when this object starts/stops colliding with another\n
 these placeholders will be substituted:
@@ -382,5 +386,8 @@ $rot for rotation
 $vx for x velocity
 $vy for y velocity
 $va for angular velocity
-$mass for.. well, the mass
-$inertia for angular inertia";
+$vm for velocity magnitude (polar)
+$vp for velocity phase (polar)
+$mass
+$inertia
+$id for the entity id";
