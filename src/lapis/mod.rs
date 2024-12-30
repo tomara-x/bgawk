@@ -42,10 +42,6 @@ pub struct Lapis {
     pub receivers: (Receiver<f32>, Receiver<f32>),
 }
 
-#[derive(Resource, Reflect, Default)]
-#[reflect(Resource)]
-pub struct UpdateCode(pub String);
-
 impl Lapis {
     pub fn new() -> Self {
         let (slot, slot_back) = Slot::new(Box::new(dc(0.) | dc(0.)));

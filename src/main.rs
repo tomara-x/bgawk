@@ -41,7 +41,6 @@ fn main() {
         })
         .add_systems(Startup, setup)
         .insert_resource(Lapis::new())
-        .insert_resource(UpdateCode::default())
         .run();
 }
 

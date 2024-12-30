@@ -16,9 +16,13 @@ impl Plugin for UiPlugin {
         app.add_plugins(EguiPlugin)
             .init_resource::<InsertComponents>()
             .insert_resource(ZoomFactor(1.))
+            .init_resource::<UpdateCode>()
             .add_systems(Update, egui_ui);
     }
 }
+
+#[derive(Resource, Default)]
+struct UpdateCode(String);
 
 #[derive(Resource, Default)]
 struct InsertComponents {
