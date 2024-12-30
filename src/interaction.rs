@@ -131,7 +131,7 @@ impl Default for JointSettings {
     fn default() -> Self {
         JointSettings {
             joint_type: JointType::Distance,
-            compliance: 0.,
+            compliance: 0.001,
             local_anchor_1: Vec2::new(0., 0.),
             local_anchor_2: Vec2::new(0., 0.),
             dist_limits: (0., 200.),
