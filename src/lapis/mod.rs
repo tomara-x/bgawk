@@ -384,59 +384,64 @@ fn eval_stmt(s: Stmt, lapis: &mut Lapis, quiet: bool) {
                     eval_stmt(stmt, lapis, quiet);
                 }
             }
-            _ if !quiet => {
-                if let Some(n) = eval_float(&expr, lapis) {
-                    lapis.buffer.push_str(&format!("\n// {:?}", n));
-                } else if let Some(arr) = eval_vec_ref(&expr, lapis) {
-                    lapis.buffer.push_str(&format!("\n// {:?}", arr));
-                } else if let Some(arr) = eval_vec_cloned(&expr, lapis) {
-                    lapis.buffer.push_str(&format!("\n// {:?}", arr));
-                } else if let Some(mut g) = eval_net_cloned(&expr, lapis) {
-                    let info = g.display().replace('\n', "\n// ");
-                    lapis.buffer.push_str(&format!("\n// {}", info));
-                    lapis
-                        .buffer
-                        .push_str(&format!("Size           : {}", g.size()));
-                } else if let Some(id) = path_nodeid(&expr, lapis) {
-                    lapis.buffer.push_str(&format!("\n// {:?}", id));
-                } else if let Some(b) = eval_bool(&expr, lapis) {
-                    lapis.buffer.push_str(&format!("\n// {:?}", b));
-                } else if let Some(s) = eval_shared(&expr, lapis) {
-                    lapis
-                        .buffer
-                        .push_str(&format!("\n// Shared({})", s.value()));
-                } else if let Some(w) = path_wave(&expr, lapis) {
-                    lapis.buffer.push_str(&format!(
-                        "\n// Wave(ch:{}, sr:{}, len:{}, dur:{})",
-                        w.channels(),
-                        w.sample_rate(),
-                        w.len(),
-                        w.duration()
-                    ));
-                } else if let Some(w) = eval_wave(&expr, lapis) {
-                    lapis.buffer.push_str(&format!(
-                        "\n// Wave(ch:{}, sr:{}, len:{}, dur:{})",
-                        w.channels(),
-                        w.sample_rate(),
-                        w.len(),
-                        w.duration()
-                    ));
-                } else if let Some(seq) = path_seq(&expr, lapis).or(call_seq(&expr, lapis).as_ref())
-                {
-                    let info = format!(
-                        "\n// Sequencer(outs: {}, has_backend: {}, replay: {})",
-                        seq.outputs(),
-                        seq.has_backend(),
-                        seq.replay_events()
-                    );
-                    lapis.buffer.push_str(&info);
-                } else if let Some(source) = eval_source(&expr, lapis) {
-                    lapis.buffer.push_str(&format!("\n// {:?}", source));
-                } else if let Some(event) = path_eventid(&expr, lapis) {
-                    lapis.buffer.push_str(&format!("\n// {:?}", event));
+            _ => {
+                if !quiet {
+                    if let Some(n) = eval_float(&expr, lapis) {
+                        lapis.buffer.push_str(&format!("\n// {:?}", n));
+                    } else if let Some(arr) = eval_vec_ref(&expr, lapis) {
+                        lapis.buffer.push_str(&format!("\n// {:?}", arr));
+                    } else if let Some(arr) = eval_vec_cloned(&expr, lapis) {
+                        lapis.buffer.push_str(&format!("\n// {:?}", arr));
+                    } else if let Some(mut g) = eval_net_cloned(&expr, lapis) {
+                        let info = g.display().replace('\n', "\n// ");
+                        lapis.buffer.push_str(&format!("\n// {}", info));
+                        lapis
+                            .buffer
+                            .push_str(&format!("Size           : {}", g.size()));
+                    } else if let Some(id) = path_nodeid(&expr, lapis) {
+                        lapis.buffer.push_str(&format!("\n// {:?}", id));
+                    } else if let Some(b) = eval_bool(&expr, lapis) {
+                        lapis.buffer.push_str(&format!("\n// {:?}", b));
+                    } else if let Some(s) = eval_shared(&expr, lapis) {
+                        lapis
+                            .buffer
+                            .push_str(&format!("\n// Shared({})", s.value()));
+                    } else if let Some(w) = path_wave(&expr, lapis) {
+                        lapis.buffer.push_str(&format!(
+                            "\n// Wave(ch:{}, sr:{}, len:{}, dur:{})",
+                            w.channels(),
+                            w.sample_rate(),
+                            w.len(),
+                            w.duration()
+                        ));
+                    } else if let Some(w) = eval_wave(&expr, lapis) {
+                        lapis.buffer.push_str(&format!(
+                            "\n// Wave(ch:{}, sr:{}, len:{}, dur:{})",
+                            w.channels(),
+                            w.sample_rate(),
+                            w.len(),
+                            w.duration()
+                        ));
+                    } else if let Some(seq) =
+                        path_seq(&expr, lapis).or(call_seq(&expr, lapis).as_ref())
+                    {
+                        let info = format!(
+                            "\n// Sequencer(outs: {}, has_backend: {}, replay: {})",
+                            seq.outputs(),
+                            seq.has_backend(),
+                            seq.replay_events()
+                        );
+                        lapis.buffer.push_str(&info);
+                    } else if let Some(source) = eval_source(&expr, lapis) {
+                        lapis.buffer.push_str(&format!("\n// {:?}", source));
+                    } else if let Some(event) = path_eventid(&expr, lapis) {
+                        lapis.buffer.push_str(&format!("\n// {:?}", event));
+                    }
+                }
+                if let Expr::Binary(expr) = expr {
+                    float_bin_assign(&expr, lapis);
                 }
             }
-            _ => {}
         },
         _ => {}
     }
