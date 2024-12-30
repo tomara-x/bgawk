@@ -357,6 +357,8 @@ to set the variable to the property's value
 or
 property < variable
 to set the property to the variable's value\n
+note: float expressions also work in assignment
+e.g. \"mass < 5\", \"y < sin(s.value())\", or \"rot = PI*3\"\n
 properties list:
 x
 y
@@ -367,6 +369,8 @@ mass
 vx (x velocity)
 vy
 va (angular velocity)
+vm (velocity magnitude) (polar)
+vp (velocity phase) (polar)
 restitution
 lindamp (linear damping)
 angdamp (angular damping)
@@ -378,9 +382,7 @@ a (alpha)
 sides
 cmx (center of mass x)
 cmy (center of mass y)
-friction
-vm (velocity magnitude) (polar)
-vp (velocity phase) (polar)";
+friction";
 
 const CODE_TOOLTIP: &str = "evaluated when this object starts/stops colliding with another\n
 these placeholders will be substituted:

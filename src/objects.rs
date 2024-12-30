@@ -1,6 +1,7 @@
-use crate::{interaction::*, lapis::Lapis};
+use crate::{interaction::*, lapis::floats::*, lapis::Lapis};
 use avian2d::prelude::*;
 use bevy::{prelude::*, sprite::AlphaMode2d};
+use syn::*;
 
 pub struct ObjectsPlugin;
 
@@ -467,6 +468,88 @@ fn sync_links(
                         }
                     }
                     _ => {}
+                }
+            // assign a float expression
+            } else if dir == "<" || dir == "=" {
+                if let Ok(expr) = parse_str::<Expr>(var) {
+                    if let Some(f) = eval_float(&expr, &lapis) {
+                        match property {
+                            "x" => trans_query.get_mut(e).unwrap().translation.x = f,
+                            "y" => trans_query.get_mut(e).unwrap().translation.y = f,
+                            "rx" => trans_query.get_mut(e).unwrap().scale.x = f,
+                            "ry" => trans_query.get_mut(e).unwrap().scale.y = f,
+                            "rot" => {
+                                trans_query.get_mut(e).unwrap().rotation = Quat::from_rotation_z(f)
+                            }
+                            "mass" => mass_query.get_mut(e).unwrap().0 = f,
+                            "vx" => lin_velocity_query.get_mut(e).unwrap().x = f,
+                            "vy" => lin_velocity_query.get_mut(e).unwrap().y = f,
+                            "va" => ang_velocity_query.get_mut(e).unwrap().0 = f,
+                            "vm" => {
+                                let mut v = lin_velocity_query.get_mut(e).unwrap();
+                                let m = f;
+                                let p = v.y.atan2(v.x);
+                                v.x = m * p.cos();
+                                v.y = m * p.sin();
+                            }
+                            "vp" => {
+                                let mut v = lin_velocity_query.get_mut(e).unwrap();
+                                let m = v.x.hypot(v.y);
+                                let p = f;
+                                v.x = m * p.cos();
+                                v.y = m * p.sin();
+                            }
+                            "restitution" => restitution_query.get_mut(e).unwrap().coefficient = f,
+                            "lindamp" => lin_damp_query.get_mut(e).unwrap().0 = f,
+                            "angdamp" => ang_damp_query.get_mut(e).unwrap().0 = f,
+                            "inertia" => inertia_query.get_mut(e).unwrap().0 = f,
+                            "h" => {
+                                let mat_id = material_ids.get(e).unwrap();
+                                let mat = materials.get_mut(mat_id).unwrap();
+                                let mut hsla: Hsla = mat.color.into();
+                                hsla.hue = f;
+                                mat.color = hsla.into();
+                            }
+                            "s" => {
+                                let mat_id = material_ids.get(e).unwrap();
+                                let mat = materials.get_mut(mat_id).unwrap();
+                                let mut hsla: Hsla = mat.color.into();
+                                hsla.saturation = f;
+                                mat.color = hsla.into();
+                            }
+                            "l" => {
+                                let mat_id = material_ids.get(e).unwrap();
+                                let mat = materials.get_mut(mat_id).unwrap();
+                                let mut hsla: Hsla = mat.color.into();
+                                hsla.lightness = f;
+                                mat.color = hsla.into();
+                            }
+                            "a" => {
+                                let mat_id = material_ids.get(e).unwrap();
+                                let mat = materials.get_mut(mat_id).unwrap();
+                                let mut hsla: Hsla = mat.color.into();
+                                hsla.alpha = f;
+                                mat.color = hsla.into();
+                            }
+                            "sides" => {
+                                let sides = (f as u32).clamp(3, 512);
+                                let mesh_id = mesh_ids.get(e).unwrap();
+                                let mesh = meshes.get_mut(mesh_id).unwrap();
+                                *mesh = RegularPolygon::new(1., sides).into();
+                                let mut collider = collider_query.get_mut(e).unwrap();
+                                *collider = Collider::regular_polygon(1., sides);
+                                sides_query.get_mut(e).unwrap().0 = sides;
+                            }
+                            "cmx" => cm_query.get_mut(e).unwrap().0.x = f,
+                            "cmy" => cm_query.get_mut(e).unwrap().0.y = f,
+                            "friction" => {
+                                let mut fric = friction_query.get_mut(e).unwrap();
+                                fric.dynamic_coefficient = f;
+                                fric.static_coefficient = f;
+                            }
+                            _ => {}
+                        }
+                    }
                 }
             }
         }

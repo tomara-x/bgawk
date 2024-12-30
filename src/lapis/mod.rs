@@ -11,7 +11,7 @@ use syn::*;
 mod arrays;
 mod atomics;
 mod bools;
-mod floats;
+pub mod floats;
 mod helpers;
 mod ints;
 mod nets;
