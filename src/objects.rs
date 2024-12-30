@@ -118,8 +118,10 @@ fn attract(
                 let p1 = e1.1 .0;
                 let p2 = e2.1 .0;
                 let r = p1.distance_squared(p2);
-                e1.2 .0 += (p2 - p1) * m2 / r * factor.0;
-                e2.2 .0 += (p1 - p2) * m1 / r * factor.0;
+                if r > 1. {
+                    e1.2 .0 += (p2 - p1) * m2 / r * factor.0;
+                    e2.2 .0 += (p1 - p2) * m1 / r * factor.0;
+                }
             }
         }
     }

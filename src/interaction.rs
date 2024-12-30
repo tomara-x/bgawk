@@ -253,10 +253,38 @@ fn delete_selected(
     mut commands: Commands,
     selected_query: Query<Entity, With<Selected>>,
     keyboard_input: Res<ButtonInput<KeyCode>>,
+    fixed: Query<(Entity, &FixedJoint)>,
+    distance: Query<(Entity, &DistanceJoint)>,
+    revolute: Query<(Entity, &RevoluteJoint)>,
+    prismatic: Query<(Entity, &PrismaticJoint)>,
 ) {
     if keyboard_input.just_pressed(KeyCode::Delete) {
-        for e in selected_query.iter() {
-            commands.entity(e).despawn();
+        let shift = keyboard_input.any_pressed([KeyCode::ShiftLeft, KeyCode::ShiftRight]);
+        if shift {
+            for (e, j) in fixed.iter() {
+                if selected_query.contains(j.entity1) || selected_query.contains(j.entity2) {
+                    commands.entity(e).despawn();
+                }
+            }
+            for (e, j) in distance.iter() {
+                if selected_query.contains(j.entity1) || selected_query.contains(j.entity2) {
+                    commands.entity(e).despawn();
+                }
+            }
+            for (e, j) in revolute.iter() {
+                if selected_query.contains(j.entity1) || selected_query.contains(j.entity2) {
+                    commands.entity(e).despawn();
+                }
+            }
+            for (e, j) in prismatic.iter() {
+                if selected_query.contains(j.entity1) || selected_query.contains(j.entity2) {
+                    commands.entity(e).despawn();
+                }
+            }
+        } else {
+            for e in selected_query.iter() {
+                commands.entity(e).despawn();
+            }
         }
     }
 }
