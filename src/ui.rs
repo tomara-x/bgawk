@@ -44,7 +44,6 @@ fn egui_ui(
     mut attraction_factor: ResMut<AttractionFactor>,
     mut joint: ResMut<JointSettings>,
     mut time: ResMut<Time<Virtual>>,
-    mut quiet: ResMut<QuietCollisionEval>,
     mut insert: ResMut<InsertComponents>,
     cursor: Res<CursorInfo>,
     mut config_store: ResMut<GizmoConfigStore>,
@@ -59,7 +58,7 @@ fn egui_ui(
         ui.fonts(|f| f.layout_job(layout_job))
     };
     if lapis.keys_active {
-        if quiet.0 {
+        if lapis.quiet {
             for (shortcut, code) in lapis.keys.clone() {
                 if ctx.input_mut(|i| i.consume_shortcut(&shortcut)) {
                     lapis.quiet_eval(&code);
@@ -271,9 +270,9 @@ fn egui_ui(
         .default_pos([900., 10.])
         .show(ctx, |ui| {
             ui.horizontal(|ui| {
-                ui.toggle_value(&mut quiet.0, "quiet?")
+                ui.toggle_value(&mut lapis.quiet, "quiet?")
                     .on_hover_text("don't log collision/keybinding evaluation");
-                ui.toggle_value(&mut lapis.keys_active, "keys")
+                ui.toggle_value(&mut lapis.keys_active, "keys?")
                     .on_hover_text("enable keybindings");
             });
             ScrollArea::vertical().stick_to_bottom(true).show(ui, |ui| {

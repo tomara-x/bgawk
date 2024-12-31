@@ -16,8 +16,7 @@ impl Plugin for ObjectsPlugin {
         .add_systems(PhysicsSchedule, attract.in_set(PhysicsStepSet::Last))
         .add_systems(Update, eval_collisions)
         .add_systems(PostUpdate, sync_links)
-        .insert_resource(AttractionFactor(0.01))
-        .insert_resource(QuietCollisionEval(false));
+        .insert_resource(AttractionFactor(0.01));
     }
 }
 
@@ -36,10 +35,6 @@ pub struct Sides(pub u32);
 #[derive(Resource, Reflect)]
 #[reflect(Resource)]
 pub struct AttractionFactor(pub f32);
-
-#[derive(Resource, Reflect)]
-#[reflect(Resource)]
-pub struct QuietCollisionEval(pub bool);
 
 fn spawn(
     mut commands: Commands,
@@ -136,7 +131,6 @@ fn eval_collisions(
     ang_velocity_query: Query<&AngularVelocity>,
     mass_query: Query<&Mass>,
     inertia_query: Query<&AngularInertia>,
-    quiet: Res<QuietCollisionEval>,
     mut started: EventReader<CollisionStarted>,
     mut ended: EventReader<CollisionEnded>,
 ) {
@@ -167,7 +161,7 @@ fn eval_collisions(
             .replace("$inertia", &format!("{inertia}"))
             .replace("$id", &format!("{}", e))
     };
-    if quiet.0 {
+    if lapis.quiet {
         for CollisionStarted(e1, e2) in started.read() {
             for e in [e1, e2] {
                 let c = code.get(*e).unwrap();
