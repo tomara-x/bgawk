@@ -44,6 +44,7 @@ pub struct Lapis {
     pub keys: Vec<(KeyboardShortcut, String)>,
     pub keys_active: bool,
     pub quiet: bool,
+    pub about: bool,
 }
 
 impl Lapis {
@@ -71,6 +72,7 @@ impl Lapis {
             keys: Vec::new(),
             keys_active: false,
             quiet: false,
+            about: false,
         }
     }
     pub fn drop(&mut self, k: &String) {

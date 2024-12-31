@@ -332,7 +332,51 @@ fn egui_ui(
             ui.label(format!("i: ({}, {})", cursor.i.x, cursor.i.y));
             ui.label(format!("f: ({}, {})", cursor.f.x, cursor.f.y));
             ui.label(format!("distance: {}", cursor.i.distance(cursor.f)));
+            if ui.button("about").clicked() {
+                lapis.about = !lapis.about;
+            }
         });
+    Window::new("about").open(&mut lapis.about).show(ctx, |ui| {
+        ui.label("bgawk is a toy for playing with physics and sound");
+        ui.label("lapis is a FunDSP interpreter");
+        ui.horizontal(|ui| {
+            ui.label("FunDSP:");
+            ui.hyperlink_to(
+                "github.com/SamiPerttu/fundsp",
+                "https://github.com/SamiPerttu/fundsp/",
+            );
+        });
+        ui.horizontal(|ui| {
+            ui.label("lapis:");
+            ui.hyperlink_to(
+                "github.com/tomara-x/lapis",
+                "https://github.com/tomara-x/lapis/",
+            );
+        });
+        ui.horizontal(|ui| {
+            ui.label("lapis mirror:");
+            ui.hyperlink_to(
+                "codeberg.org/tomara-x/lapis",
+                "https://codeberg.org/tomara-x/lapis/",
+            );
+        });
+        ui.horizontal(|ui| {
+            ui.label("repo:");
+            ui.hyperlink_to(
+                "github.com/tomara-x/bgawk",
+                "https://github.com/tomara-x/bgawk/",
+            );
+        });
+        ui.horizontal(|ui| {
+            ui.label("mirror:");
+            ui.hyperlink_to(
+                "codeberg.org/tomara-x/bgawk",
+                "https://codeberg.org/tomara-x/bgawk/",
+            );
+        });
+        ui.label("an amy universe piece");
+        ui.label("courtesy of the alphabet mafia");
+    });
 }
 
 fn links_line(ui: &mut Ui, buffer: &mut String) {
@@ -376,7 +420,8 @@ or
 property < variable
 to set the property to the variable's value\n
 note: float expressions also work in assignment
-e.g. \"mass < 5\", \"y < sin(s.value())\", or \"rot = PI*3\"\n
+e.g. \"mass < 5\", \"y < sin(s.value())\", or \"rot = PI*3\"
+(no spaces)\n
 properties list:
 x
 y
