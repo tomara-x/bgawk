@@ -1,6 +1,4 @@
-use crate::lapis::{floats::*, helpers::*, Lapis};
-use fundsp::hacker32::*;
-use syn::*;
+use crate::lapis::*;
 
 pub fn eval_shared(expr: &Expr, lapis: &Lapis) -> Option<Shared> {
     match expr {

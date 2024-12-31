@@ -4,6 +4,7 @@ use cpal::{
     FromSample, SizedSample,
 };
 use crossbeam_channel::{bounded, Receiver, Sender};
+use egui::KeyboardShortcut;
 use fundsp::hacker32::*;
 use std::{collections::HashMap, sync::Arc};
 use syn::*;
@@ -21,7 +22,7 @@ mod units;
 mod waves;
 use {
     arrays::*, atomics::*, bools::*, floats::*, helpers::*, ints::*, nets::*, sequencers::*,
-    sources::*, waves::*,
+    sources::*, units::*, waves::*,
 };
 
 #[derive(Resource)]
@@ -40,6 +41,8 @@ pub struct Lapis {
     pub srcmap: HashMap<String, Source>,
     pub slot: Slot,
     pub receivers: (Receiver<f32>, Receiver<f32>),
+    pub keys: Vec<(KeyboardShortcut, String)>,
+    pub keys_active: bool,
 }
 
 impl Lapis {
@@ -64,6 +67,8 @@ impl Lapis {
             srcmap: HashMap::new(),
             slot,
             receivers: (lr, rr),
+            keys: Vec::new(),
+            keys_active: false,
         }
     }
     pub fn drop(&mut self, k: &String) {
@@ -325,6 +330,21 @@ fn eval_stmt(s: Stmt, lapis: &mut Lapis, quiet: bool) {
                                 if let Some(vec) = lapis.vmap.get_mut(&k) {
                                     if let Some(v) = vec.get_mut(index) {
                                         *v = right;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+                Expr::Lit(left) => {
+                    if let Lit::Str(left) = left.lit {
+                        if let Expr::Lit(right) = *expr.right {
+                            if let Some(shortcut) = parse_shortcut(left.value()) {
+                                lapis.keys.retain(|x| x.0 != shortcut);
+                                if let Lit::Str(right) = right.lit {
+                                    let code = right.value();
+                                    if !code.is_empty() {
+                                        lapis.keys.push((shortcut, code));
                                     }
                                 }
                             }

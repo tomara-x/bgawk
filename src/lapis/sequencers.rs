@@ -1,6 +1,4 @@
-use crate::lapis::{bools::*, floats::*, helpers::*, ints::*, nets::*, Lapis};
-use fundsp::hacker32::*;
-use syn::*;
+use crate::lapis::*;
 
 pub fn call_seq(expr: &Expr, lapis: &Lapis) -> Option<Sequencer> {
     match expr {

@@ -58,6 +58,21 @@ fn egui_ui(
         layout_job.wrap.max_width = wrap_width;
         ui.fonts(|f| f.layout_job(layout_job))
     };
+    if lapis.keys_active {
+        if quiet.0 {
+            for (shortcut, code) in lapis.keys.clone() {
+                if ctx.input_mut(|i| i.consume_shortcut(&shortcut)) {
+                    lapis.quiet_eval(&code);
+                }
+            }
+        } else {
+            for (shortcut, code) in lapis.keys.clone() {
+                if ctx.input_mut(|i| i.consume_shortcut(&shortcut)) {
+                    lapis.eval(&code);
+                }
+            }
+        }
+    }
     Window::new("mode").show(ctx, |ui| {
         ui.horizontal(|ui| {
             ui.selectable_value(&mut *mode, Mode::Edit, "Edit")
@@ -255,8 +270,12 @@ fn egui_ui(
         // TODO why pivot doesn't work?
         .default_pos([900., 10.])
         .show(ctx, |ui| {
-            ui.toggle_value(&mut quiet.0, "quiet?")
-                .on_hover_text("don't log collision evaluation");
+            ui.horizontal(|ui| {
+                ui.toggle_value(&mut quiet.0, "quiet?")
+                    .on_hover_text("don't log collision/keybinding evaluation");
+                ui.toggle_value(&mut lapis.keys_active, "keys")
+                    .on_hover_text("enable keybindings");
+            });
             ScrollArea::vertical().stick_to_bottom(true).show(ui, |ui| {
                 ui.add(
                     TextEdit::multiline(&mut lapis.buffer)

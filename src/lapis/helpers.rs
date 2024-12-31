@@ -1,8 +1,34 @@
-use crate::{
-    lapis::*,
-    lapis::{floats::*, ints::*},
-};
+use crate::lapis::*;
+use egui::{Key, KeyboardShortcut, Modifiers};
 use syn::punctuated::Punctuated;
+
+pub fn parse_shortcut(mut k: String) -> Option<KeyboardShortcut> {
+    k = k.replace(char::is_whitespace, "");
+    let mut modifiers = Modifiers::NONE;
+    if k.contains("Ctrl") || k.contains("ctrl") {
+        modifiers = modifiers.plus(Modifiers::CTRL);
+    }
+    if k.contains("Alt") || k.contains("alt") {
+        modifiers = modifiers.plus(Modifiers::ALT);
+    }
+    if k.contains("Shift") || k.contains("shift") {
+        modifiers = modifiers.plus(Modifiers::SHIFT);
+    }
+    if k.contains("Command") || k.contains("command") {
+        modifiers = modifiers.plus(Modifiers::COMMAND);
+    }
+    k = k
+        .replace("Ctrl+", "")
+        .replace("ctrl+", "")
+        .replace("Alt+", "")
+        .replace("alt+", "")
+        .replace("Shift+", "")
+        .replace("shift+", "")
+        .replace("Command+", "")
+        .replace("command+", "");
+    let key = Key::from_name(&k)?;
+    Some(KeyboardShortcut::new(modifiers, key))
+}
 
 pub fn path_fade(expr: &Expr) -> Option<Fade> {
     let f = nth_path_ident(expr, 0)?;

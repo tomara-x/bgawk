@@ -1,5 +1,4 @@
-use crate::lapis::{floats::*, Lapis};
-use syn::*;
+use crate::lapis::*;
 
 pub fn eval_bool(expr: &Expr, lapis: &Lapis) -> Option<bool> {
     match expr {

@@ -1,9 +1,6 @@
-use crate::lapis::{
-    arrays::*, atomics::*, bools::*, floats::*, helpers::*, ints::*, sources::*, units::*, Lapis,
-};
-use fundsp::{hacker32::*, sound::*};
+use crate::lapis::*;
+use fundsp::sound::*;
 use std::num::Wrapping;
-use syn::*;
 
 pub fn eval_net(expr: &Expr, lapis: &mut Lapis) -> Option<Net> {
     match expr {
