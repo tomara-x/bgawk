@@ -49,13 +49,16 @@ fn update_tail(
     mut gizmos: Gizmos,
     material_ids: Query<&MeshMaterial2d<ColorMaterial>>,
     materials: ResMut<Assets<ColorMaterial>>,
+    time: ResMut<Time<Virtual>>,
 ) {
     for (e, trans, mut tail) in tail_query.iter_mut() {
-        let mat_id = material_ids.get(e).unwrap();
-        let mat = materials.get(mat_id).unwrap();
-        tail.points.push_front((trans.translation.xy(), mat.color));
-        while tail.points.len() > tail.len {
-            tail.points.pop_back();
+        if !time.is_paused() {
+            let mat_id = material_ids.get(e).unwrap();
+            let mat = materials.get(mat_id).unwrap();
+            tail.points.push_front((trans.translation.xy(), mat.color));
+            while tail.points.len() > tail.len {
+                tail.points.pop_back();
+            }
         }
         gizmos.linestrip_gradient_2d(tail.points.clone());
     }
