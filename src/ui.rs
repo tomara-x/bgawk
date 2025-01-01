@@ -102,6 +102,10 @@ fn egui_ui(
                 ui.color_edit_button_srgba_unmultiplied(&mut draw.color);
             });
             ui.horizontal(|ui| {
+                ui.label("tail");
+                ui.add(DragValue::new(&mut draw.tail).range(0..=3600));
+            });
+            ui.horizontal(|ui| {
                 ui.toggle_value(&mut draw.custom_mass, "custom mass?")
                     .on_hover_text("if not selected, mass = radius ^ 3");
                 ui.add_enabled(draw.custom_mass, DragValue::new(&mut draw.mass));
@@ -445,7 +449,8 @@ a (alpha)
 sides
 cmx (center of mass x)
 cmy (center of mass y)
-friction";
+friction
+tail (tail length in points)";
 
 const CODE_TOOLTIP: &str = "evaluated when this object starts/stops colliding with another\n
 these placeholders will be substituted:

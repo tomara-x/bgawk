@@ -80,6 +80,7 @@ pub struct DrawSettings {
     pub lin_damp: f32,
     pub ang_damp: f32,
     pub friction: f32,
+    pub tail: usize,
 }
 
 impl Default for DrawSettings {
@@ -101,6 +102,7 @@ impl Default for DrawSettings {
             lin_damp: 0.,
             ang_damp: 0.,
             friction: 0.5,
+            tail: 90,
         }
     }
 }

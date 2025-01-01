@@ -1,6 +1,7 @@
 use crate::{interaction::*, lapis::floats::*, lapis::Lapis};
 use avian2d::prelude::*;
 use bevy::{prelude::*, sprite::AlphaMode2d};
+use std::collections::VecDeque;
 use syn::*;
 
 pub struct ObjectsPlugin;
@@ -16,6 +17,7 @@ impl Plugin for ObjectsPlugin {
         .add_systems(PhysicsSchedule, attract.in_set(PhysicsStepSet::Last))
         .add_systems(Update, eval_collisions)
         .add_systems(PostUpdate, sync_links)
+        .add_systems(Update, update_tail)
         .insert_resource(AttractionFactor(0.01));
     }
 }
@@ -35,6 +37,29 @@ pub struct Sides(pub u32);
 #[derive(Resource, Reflect)]
 #[reflect(Resource)]
 pub struct AttractionFactor(pub f32);
+
+#[derive(Component, Default)]
+struct Tail {
+    len: usize,
+    points: VecDeque<(Vec2, Color)>,
+}
+
+fn update_tail(
+    mut tail_query: Query<(Entity, &Transform, &mut Tail)>,
+    mut gizmos: Gizmos,
+    material_ids: Query<&MeshMaterial2d<ColorMaterial>>,
+    materials: ResMut<Assets<ColorMaterial>>,
+) {
+    for (e, trans, mut tail) in tail_query.iter_mut() {
+        let mat_id = material_ids.get(e).unwrap();
+        let mat = materials.get(mat_id).unwrap();
+        tail.points.push_front((trans.translation.xy(), mat.color));
+        while tail.points.len() > tail.len {
+            tail.points.pop_back();
+        }
+        gizmos.linestrip_gradient_2d(tail.points.clone());
+    }
+}
 
 fn spawn(
     mut commands: Commands,
@@ -83,6 +108,10 @@ fn spawn(
                 ..default()
             },
             Sides(settings.sides),
+            Tail {
+                len: settings.tail,
+                ..default()
+            },
         ));
         if settings.sensor {
             e.insert(Sensor);
@@ -233,6 +262,7 @@ fn sync_links(
     mut sides_query: Query<&mut Sides>,
     mut cm_query: Query<&mut CenterOfMass>,
     mut friction_query: Query<&mut Friction>,
+    mut tail_query: Query<&mut Tail>,
     lapis: Res<Lapis>,
 ) {
     for (e, Links(links)) in links_query.iter() {
@@ -461,6 +491,14 @@ fn sync_links(
                             var.set(fric.dynamic_coefficient);
                         }
                     }
+                    "tail" => {
+                        let mut tail = tail_query.get_mut(e).unwrap();
+                        if dir == "<" {
+                            tail.len = var.value() as usize;
+                        } else if dir == ">" {
+                            var.set(tail.len as f32);
+                        }
+                    }
                     _ => {}
                 }
             // assign a float expression
@@ -541,6 +579,7 @@ fn sync_links(
                                 fric.dynamic_coefficient = f;
                                 fric.static_coefficient = f;
                             }
+                            "tail" => tail_query.get_mut(e).unwrap().len = f as usize,
                             _ => {}
                         }
                     }
