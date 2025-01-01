@@ -327,8 +327,8 @@ fn egui_ui(
         .default_pos([10., 580.])
         .show(ctx, |ui| {
             let (conf, _) = config_store.config_mut::<PhysicsGizmos>();
-            ui.toggle_value(&mut conf.enabled, "debug")
-                .on_hover_text("gizmos for objects/joints");
+            ui.toggle_value(&mut conf.enabled, "debug?")
+                .on_hover_text("show gizmos for objects/joints");
             ui.label(format!("i: ({}, {})", cursor.i.x, cursor.i.y));
             ui.label(format!("f: ({}, {})", cursor.f.x, cursor.f.y));
             ui.label(format!("distance: {}", cursor.i.distance(cursor.f)));
