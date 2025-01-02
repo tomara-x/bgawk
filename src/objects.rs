@@ -52,6 +52,11 @@ fn update_tail(
     time: ResMut<Time<Virtual>>,
 ) {
     for (e, trans, mut tail) in tail_query.iter_mut() {
+        let mut prev = trans.translation.xy();
+        for (pos, col) in &tail.points {
+            gizmos.line_2d(prev, *pos, *col);
+            prev = *pos;
+        }
         if !time.is_paused() {
             let mat_id = material_ids.get(e).unwrap();
             let mat = materials.get(mat_id).unwrap();
@@ -60,7 +65,6 @@ fn update_tail(
                 tail.points.pop_back();
             }
         }
-        gizmos.linestrip_gradient_2d(tail.points.clone());
     }
 }
 
