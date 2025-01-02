@@ -103,7 +103,7 @@ fn egui_ui(
             });
             ui.horizontal(|ui| {
                 ui.label("tail");
-                ui.add(DragValue::new(&mut draw.tail).range(0..=3600));
+                ui.add(DragValue::new(&mut draw.tail).range(0..=36000));
             });
             ui.horizontal(|ui| {
                 ui.toggle_value(&mut draw.custom_mass, "custom mass?")
@@ -117,8 +117,8 @@ fn egui_ui(
             });
             ui.horizontal(|ui| {
                 ui.label("center of mass");
-                ui.add(DragValue::new(&mut draw.center_of_mass.x));
-                ui.add(DragValue::new(&mut draw.center_of_mass.y));
+                ui.add(DragValue::new(&mut draw.center_of_mass.x).speed(0.1));
+                ui.add(DragValue::new(&mut draw.center_of_mass.y).speed(0.1));
             });
             ui.horizontal(|ui| {
                 ui.label("friction");
