@@ -8,6 +8,7 @@ use bevy::{
     },
     prelude::*,
 };
+use bevy_egui::EguiContexts;
 use bevy_pancam::*;
 
 mod interaction;
@@ -44,9 +45,21 @@ fn main() {
         .run();
 }
 
-fn setup(mut commands: Commands, mut config_store: ResMut<GizmoConfigStore>) {
+fn setup(
+    mut commands: Commands,
+    mut config_store: ResMut<GizmoConfigStore>,
+    mut contexts: EguiContexts,
+) {
+    // egui visuals
+    contexts.ctx_mut().set_visuals(egui::Visuals {
+        window_shadow: egui::Shadow::NONE,
+        popup_shadow: egui::Shadow::NONE,
+        ..default()
+    });
+    // disable avian debug gizmos
     let (conf, _) = config_store.config_mut::<PhysicsGizmos>();
     conf.enabled = false;
+    // camera
     commands.spawn((
         Camera {
             hdr: true,
