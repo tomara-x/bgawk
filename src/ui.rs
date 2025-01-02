@@ -341,7 +341,7 @@ fn egui_ui(
             }
         });
     Window::new("about").open(&mut lapis.about).show(ctx, |ui| {
-        ui.label("bgawk is a toy for playing with physics and sound");
+        ui.label("this is a toy for playing with physics and sound");
         ui.label("lapis is a FunDSP interpreter");
         ui.horizontal(|ui| {
             ui.label("FunDSP:");
@@ -380,6 +380,7 @@ fn egui_ui(
         });
         ui.label("an amy universe piece");
         ui.label("courtesy of the alphabet mafia");
+        ui.small("made in africa");
     });
 }
 
