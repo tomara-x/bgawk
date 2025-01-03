@@ -6,6 +6,7 @@ use bevy::{
 };
 use bevy_egui::EguiContexts;
 use bevy_pancam::*;
+use std::f32::consts::TAU;
 
 pub struct InteractPlugin;
 
@@ -132,7 +133,6 @@ pub struct JointSettings {
 
 impl Default for JointSettings {
     fn default() -> Self {
-        let tau = std::f32::consts::TAU;
         JointSettings {
             joint_type: JointType::Distance,
             compliance: 0.001,
@@ -143,7 +143,7 @@ impl Default for JointSettings {
             dist_rest: 150.,
             prismatic_axis: Vec2::ONE,
             prismatic_limits: (100., 500.),
-            angle_limits: (-tau, tau),
+            angle_limits: (-TAU, TAU),
         }
     }
 }
