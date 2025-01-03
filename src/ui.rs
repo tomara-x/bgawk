@@ -273,7 +273,6 @@ fn egui_ui(
         }
     });
     Window::new("lapis output")
-        // TODO why pivot doesn't work?
         .default_pos([900., 10.])
         .show(ctx, |ui| {
             ui.horizontal(|ui| {
