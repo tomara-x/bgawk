@@ -248,9 +248,13 @@ fn update_indicator(
 
 fn highlight_selected(selected_query: Query<&Transform, With<Selected>>, mut gizmos: Gizmos) {
     for t in selected_query.iter() {
-        let iso = Isometry2d::from_translation(t.translation.xy());
-        let rad = t.scale.x;
-        gizmos.circle_2d(iso, rad, Color::WHITE);
+        let center = t.translation.xy();
+        let xy = t.scale.xy();
+        let xyp = xy.perp();
+        gizmos.ray_2d(center + xy, xy, Color::WHITE);
+        gizmos.ray_2d(center - xy, -xy, Color::WHITE);
+        gizmos.ray_2d(center + xyp, xyp, Color::WHITE);
+        gizmos.ray_2d(center - xyp, -xyp, Color::WHITE);
     }
 }
 
