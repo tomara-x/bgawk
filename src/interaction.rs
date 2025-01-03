@@ -132,6 +132,7 @@ pub struct JointSettings {
 
 impl Default for JointSettings {
     fn default() -> Self {
+        let tau = std::f32::consts::TAU;
         JointSettings {
             joint_type: JointType::Distance,
             compliance: 0.001,
@@ -140,9 +141,9 @@ impl Default for JointSettings {
             local_anchor_2: Vec2::ZERO,
             dist_limits: (0., 200.),
             dist_rest: 150.,
-            prismatic_axis: Vec2::new(1., 0.),
+            prismatic_axis: Vec2::ONE,
             prismatic_limits: (100., 500.),
-            angle_limits: (-std::f32::consts::TAU, std::f32::consts::TAU),
+            angle_limits: (-tau, tau),
         }
     }
 }
