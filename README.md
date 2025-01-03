@@ -3,7 +3,9 @@
 ## building
 
 - install rust: https://www.rust-lang.org/tools/install
-- on linux you need `libjack-dev` and `libasound2-dev` (`jack-devel` and `alsa-lib-devel` on void)
+- on linux:
+    - install [bevy dependecies](https://github.com/bevyengine/bevy/blob/latest/docs/linux_dependencies.md)
+    - install `libjack-dev` (`jack-devel` on void)
 - clone
 ```
 git clone https://github.com/tomara-x/bgawk.git
