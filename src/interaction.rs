@@ -120,6 +120,7 @@ pub enum JointType {
 pub struct JointSettings {
     pub joint_type: JointType,
     pub compliance: f32,
+    pub custom_anchors: bool,
     pub local_anchor_1: Vec2,
     pub local_anchor_2: Vec2,
     pub dist_limits: (f32, f32),
@@ -134,6 +135,7 @@ impl Default for JointSettings {
         JointSettings {
             joint_type: JointType::Distance,
             compliance: 0.001,
+            custom_anchors: false,
             local_anchor_1: Vec2::ZERO,
             local_anchor_2: Vec2::ZERO,
             dist_limits: (0., 200.),

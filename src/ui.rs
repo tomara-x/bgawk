@@ -212,16 +212,19 @@ fn egui_ui(
                         .speed(0.001),
                 );
             });
-            ui.horizontal(|ui| {
-                ui.label("local anchor 1");
-                ui.add(DragValue::new(&mut joint.local_anchor_1.x).speed(0.01));
-                ui.add(DragValue::new(&mut joint.local_anchor_1.y).speed(0.01));
-            });
-            ui.horizontal(|ui| {
-                ui.label("local anchor 2");
-                ui.add(DragValue::new(&mut joint.local_anchor_2.x).speed(0.01));
-                ui.add(DragValue::new(&mut joint.local_anchor_2.y).speed(0.01));
-            });
+            ui.toggle_value(&mut joint.custom_anchors, "custom anchors?");
+            if joint.custom_anchors {
+                ui.horizontal(|ui| {
+                    ui.label("local anchor 1");
+                    ui.add(DragValue::new(&mut joint.local_anchor_1.x).speed(0.01));
+                    ui.add(DragValue::new(&mut joint.local_anchor_1.y).speed(0.01));
+                });
+                ui.horizontal(|ui| {
+                    ui.label("local anchor 2");
+                    ui.add(DragValue::new(&mut joint.local_anchor_2.x).speed(0.01));
+                    ui.add(DragValue::new(&mut joint.local_anchor_2.y).speed(0.01));
+                });
+            }
             match joint.joint_type {
                 JointType::Distance => {
                     ui.horizontal(|ui| {
