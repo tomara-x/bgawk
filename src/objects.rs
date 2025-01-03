@@ -132,7 +132,6 @@ fn spawn(
     }
 }
 
-// TODO only work on dynamic objects (optimization)
 fn attract(
     layers: Query<(Entity, &CollisionLayers)>,
     mut query: Query<(&Mass, &Position, &mut LinearVelocity)>,
