@@ -20,12 +20,23 @@ features = [
     "x11",
 ]
 
+[dependencies.avian2d]
+version = "0.2"
+default-features = false
+features = [
+    "2d",
+    "f32",
+    "parry-f32",
+    "debug-plugin",
+    "parallel",
+    "simd",
+]
+
 [dependencies]
 bevy_pancam = "0.16"
 bevy_egui = "0.31"
 egui = "0.29"
 egui_extras = { version = "0.29", default-features = false, features = ["syntect"] }
-avian2d = {version = "0.2", features = ["debug-plugin"]}
 fundsp = {version = "0.20", git = "https://github.com/SamiPerttu/fundsp"}
 cpal = {version = "0.15.3", features = ["jack"]}
 syn = {version = "2.0", features = ["full", "extra-traits"]}
