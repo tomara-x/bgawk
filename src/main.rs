@@ -7,9 +7,11 @@ use bevy::{
         tonemapping::Tonemapping,
     },
     prelude::*,
+    winit::{UpdateMode, WinitSettings},
 };
 use bevy_egui::EguiContexts;
 use bevy_pancam::*;
+use std::time::Duration;
 
 mod interaction;
 mod joints;
@@ -27,6 +29,10 @@ fn main() {
             }),
             ..default()
         }))
+        .insert_resource(WinitSettings {
+            focused_mode: UpdateMode::reactive_low_power(Duration::from_secs_f64(1.0 / 60.0)),
+            unfocused_mode: UpdateMode::reactive_low_power(Duration::from_secs_f64(1.0 / 30.0)),
+        })
         .add_plugins(PanCamPlugin)
         .add_plugins(InteractPlugin)
         .add_plugins(ObjectsPlugin)
