@@ -50,7 +50,8 @@ impl Plugin for InteractPlugin {
             .add_systems(
                 Update,
                 delete_selected.run_if(resource_equals(EguiFocused(false))),
-            );
+            )
+            .add_systems(Update, follow_object);
     }
 }
 
@@ -415,6 +416,20 @@ fn toggle_pan(
     egui_focused: Res<EguiFocused>,
 ) {
     query.single_mut().enabled = keyboard_input.pressed(KeyCode::Space) && !egui_focused.0;
+}
+
+fn follow_object(
+    selected_query: Query<&Transform, (With<Selected>, Without<Camera>)>,
+    mut camera_query: Query<&mut Transform, With<Camera>>,
+    mouse_button_input: Res<ButtonInput<MouseButton>>,
+) {
+    if mouse_button_input.pressed(MouseButton::Right) {
+        if let Ok(t) = selected_query.get_single() {
+            let mut cam = camera_query.single_mut();
+            cam.translation.x = t.translation.x;
+            cam.translation.y = t.translation.y;
+        }
+    }
 }
 
 // this system was stolen from bevy_pancam (then refactored)
