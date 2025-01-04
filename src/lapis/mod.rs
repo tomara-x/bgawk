@@ -186,7 +186,7 @@ fn eval_stmt(s: Stmt, lapis: &mut Lapis, quiet: bool) {
                     let Some(input) = method.args.first() else {
                         return;
                     };
-                    let Some(in_arr) = eval_vec_cloned(input, lapis) else {
+                    let Some(in_arr) = eval_vec(input, lapis) else {
                         return;
                     };
                     let mut output = Vec::new();
@@ -251,7 +251,7 @@ fn eval_stmt(s: Stmt, lapis: &mut Lapis, quiet: bool) {
                         if !quiet {
                             lapis.buffer.push_str(&format!("\n// {:?}", n));
                         }
-                    } else if let Some(arr) = method_call_vec_ref(method, lapis) {
+                    } else if let Some(arr) = method_call_vec(method, lapis) {
                         if !quiet {
                             lapis.buffer.push_str(&format!("\n// {:?}", arr));
                         }
@@ -408,11 +408,9 @@ fn eval_stmt(s: Stmt, lapis: &mut Lapis, quiet: bool) {
                 if !quiet {
                     if let Some(n) = eval_float(&expr, lapis) {
                         lapis.buffer.push_str(&format!("\n// {:?}", n));
-                    } else if let Some(arr) = eval_vec_ref(&expr, lapis) {
+                    } else if let Some(arr) = eval_vec(&expr, lapis) {
                         lapis.buffer.push_str(&format!("\n// {:?}", arr));
-                    } else if let Some(arr) = eval_vec_cloned(&expr, lapis) {
-                        lapis.buffer.push_str(&format!("\n// {:?}", arr));
-                    } else if let Some(mut g) = eval_net_cloned(&expr, lapis) {
+                    } else if let Some(mut g) = eval_net(&expr, lapis) {
                         let info = g.display().replace('\n', "\n// ");
                         lapis.buffer.push_str(&format!("\n// {}", info));
                         lapis
