@@ -63,8 +63,7 @@ fn setup(
         ..default()
     });
     // disable avian debug gizmos
-    let (conf, _) = config_store.config_mut::<PhysicsGizmos>();
-    conf.enabled = false;
+    config_store.config_mut::<PhysicsGizmos>().0.enabled = false;
     // camera
     commands.spawn((
         Camera {
