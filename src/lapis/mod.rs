@@ -45,6 +45,7 @@ pub struct Lapis {
     pub keys_active: bool,
     pub quiet: bool,
     pub about: bool,
+    pub help: bool,
 }
 
 impl Lapis {
@@ -73,6 +74,7 @@ impl Lapis {
             keys_active: false,
             quiet: false,
             about: false,
+            help: false,
         }
     }
     pub fn drop(&mut self, k: &String) {

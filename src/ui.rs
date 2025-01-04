@@ -339,9 +339,14 @@ fn egui_ui(
             ui.label(format!("i: ({}, {})", cursor.i.x, cursor.i.y));
             ui.label(format!("f: ({}, {})", cursor.f.x, cursor.f.y));
             ui.label(format!("distance: {}", cursor.i.distance(cursor.f)));
-            if ui.button("about").clicked() {
-                lapis.about = !lapis.about;
-            }
+            ui.horizontal(|ui| {
+                if ui.button("help").clicked() {
+                    lapis.help = !lapis.help;
+                }
+                if ui.button("about").clicked() {
+                    lapis.about = !lapis.about;
+                }
+            });
         });
     Window::new("about").open(&mut lapis.about).show(ctx, |ui| {
         ui.label("this is a toy for playing with physics and sound");
@@ -384,6 +389,9 @@ fn egui_ui(
         ui.label("an amy universe piece");
         ui.label("courtesy of the alphabet mafia");
         ui.small("made in africa");
+    });
+    Window::new("help").open(&mut lapis.help).show(ctx, |ui| {
+        ui.label(HELP_TEXT);
     });
 }
 
@@ -471,3 +479,14 @@ $vp for velocity phase (polar)
 $mass
 $inertia
 $id for the entity id";
+
+const HELP_TEXT: &str = "- hold space and drag/scroll to pan/zoom the camera
+- in edit mode:
+    - when selecting objects, hold shift to add to selection
+      or hold ctrl to remove from selection
+    - press delete to delete selected objects
+    - press shift+delete to delete any joints connected to
+      selected objects
+- in joint mode:
+    - drag from one object to another to create a joint
+      with the click/release positions as local anchors";
