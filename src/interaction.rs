@@ -397,6 +397,7 @@ fn move_selected(
 ) {
     if mouse_button_input.pressed(MouseButton::Left)
         && !mouse_button_input.just_pressed(MouseButton::Left)
+        && cursor.i.distance_squared(cursor.f) > 1.
         && !keyboard_input.pressed(KeyCode::Space)
         && !keyboard_input.any_pressed([KeyCode::ShiftLeft, KeyCode::ShiftRight])
         && !keyboard_input.any_pressed([KeyCode::ControlLeft, KeyCode::ControlRight])
