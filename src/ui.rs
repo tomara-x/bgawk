@@ -484,6 +484,7 @@ const HELP_TEXT: &str = "- hold space and drag/scroll to pan/zoom the camera
 - hold the right mouse button while one object is selected
   to track it with the camera
 - in edit mode:
+    - press ctrl+a to select all objects
     - when selecting objects, hold shift to add to selection
       or hold ctrl to remove from selection
     - press delete to delete selected objects
