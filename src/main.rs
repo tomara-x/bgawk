@@ -30,15 +30,15 @@ fn main() {
             ..default()
         }))
         .insert_resource(WinitSettings {
-            focused_mode: UpdateMode::reactive_low_power(Duration::from_secs_f64(1.0 / 60.0)),
-            unfocused_mode: UpdateMode::reactive_low_power(Duration::from_secs_f64(1.0 / 30.0)),
+            focused_mode: UpdateMode::reactive_low_power(Duration::from_secs_f64(1. / 60.)),
+            unfocused_mode: UpdateMode::reactive_low_power(Duration::from_secs_f64(1. / 30.)),
         })
         .add_plugins(PanCamPlugin)
         .add_plugins(InteractPlugin)
         .add_plugins(ObjectsPlugin)
         .add_plugins(JointsPlugin)
         .add_plugins(UiPlugin)
-        .add_plugins(PhysicsPlugins::default().with_length_unit(100.0))
+        .add_plugins(PhysicsPlugins::default().with_length_unit(100.))
         .add_plugins(PhysicsDebugPlugin::default())
         .insert_resource(ClearColor(Color::BLACK))
         .insert_resource(Gravity::ZERO)

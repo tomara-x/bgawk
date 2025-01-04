@@ -83,7 +83,7 @@ fn spawn(
         // avoid spawning when dragging outside of egui
         && !egui_focused.is_changed()
     {
-        let r = cursor.f.distance(cursor.i).max(1.0);
+        let r = cursor.f.distance(cursor.i).max(1.);
         let material = ColorMaterial {
             color: Srgba::from_u8_array(settings.color).into(),
             alpha_mode: AlphaMode2d::Blend,
