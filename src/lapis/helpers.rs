@@ -42,6 +42,7 @@ pub fn path_fade(expr: &Expr) -> Option<Fade> {
     }
     None
 }
+
 pub fn eval_meter(expr: &Expr, lapis: &Lapis) -> Option<Meter> {
     match expr {
         Expr::Call(expr) => {
@@ -71,6 +72,7 @@ pub fn eval_meter(expr: &Expr, lapis: &Lapis) -> Option<Meter> {
         _ => None,
     }
 }
+
 pub fn pat_ident(pat: &Pat) -> Option<String> {
     match pat {
         Pat::Ident(expr) => Some(expr.ident.to_string()),
@@ -79,6 +81,7 @@ pub fn pat_ident(pat: &Pat) -> Option<String> {
         _ => None,
     }
 }
+
 pub fn range_bounds(expr: &Expr, lapis: &Lapis) -> Option<(i32, i32)> {
     match expr {
         Expr::Range(expr) => {
@@ -94,6 +97,7 @@ pub fn range_bounds(expr: &Expr, lapis: &Lapis) -> Option<(i32, i32)> {
         _ => None,
     }
 }
+
 pub fn nth_path_ident(expr: &Expr, n: usize) -> Option<String> {
     if let Expr::Path(expr) = expr {
         if let Some(expr) = expr.path.segments.get(n) {
@@ -102,6 +106,7 @@ pub fn nth_path_ident(expr: &Expr, n: usize) -> Option<String> {
     }
     None
 }
+
 pub fn nth_path_generic(expr: &Expr, n: usize) -> Option<String> {
     if let Expr::Path(expr) = expr {
         if let Some(expr) = expr.path.segments.first() {
@@ -116,6 +121,7 @@ pub fn nth_path_generic(expr: &Expr, n: usize) -> Option<String> {
     }
     None
 }
+
 pub fn accumulate_args(args: &Punctuated<Expr, Token!(,)>, lapis: &Lapis) -> Vec<f32> {
     let mut vec = Vec::new();
     for arg in args {
@@ -137,6 +143,7 @@ pub enum ShapeEnum {
     Softsign(Softsign),
     Tanh(Tanh),
 }
+
 impl Shape for ShapeEnum {
     fn shape(&mut self, input: f32) -> f32 {
         match self {
@@ -150,6 +157,7 @@ impl Shape for ShapeEnum {
         }
     }
 }
+
 pub fn call_shape(expr: &Expr, lapis: &Lapis) -> Option<ShapeEnum> {
     match expr {
         Expr::Call(expr) => {
