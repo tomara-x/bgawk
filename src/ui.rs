@@ -103,7 +103,8 @@ fn egui_ui(
             });
             ui.horizontal(|ui| {
                 ui.label("tail");
-                ui.add(DragValue::new(&mut draw.tail).range(0..=36000));
+                ui.add(DragValue::new(&mut draw.tail).range(0..=36000))
+                    .on_hover_text("tail length in points");
             });
             ui.horizontal(|ui| {
                 ui.toggle_value(&mut draw.custom_mass, "custom mass?")
