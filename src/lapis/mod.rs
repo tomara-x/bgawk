@@ -410,7 +410,7 @@ fn eval_stmt(s: Stmt, lapis: &mut Lapis, quiet: bool) {
                         lapis.buffer.push_str(&format!("\n// {:?}", n));
                     } else if let Some(arr) = eval_vec(&expr, lapis) {
                         lapis.buffer.push_str(&format!("\n// {:?}", arr));
-                    } else if let Some(mut g) = eval_net(&expr, lapis) {
+                    } else if let Some(mut g) = eval_net_cloned(&expr, lapis) {
                         let info = g.display().replace('\n', "\n// ");
                         lapis.buffer.push_str(&format!("\n// {}", info));
                         lapis
