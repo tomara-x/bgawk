@@ -39,9 +39,9 @@ pub struct Sides(pub u32);
 pub struct AttractionFactor(pub f32);
 
 #[derive(Component, Default)]
-struct Tail {
-    len: usize,
-    points: VecDeque<(Vec2, Color)>,
+pub struct Tail {
+    pub len: usize,
+    pub points: VecDeque<(Vec2, Color)>,
 }
 
 fn update_tail(
@@ -168,6 +168,7 @@ fn eval_collisions(
     inertia_query: Query<&AngularInertia>,
     mut started: EventReader<CollisionStarted>,
     mut ended: EventReader<CollisionEnded>,
+    mut commands: Commands,
 ) {
     let search_and_replace = |code: &str, e| {
         let trans = trans_query.get(e).unwrap();
@@ -194,7 +195,7 @@ fn eval_collisions(
             .replace("$vp", &format!("{}", vy.atan2(vx)))
             .replace("$mass", &format!("{mass}"))
             .replace("$inertia", &format!("{inertia}"))
-            .replace("$id", &format!("{}", e))
+            .replace("$id", &format!("{}", e.to_bits()))
     };
     if lapis.quiet {
         for CollisionStarted(e1, e2) in started.read() {
@@ -202,9 +203,9 @@ fn eval_collisions(
                 let c = code.get(*e).unwrap();
                 if c.0.contains('$') {
                     let code = search_and_replace(&c.0, *e);
-                    lapis.quiet_eval(&code);
+                    lapis.quiet_eval(&code, &mut commands);
                 } else {
-                    lapis.quiet_eval(&c.0);
+                    lapis.quiet_eval(&c.0, &mut commands);
                 }
             }
         }
@@ -213,9 +214,9 @@ fn eval_collisions(
                 if let Ok(c) = code.get(*e) {
                     if c.1.contains('$') {
                         let code = search_and_replace(&c.1, *e);
-                        lapis.quiet_eval(&code);
+                        lapis.quiet_eval(&code, &mut commands);
                     } else {
-                        lapis.quiet_eval(&c.1);
+                        lapis.quiet_eval(&c.1, &mut commands);
                     }
                 }
             }
@@ -226,9 +227,9 @@ fn eval_collisions(
                 let c = code.get(*e).unwrap();
                 if c.0.contains('$') {
                     let code = search_and_replace(&c.0, *e);
-                    lapis.eval(&code);
+                    lapis.eval(&code, &mut commands);
                 } else {
-                    lapis.eval(&c.0);
+                    lapis.eval(&c.0, &mut commands);
                 }
             }
         }
@@ -237,9 +238,9 @@ fn eval_collisions(
                 if let Ok(c) = code.get(*e) {
                     if c.1.contains('$') {
                         let code = search_and_replace(&c.1, *e);
-                        lapis.eval(&code);
+                        lapis.eval(&code, &mut commands);
                     } else {
-                        lapis.eval(&c.1);
+                        lapis.eval(&c.1, &mut commands);
                     }
                 }
             }

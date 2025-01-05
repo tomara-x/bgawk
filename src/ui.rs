@@ -2,7 +2,7 @@ use crate::{interaction::*, lapis::*, objects::*};
 use avian2d::prelude::*;
 use bevy::{
     app::{App, Plugin, Update},
-    prelude::{GizmoConfigStore, Query, Res, ResMut, Resource, Time, Virtual, With},
+    prelude::{Commands, GizmoConfigStore, Query, Res, ResMut, Resource, Time, Virtual, With},
 };
 use bevy_egui::{EguiContexts, EguiPlugin};
 use egui::*;
@@ -49,6 +49,7 @@ fn egui_ui(
     mut config_store: ResMut<GizmoConfigStore>,
     mut zoom_factor: ResMut<ZoomFactor>,
     mut win: Query<&mut bevy::prelude::Window>,
+    mut commands: Commands,
 ) {
     let ctx = contexts.ctx_mut();
     let theme = CodeTheme::from_memory(ctx, &ctx.style());
@@ -61,13 +62,13 @@ fn egui_ui(
         if lapis.quiet {
             for (shortcut, code) in lapis.keys.clone() {
                 if ctx.input_mut(|i| i.consume_shortcut(&shortcut)) {
-                    lapis.quiet_eval(&code);
+                    lapis.quiet_eval(&code, &mut commands);
                 }
             }
         } else {
             for (shortcut, code) in lapis.keys.clone() {
                 if ctx.input_mut(|i| i.consume_shortcut(&shortcut)) {
-                    lapis.eval(&code);
+                    lapis.eval(&code, &mut commands);
                 }
             }
         }
@@ -304,7 +305,7 @@ fn egui_ui(
                         .layouter(&mut layouter),
                 );
             });
-            lapis.quiet_eval(&update_code.0);
+            lapis.quiet_eval(&update_code.0, &mut commands);
             ScrollArea::vertical().show(ui, |ui| {
                 ui.horizontal(|ui| {
                     ui.with_layout(Layout::right_to_left(Align::TOP), |ui| {
@@ -323,7 +324,7 @@ fn egui_ui(
                         if input_focused && ctx.input_mut(|i| i.consume_shortcut(&shortcut))
                             || execute.clicked()
                         {
-                            lapis.eval_input();
+                            lapis.eval_input(&mut commands);
                         }
                     });
                 });

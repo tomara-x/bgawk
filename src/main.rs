@@ -38,6 +38,7 @@ fn main() {
         .add_plugins(ObjectsPlugin)
         .add_plugins(JointsPlugin)
         .add_plugins(UiPlugin)
+        .add_plugins(LapisPlugin)
         .add_plugins(PhysicsPlugins::default().with_length_unit(100.))
         .add_plugins(PhysicsDebugPlugin::default())
         .insert_resource(ClearColor(Color::BLACK))
@@ -47,7 +48,6 @@ fn main() {
             angular: -1.,
         })
         .add_systems(Startup, setup)
-        .insert_resource(Lapis::new())
         .run();
 }
 

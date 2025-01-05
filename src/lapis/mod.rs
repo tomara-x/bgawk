@@ -12,6 +12,7 @@ use syn::*;
 mod arrays;
 mod atomics;
 mod bools;
+mod entities;
 pub mod floats;
 mod helpers;
 mod ints;
@@ -21,9 +22,19 @@ mod sources;
 mod units;
 mod waves;
 use {
-    arrays::*, atomics::*, bools::*, floats::*, helpers::*, ints::*, nets::*, sequencers::*,
-    sources::*, units::*, waves::*,
+    arrays::*, atomics::*, bools::*, entities::*, floats::*, helpers::*, ints::*, nets::*,
+    sequencers::*, sources::*, units::*, waves::*,
 };
+
+pub struct LapisPlugin;
+
+impl Plugin for LapisPlugin {
+    fn build(&self, app: &mut App) {
+        app.insert_resource(Lapis::new())
+            .add_observer(set_x)
+            .add_observer(insert_defaults);
+    }
+}
 
 #[derive(Resource)]
 pub struct Lapis {
@@ -39,6 +50,7 @@ pub struct Lapis {
     pub seqmap: HashMap<String, Sequencer>,
     pub eventmap: HashMap<String, EventId>,
     pub srcmap: HashMap<String, Source>,
+    pub entitymap: HashMap<String, Entity>,
     pub slot: Slot,
     pub receivers: (Receiver<f32>, Receiver<f32>),
     pub keys: Vec<(KeyboardShortcut, String)>,
@@ -68,6 +80,7 @@ impl Lapis {
             seqmap: HashMap::new(),
             eventmap: HashMap::new(),
             srcmap: HashMap::new(),
+            entitymap: HashMap::new(),
             slot,
             receivers: (lr, rr),
             keys: Vec::new(),
@@ -88,14 +101,15 @@ impl Lapis {
         self.seqmap.remove(k);
         self.eventmap.remove(k);
         self.srcmap.remove(k);
+        self.entitymap.remove(k);
     }
-    pub fn eval(&mut self, input: &str) {
+    pub fn eval(&mut self, input: &str, commands: &mut Commands) {
         if !input.is_empty() {
             self.buffer.push('\n');
             self.buffer.push_str(input);
             match parse_str::<Stmt>(&format!("{{{}}}", input)) {
                 Ok(stmt) => {
-                    eval_stmt(stmt, self, false);
+                    eval_stmt(stmt, self, false, commands);
                 }
                 Err(err) => {
                     self.buffer.push_str(&format!("\n// error: {}", err));
@@ -103,13 +117,13 @@ impl Lapis {
             }
         }
     }
-    pub fn eval_input(&mut self) {
+    pub fn eval_input(&mut self, commands: &mut Commands) {
         if !self.input.is_empty() {
             match parse_str::<Stmt>(&format!("{{{}}}", self.input)) {
                 Ok(stmt) => {
                     self.buffer.push('\n');
                     self.buffer.push_str(&std::mem::take(&mut self.input));
-                    eval_stmt(stmt, self, false);
+                    eval_stmt(stmt, self, false, commands);
                 }
                 Err(err) => {
                     self.buffer.push_str(&format!("\n// error: {}", err));
@@ -117,15 +131,15 @@ impl Lapis {
             }
         }
     }
-    pub fn quiet_eval(&mut self, input: &str) {
+    pub fn quiet_eval(&mut self, input: &str, commands: &mut Commands) {
         if let Ok(stmt) = parse_str::<Stmt>(&format!("{{{}}}", input)) {
-            eval_stmt(stmt, self, true);
+            eval_stmt(stmt, self, true, commands);
         }
     }
 }
 
 #[allow(clippy::map_entry)]
-fn eval_stmt(s: Stmt, lapis: &mut Lapis, quiet: bool) {
+fn eval_stmt(s: Stmt, lapis: &mut Lapis, quiet: bool, commands: &mut Commands) {
     match s {
         Stmt::Local(expr) => {
             if let Some(k) = pat_ident(&expr.pat) {
@@ -165,12 +179,17 @@ fn eval_stmt(s: Stmt, lapis: &mut Lapis, quiet: bool) {
                     {
                         lapis.drop(&k);
                         lapis.eventmap.insert(k, event);
+                    } else if let Some(entity) = eval_entity(&expr.expr, lapis, commands) {
+                        lapis.drop(&k);
+                        lapis.entitymap.insert(k, entity);
                     }
                 }
             }
         }
         Stmt::Expr(expr, _) => match expr {
             Expr::MethodCall(ref method) => match method.method.to_string().as_str() {
+                // TODO can we move those 5 to an else at the end?
+                // removing the need for this mess
                 "play" => {
                     if let Some(g) = eval_net(&method.receiver, lapis) {
                         if g.inputs() == 0 && g.outputs() == 1 {
@@ -277,12 +296,17 @@ fn eval_stmt(s: Stmt, lapis: &mut Lapis, quiet: bool) {
                         if !quiet {
                             lapis.buffer.push_str(&format!("\n// {:?}", source));
                         }
+                    } else if let Some(entity) = method_entity(method, lapis, commands) {
+                        if !quiet {
+                            lapis.buffer.push_str(&format!("\n// {:?}", entity));
+                        }
                     } else {
                         wave_methods(method, lapis);
                         net_methods(method, lapis);
                         vec_methods(method, lapis);
                         shared_methods(method, lapis);
                         seq_methods(method, lapis);
+                        entity_methods(method, lapis, commands);
                     }
                 }
             },
@@ -327,6 +351,10 @@ fn eval_stmt(s: Stmt, lapis: &mut Lapis, quiet: bool) {
                         if let Some(var) = lapis.eventmap.get_mut(&ident) {
                             *var = event;
                         }
+                    } else if let Some(entity) = eval_entity(&expr.right, lapis, commands) {
+                        if let Some(var) = lapis.entitymap.get_mut(&ident) {
+                            *var = entity;
+                        }
                     }
                 }
                 Expr::Index(left) => {
@@ -370,14 +398,14 @@ fn eval_stmt(s: Stmt, lapis: &mut Lapis, quiet: bool) {
                     for i in r0..r1 {
                         lapis.fmap.insert(ident.clone(), i as f32);
                         for stmt in &expr.body.stmts {
-                            eval_stmt(stmt.clone(), lapis, quiet);
+                            eval_stmt(stmt.clone(), lapis, quiet, commands);
                         }
                     }
                 } else if let Some(arr) = arr {
                     for i in arr {
                         lapis.fmap.insert(ident.clone(), i);
                         for stmt in &expr.body.stmts {
-                            eval_stmt(stmt.clone(), lapis, quiet);
+                            eval_stmt(stmt.clone(), lapis, quiet, commands);
                         }
                     }
                 }
@@ -395,15 +423,15 @@ fn eval_stmt(s: Stmt, lapis: &mut Lapis, quiet: bool) {
                             label: None,
                             block: expr.then_branch,
                         });
-                        eval_stmt(Stmt::Expr(expr, None), lapis, quiet);
+                        eval_stmt(Stmt::Expr(expr, None), lapis, quiet, commands);
                     } else if let Some((_, else_branch)) = expr.else_branch {
-                        eval_stmt(Stmt::Expr(*else_branch, None), lapis, quiet);
+                        eval_stmt(Stmt::Expr(*else_branch, None), lapis, quiet, commands);
                     }
                 }
             }
             Expr::Block(expr) => {
                 for stmt in expr.block.stmts {
-                    eval_stmt(stmt, lapis, quiet);
+                    eval_stmt(stmt, lapis, quiet, commands);
                 }
             }
             _ => {
@@ -456,6 +484,8 @@ fn eval_stmt(s: Stmt, lapis: &mut Lapis, quiet: bool) {
                         lapis.buffer.push_str(&format!("\n// {:?}", source));
                     } else if let Some(event) = path_eventid(&expr, lapis) {
                         lapis.buffer.push_str(&format!("\n// {:?}", event));
+                    } else if let Some(entity) = eval_entity(&expr, lapis, commands) {
+                        lapis.buffer.push_str(&format!("\n// {:?}", entity));
                     }
                 }
                 if let Expr::Binary(expr) = expr {
