@@ -2,6 +2,11 @@ use crate::{interaction::*, lapis::*, objects::*};
 use avian2d::prelude::*;
 use bevy::sprite::AlphaMode2d;
 
+//TODO joints not spawned programmatically are not accessible
+//TODO do we need Vec<Entity>? can we spawn structures like grids?
+//      we can avoid this need by making join take coordinates instead and
+//      so it becomes a copy of the spawn_joint system
+
 pub fn eval_entity(expr: &Expr, lapis: &Lapis, commands: &mut Commands) -> Option<Entity> {
     match expr {
         Expr::Call(expr) => call_entity(expr, lapis, commands),
@@ -69,35 +74,292 @@ fn call_entity(expr: &ExprCall, lapis: &Lapis, commands: &mut Commands) -> Optio
 
 fn method_entity(expr: &ExprMethodCall, lapis: &Lapis, commands: &mut Commands) -> Option<Entity> {
     let e = eval_entity(&expr.receiver, lapis, commands)?;
-    match expr.method.to_string().as_str() {
-        // this being here allows some nonsense like
-        // let var = entity.despawn();
-        // which doesn't assign anything to var but does despawn entity
-        "despawn" => {
-            commands.get_entity(e)?.try_despawn();
-            None
-        }
-        "x" => {
-            let x = eval_float(expr.args.first()?, lapis)?;
-            commands.trigger(SetX(e, x));
-            Some(e)
-        }
-        "y" => None,
-        "h" => None,
-        "s" => None,
-        // and so on..
-        // TODO
-        _ => None,
+    // this being here allows some nonsense like
+    // let var = entity.despawn();
+    // which doesn't assign anything to var but does despawn entity
+    if expr.method == "despawn" {
+        commands.get_entity(e)?.try_despawn();
+        return None;
     }
+    let val = eval_float(expr.args.first()?, lapis);
+    match expr.method.to_string().as_str() {
+        "x" => commands.trigger(SetEvent(e, Property::X(val?))),
+        "y" => commands.trigger(SetEvent(e, Property::Y(val?))),
+        "rx" => commands.trigger(SetEvent(e, Property::Rx(val?))),
+        "ry" => commands.trigger(SetEvent(e, Property::Ry(val?))),
+        "rot" => commands.trigger(SetEvent(e, Property::Rot(val?))),
+        "mass" => commands.trigger(SetEvent(e, Property::Mass(val?))),
+        "vx" => commands.trigger(SetEvent(e, Property::Vx(val?))),
+        "vy" => commands.trigger(SetEvent(e, Property::Vy(val?))),
+        "va" => commands.trigger(SetEvent(e, Property::Va(val?))),
+        "restitution" => commands.trigger(SetEvent(e, Property::Restitution(val?))),
+        "lindamp" => commands.trigger(SetEvent(e, Property::LinDamp(val?))),
+        "angdamp" => commands.trigger(SetEvent(e, Property::AngDamp(val?))),
+        "inertia" => commands.trigger(SetEvent(e, Property::Inertia(val?))),
+        "h" => commands.trigger(SetEvent(e, Property::H(val?))),
+        "s" => commands.trigger(SetEvent(e, Property::S(val?))),
+        "l" => commands.trigger(SetEvent(e, Property::L(val?))),
+        "a" => commands.trigger(SetEvent(e, Property::A(val?))),
+        "sides" => commands.trigger(SetEvent(e, Property::Sides(val? as u32))),
+        "cmx" => commands.trigger(SetEvent(e, Property::Cmx(val?))),
+        "cmy" => commands.trigger(SetEvent(e, Property::Cmy(val?))),
+        "friction" => commands.trigger(SetEvent(e, Property::Friction(val?))),
+        "tail" => commands.trigger(SetEvent(e, Property::Tail(val? as usize))),
+        "layer" => commands.trigger(SetEvent(e, Property::Layer(val? as u32))),
+        "dynamic" => {
+            let b = eval_bool(expr.args.first()?, lapis)?;
+            commands.trigger(SetEvent(e, Property::Dynamic(b)));
+        }
+        "sensor" => {
+            let b = eval_bool(expr.args.first()?, lapis)?;
+            commands.trigger(SetEvent(e, Property::Sensor(b)));
+        }
+        "links" => {
+            if let Expr::Lit(expr) = expr.args.first()? {
+                if let Lit::Str(expr) = &expr.lit {
+                    commands.trigger(SetEvent(e, Property::Links(expr.value())));
+                }
+            }
+        }
+        "code_i" => {
+            if let Expr::Lit(expr) = expr.args.first()? {
+                if let Lit::Str(expr) = &expr.lit {
+                    commands.trigger(SetEvent(e, Property::CodeI(expr.value())));
+                }
+            }
+        }
+        "code_f" => {
+            if let Expr::Lit(expr) = expr.args.first()? {
+                if let Lit::Str(expr) = &expr.lit {
+                    commands.trigger(SetEvent(e, Property::CodeF(expr.value())));
+                }
+            }
+        }
+        _ => return None,
+    }
+    Some(e)
 }
 
 // ---- observers ----
 
-#[derive(Event)]
-pub struct SetX(Entity, f32);
+enum Property {
+    X(f32),
+    Y(f32),
+    Rx(f32),
+    Ry(f32),
+    Rot(f32),
+    Mass(f32),
+    Vx(f32),
+    Vy(f32),
+    Va(f32),
+    Restitution(f32),
+    LinDamp(f32),
+    AngDamp(f32),
+    Inertia(f32),
+    H(f32),
+    S(f32),
+    L(f32),
+    A(f32),
+    Sides(u32),
+    Cmx(f32),
+    Cmy(f32),
+    Friction(f32),
+    Tail(usize),
+    Layer(u32),
+    Dynamic(bool),
+    Sensor(bool),
+    Links(String),
+    CodeI(String),
+    CodeF(String),
+}
 
-pub fn set_x(trig: Trigger<SetX>, mut trans_query: Query<&mut Transform>) {
-    trans_query.get_mut(trig.event().0).unwrap().translation.x = trig.event().1;
+#[derive(Event)]
+pub struct SetEvent(Entity, Property);
+
+pub fn set_observer(
+    trig: Trigger<SetEvent>,
+    mut trans_query: Query<&mut Transform, With<RigidBody>>,
+    mut commands: Commands,
+    mut lin_velocity_query: Query<&mut LinearVelocity>,
+    mesh_ids: Query<&Mesh2d>,
+    mut meshes: ResMut<Assets<Mesh>>,
+    material_ids: Query<&MeshMaterial2d<ColorMaterial>>,
+    mut materials: ResMut<Assets<ColorMaterial>>,
+    mut cm_query: Query<&mut CenterOfMass>,
+    mut tail_query: Query<&mut Tail>,
+    mut code_query: Query<&mut Code>,
+) {
+    let e = trig.event().0;
+    match trig.event().1 {
+        Property::X(val) => {
+            if let Ok(mut t) = trans_query.get_mut(e) {
+                t.translation.x = val;
+            }
+        }
+        Property::Y(val) => {
+            if let Ok(mut t) = trans_query.get_mut(e) {
+                t.translation.y = val;
+            }
+        }
+        Property::Rx(val) => {
+            if let Ok(mut t) = trans_query.get_mut(e) {
+                t.scale.x = val;
+            }
+        }
+        Property::Ry(val) => {
+            if let Ok(mut t) = trans_query.get_mut(e) {
+                t.scale.y = val;
+            }
+        }
+        Property::Rot(val) => {
+            if let Ok(mut t) = trans_query.get_mut(e) {
+                t.rotation = Quat::from_rotation_z(val);
+            }
+        }
+        Property::Mass(val) => {
+            if trans_query.contains(e) {
+                commands.entity(e).insert(Mass(val));
+            }
+        }
+        Property::Vx(val) => {
+            if let Ok(mut v) = lin_velocity_query.get_mut(e) {
+                v.x = val;
+            }
+        }
+        Property::Vy(val) => {
+            if let Ok(mut v) = lin_velocity_query.get_mut(e) {
+                v.y = val;
+            }
+        }
+        Property::Va(val) => {
+            if trans_query.contains(e) {
+                commands.entity(e).insert(AngularVelocity(val));
+            }
+        }
+        Property::Restitution(val) => {
+            if trans_query.contains(e) {
+                commands.entity(e).insert(Restitution::new(val));
+            }
+        }
+        Property::LinDamp(val) => {
+            if trans_query.contains(e) {
+                commands.entity(e).insert(LinearDamping(val));
+            }
+        }
+        Property::AngDamp(val) => {
+            if trans_query.contains(e) {
+                commands.entity(e).insert(AngularDamping(val));
+            }
+        }
+        Property::Inertia(val) => {
+            if trans_query.contains(e) {
+                commands.entity(e).insert(AngularInertia(val));
+            }
+        }
+        Property::H(val) => {
+            if let Ok(mat_id) = material_ids.get(e) {
+                let mat = materials.get_mut(mat_id).unwrap();
+                let mut hsla: Hsla = mat.color.into();
+                hsla.hue = val;
+                mat.color = hsla.into();
+            }
+        }
+        Property::S(val) => {
+            if let Ok(mat_id) = material_ids.get(e) {
+                let mat = materials.get_mut(mat_id).unwrap();
+                let mut hsla: Hsla = mat.color.into();
+                hsla.saturation = val;
+                mat.color = hsla.into();
+            }
+        }
+        Property::L(val) => {
+            if let Ok(mat_id) = material_ids.get(e) {
+                let mat = materials.get_mut(mat_id).unwrap();
+                let mut hsla: Hsla = mat.color.into();
+                hsla.lightness = val;
+                mat.color = hsla.into();
+            }
+        }
+        Property::A(val) => {
+            if let Ok(mat_id) = material_ids.get(e) {
+                let mat = materials.get_mut(mat_id).unwrap();
+                let mut hsla: Hsla = mat.color.into();
+                hsla.alpha = val;
+                mat.color = hsla.into();
+            }
+        }
+        Property::Sides(val) => {
+            let sides = (val).clamp(3, 512);
+            if let Ok(mesh_id) = mesh_ids.get(e) {
+                let mesh = meshes.get_mut(mesh_id).unwrap();
+                *mesh = RegularPolygon::new(1., sides).into();
+                commands
+                    .entity(e)
+                    .insert((Sides(val), Collider::regular_polygon(1., val)));
+            }
+        }
+        Property::Cmx(val) => {
+            if let Ok(mut v) = cm_query.get_mut(e) {
+                v.x = val;
+            }
+        }
+        Property::Cmy(val) => {
+            if let Ok(mut v) = cm_query.get_mut(e) {
+                v.y = val;
+            }
+        }
+        Property::Friction(val) => {
+            if trans_query.contains(e) {
+                commands.entity(e).insert(Friction::new(val));
+            }
+        }
+        Property::Tail(val) => {
+            if let Ok(mut tail) = tail_query.get_mut(e) {
+                tail.len = val;
+            }
+        }
+        Property::Layer(val) => {
+            if trans_query.contains(e) {
+                let layer = 1 << val;
+                commands
+                    .entity(e)
+                    .insert(CollisionLayers::from_bits(layer, layer));
+            }
+        }
+        Property::Dynamic(val) => {
+            if trans_query.contains(e) {
+                if val {
+                    commands.entity(e).insert(RigidBody::Dynamic);
+                } else {
+                    commands.entity(e).insert(RigidBody::Static);
+                }
+            }
+        }
+        Property::Sensor(val) => {
+            if trans_query.contains(e) {
+                if val {
+                    commands.entity(e).insert(Sensor);
+                } else {
+                    commands.entity(e).remove::<Sensor>();
+                }
+            }
+        }
+        Property::Links(ref val) => {
+            if trans_query.contains(e) {
+                commands.entity(e).insert(Links(val.clone()));
+            }
+        }
+        Property::CodeI(ref val) => {
+            if let Ok(mut c) = code_query.get_mut(e) {
+                c.0 = val.clone();
+            }
+        }
+        Property::CodeF(ref val) => {
+            if let Ok(mut c) = code_query.get_mut(e) {
+                c.1 = val.clone();
+            }
+        }
+    }
 }
 
 #[derive(Event)]
@@ -147,13 +409,4 @@ pub fn insert_defaults(
             ..default()
         },
     ));
-    if settings.sensor {
-        commands.entity(e).insert(Sensor);
-    }
-    if settings.custom_mass {
-        commands.entity(e).insert(Mass(settings.mass));
-    }
-    if settings.custom_inertia {
-        commands.entity(e).insert(AngularInertia(settings.inertia));
-    }
 }
