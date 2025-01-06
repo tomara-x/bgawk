@@ -31,7 +31,7 @@ struct InsertComponents {
 }
 
 #[derive(Resource)]
-struct ZoomFactor(f32);
+pub struct ZoomFactor(pub f32);
 
 fn egui_ui(
     mut contexts: EguiContexts,
