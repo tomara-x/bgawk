@@ -22,7 +22,7 @@ fn array_lit(expr: &ExprArray, lapis: &Lapis) -> Option<Vec<f32>> {
     Some(arr)
 }
 
-pub fn method_call_vec(expr: &ExprMethodCall, lapis: &Lapis) -> Option<Vec<f32>> {
+fn method_call_vec(expr: &ExprMethodCall, lapis: &Lapis) -> Option<Vec<f32>> {
     match expr.method.to_string().as_str() {
         "channel" => {
             let arg = expr.args.first()?;

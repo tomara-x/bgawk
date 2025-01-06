@@ -67,11 +67,7 @@ fn call_entity(expr: &ExprCall, lapis: &Lapis, commands: &mut Commands) -> Optio
     }
 }
 
-pub fn method_entity(
-    expr: &ExprMethodCall,
-    lapis: &Lapis,
-    commands: &mut Commands,
-) -> Option<Entity> {
+fn method_entity(expr: &ExprMethodCall, lapis: &Lapis, commands: &mut Commands) -> Option<Entity> {
     let e = eval_entity(&expr.receiver, lapis, commands)?;
     match expr.method.to_string().as_str() {
         // this being here allows some nonsense like
