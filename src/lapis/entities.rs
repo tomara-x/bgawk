@@ -52,7 +52,7 @@ fn call_entity(expr: &ExprCall, lapis: &Lapis, commands: &mut Commands) -> Optio
             let y = eval_float(expr.args.get(1)?, lapis)?;
             let r = eval_float(expr.args.get(2)?, lapis)?;
             let e = commands.spawn_empty().id();
-            commands.trigger(InsertDefaults(e, x, y, r));
+            commands.trigger_targets(InsertDefaults(x, y, r), e);
             Some(e)
         }
         "joint" => {
@@ -361,7 +361,7 @@ pub fn set_observer(
 }
 
 #[derive(Event)]
-pub struct InsertDefaults(Entity, f32, f32, f32);
+pub struct InsertDefaults(f32, f32, f32);
 
 pub fn insert_defaults(
     trig: Trigger<InsertDefaults>,
@@ -370,7 +370,8 @@ pub fn insert_defaults(
     mut materials: ResMut<Assets<ColorMaterial>>,
     settings: Res<DrawSettings>,
 ) {
-    let InsertDefaults(e, x, y, r) = *trig.event();
+    let e = trig.entity();
+    let InsertDefaults(x, y, r) = *trig.event();
     let material = ColorMaterial {
         color: Srgba::from_u8_array(settings.color).into(),
         alpha_mode: AlphaMode2d::Blend,
