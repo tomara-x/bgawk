@@ -2,10 +2,13 @@ use crate::objects::AttractionFactor;
 use crate::ui::ZoomFactor;
 use avian2d::prelude::Gravity;
 use bevy::app::{App, Plugin, PostStartup};
-use bevy::prelude::{Res, ResMut, Resource};
+use bevy::prelude::{Query, Res, ResMut, Resource, Window};
 use bevy::time::{Time, Virtual};
 use clap::Parser;
-use figment::{providers::{Format, Serialized, Toml}, Figment};
+use figment::{
+    providers::{Format, Serialized, Toml},
+    Figment,
+};
 use serde::{Deserialize, Serialize};
 use xdg::BaseDirectories;
 
@@ -14,7 +17,6 @@ pub struct ConfigPlugin;
 #[derive(Parser, Debug, Resource, Serialize, Deserialize)]
 #[command(version, about, long_about = None)]
 pub struct Config {
-
     #[arg(long, default_value_t = false)]
     pub pause: bool,
 
@@ -39,7 +41,8 @@ impl Plugin for ConfigPlugin {
         let config: Config = Figment::new()
             .merge(Serialized::defaults(Config::parse()))
             .merge(Toml::file(config_path))
-            .extract().unwrap();
+            .extract()
+            .unwrap();
 
         app.insert_resource(config)
             .add_systems(PostStartup, configure);
@@ -52,6 +55,7 @@ fn configure(
     mut gravity: ResMut<Gravity>,
     mut attraction_factor: ResMut<AttractionFactor>,
     mut zoom_factor: ResMut<ZoomFactor>,
+    mut win: Query<&mut Window>,
 ) {
     if config.pause {
         time.pause();
@@ -63,4 +67,5 @@ fn configure(
     attraction_factor.0 = config.attraction;
 
     zoom_factor.0 = config.zoom;
+    win.single_mut().resolution.set_scale_factor(config.zoom);
 }

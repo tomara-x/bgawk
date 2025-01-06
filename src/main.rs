@@ -13,15 +13,15 @@ use bevy_egui::EguiContexts;
 use bevy_pancam::*;
 use std::time::Duration;
 
+mod config;
 mod interaction;
 mod joints;
 mod lapis;
 mod objects;
 mod ui;
-mod config;
 
-use {interaction::*, joints::*, lapis::*, objects::*, ui::*};
 use config::ConfigPlugin;
+use {interaction::*, joints::*, lapis::*, objects::*, ui::*};
 
 fn main() {
     App::new()
