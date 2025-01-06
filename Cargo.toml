@@ -41,6 +41,10 @@ fundsp = {version = "0.20", git = "https://github.com/SamiPerttu/fundsp"}
 cpal = {version = "0.15.3", features = ["jack"]}
 syn = {version = "2.0", features = ["full", "extra-traits"]}
 crossbeam-channel = "0.5"
+clap = { version = "4.5.23", features = ["derive"] }
+figment = { version = "0.10.19", features = ["toml"]}
+xdg = "2.5.2"
+serde = { version = "1.0.215", features = ["derive"] }
 
 # smol amount of optimization for our stuff
 [profile.dev]

@@ -18,7 +18,10 @@ mod joints;
 mod lapis;
 mod objects;
 mod ui;
+mod config;
+
 use {interaction::*, joints::*, lapis::*, objects::*, ui::*};
+use config::ConfigPlugin;
 
 fn main() {
     App::new()
@@ -48,6 +51,7 @@ fn main() {
             angular: -1.,
         })
         .add_systems(Startup, setup)
+        .add_plugins(ConfigPlugin)
         .run();
 }
 
