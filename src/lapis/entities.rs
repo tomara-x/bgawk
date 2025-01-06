@@ -74,6 +74,13 @@ pub fn method_entity(
 ) -> Option<Entity> {
     let e = eval_entity(&expr.receiver, lapis, commands)?;
     match expr.method.to_string().as_str() {
+        // this being here allows some nonsense like
+        // let var = entity.despawn();
+        // which doesn't assign anything to var but does despawn entity
+        "despawn" => {
+            commands.get_entity(e)?.try_despawn();
+            None
+        }
         "x" => {
             let x = eval_float(expr.args.first()?, lapis)?;
             commands.trigger(SetX(e, x));
@@ -85,16 +92,6 @@ pub fn method_entity(
         // and so on..
         // TODO
         _ => None,
-    }
-}
-
-pub fn entity_methods(expr: &ExprMethodCall, lapis: &Lapis, commands: &mut Commands) {
-    if let Some(e) = eval_entity(&expr.receiver, lapis, commands) {
-        if expr.method == "despawn" {
-            if let Some(mut e) = commands.get_entity(e) {
-                e.try_despawn();
-            }
-        }
     }
 }
 
