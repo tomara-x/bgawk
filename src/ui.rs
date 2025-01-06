@@ -360,6 +360,13 @@ fn egui_ui(
             );
         });
         ui.horizontal(|ui| {
+            ui.label("FunDSP doc:");
+            ui.hyperlink_to(
+                "docs.rs/fundsp/latest/fundsp",
+                "https://docs.rs/fundsp/latest/fundsp/",
+            );
+        });
+        ui.horizontal(|ui| {
             ui.label("lapis:");
             ui.hyperlink_to(
                 "github.com/tomara-x/lapis",
@@ -393,6 +400,18 @@ fn egui_ui(
     });
     Window::new("help").open(&mut lapis.help).show(ctx, |ui| {
         ui.label(HELP_TEXT);
+        ui.label("");
+        ui.horizontal(|ui| {
+            ui.label("see the");
+            ui.hyperlink_to("FunDSP readme","https://github.com/SamiPerttu/fundsp/");
+            ui.label("and");
+            ui.hyperlink_to("documentation","https://docs.rs/fundsp/latest/fundsp/");
+        });
+        ui.horizontal(|ui| {
+            ui.label("and the");
+            ui.hyperlink_to("lapis readme","https://github.com/tomara-x/lapis/");
+            ui.label("for more info about how they work");
+        });
     });
 }
 
