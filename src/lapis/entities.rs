@@ -83,55 +83,55 @@ fn method_entity(expr: &ExprMethodCall, lapis: &Lapis, commands: &mut Commands) 
     }
     let val = eval_float(expr.args.first()?, lapis);
     match expr.method.to_string().as_str() {
-        "x" => commands.trigger(SetEvent(e, Property::X(val?))),
-        "y" => commands.trigger(SetEvent(e, Property::Y(val?))),
-        "rx" => commands.trigger(SetEvent(e, Property::Rx(val?))),
-        "ry" => commands.trigger(SetEvent(e, Property::Ry(val?))),
-        "rot" => commands.trigger(SetEvent(e, Property::Rot(val?))),
-        "mass" => commands.trigger(SetEvent(e, Property::Mass(val?))),
-        "vx" => commands.trigger(SetEvent(e, Property::Vx(val?))),
-        "vy" => commands.trigger(SetEvent(e, Property::Vy(val?))),
-        "va" => commands.trigger(SetEvent(e, Property::Va(val?))),
-        "restitution" => commands.trigger(SetEvent(e, Property::Restitution(val?))),
-        "lindamp" => commands.trigger(SetEvent(e, Property::LinDamp(val?))),
-        "angdamp" => commands.trigger(SetEvent(e, Property::AngDamp(val?))),
-        "inertia" => commands.trigger(SetEvent(e, Property::Inertia(val?))),
-        "h" => commands.trigger(SetEvent(e, Property::H(val?))),
-        "s" => commands.trigger(SetEvent(e, Property::S(val?))),
-        "l" => commands.trigger(SetEvent(e, Property::L(val?))),
-        "a" => commands.trigger(SetEvent(e, Property::A(val?))),
-        "sides" => commands.trigger(SetEvent(e, Property::Sides(val? as u32))),
-        "cmx" => commands.trigger(SetEvent(e, Property::Cmx(val?))),
-        "cmy" => commands.trigger(SetEvent(e, Property::Cmy(val?))),
-        "friction" => commands.trigger(SetEvent(e, Property::Friction(val?))),
-        "tail" => commands.trigger(SetEvent(e, Property::Tail(val? as usize))),
-        "layer" => commands.trigger(SetEvent(e, Property::Layer(val? as u32))),
+        "x" => commands.trigger_targets(Property::X(val?), e),
+        "y" => commands.trigger_targets(Property::Y(val?), e),
+        "rx" => commands.trigger_targets(Property::Rx(val?), e),
+        "ry" => commands.trigger_targets(Property::Ry(val?), e),
+        "rot" => commands.trigger_targets(Property::Rot(val?), e),
+        "mass" => commands.trigger_targets(Property::Mass(val?), e),
+        "vx" => commands.trigger_targets(Property::Vx(val?), e),
+        "vy" => commands.trigger_targets(Property::Vy(val?), e),
+        "va" => commands.trigger_targets(Property::Va(val?), e),
+        "restitution" => commands.trigger_targets(Property::Restitution(val?), e),
+        "lindamp" => commands.trigger_targets(Property::LinDamp(val?), e),
+        "angdamp" => commands.trigger_targets(Property::AngDamp(val?), e),
+        "inertia" => commands.trigger_targets(Property::Inertia(val?), e),
+        "h" => commands.trigger_targets(Property::H(val?), e),
+        "s" => commands.trigger_targets(Property::S(val?), e),
+        "l" => commands.trigger_targets(Property::L(val?), e),
+        "a" => commands.trigger_targets(Property::A(val?), e),
+        "sides" => commands.trigger_targets(Property::Sides(val? as u32), e),
+        "cmx" => commands.trigger_targets(Property::Cmx(val?), e),
+        "cmy" => commands.trigger_targets(Property::Cmy(val?), e),
+        "friction" => commands.trigger_targets(Property::Friction(val?), e),
+        "tail" => commands.trigger_targets(Property::Tail(val? as usize), e),
+        "layer" => commands.trigger_targets(Property::Layer(val? as u32), e),
         "dynamic" => {
             let b = eval_bool(expr.args.first()?, lapis)?;
-            commands.trigger(SetEvent(e, Property::Dynamic(b)));
+            commands.trigger_targets(Property::Dynamic(b), e);
         }
         "sensor" => {
             let b = eval_bool(expr.args.first()?, lapis)?;
-            commands.trigger(SetEvent(e, Property::Sensor(b)));
+            commands.trigger_targets(Property::Sensor(b), e);
         }
         "links" => {
             if let Expr::Lit(expr) = expr.args.first()? {
                 if let Lit::Str(expr) = &expr.lit {
-                    commands.trigger(SetEvent(e, Property::Links(expr.value())));
+                    commands.trigger_targets(Property::Links(expr.value()), e);
                 }
             }
         }
         "code_i" => {
             if let Expr::Lit(expr) = expr.args.first()? {
                 if let Lit::Str(expr) = &expr.lit {
-                    commands.trigger(SetEvent(e, Property::CodeI(expr.value())));
+                    commands.trigger_targets(Property::CodeI(expr.value()), e);
                 }
             }
         }
         "code_f" => {
             if let Expr::Lit(expr) = expr.args.first()? {
                 if let Lit::Str(expr) = &expr.lit {
-                    commands.trigger(SetEvent(e, Property::CodeF(expr.value())));
+                    commands.trigger_targets(Property::CodeF(expr.value()), e);
                 }
             }
         }
@@ -142,7 +142,8 @@ fn method_entity(expr: &ExprMethodCall, lapis: &Lapis, commands: &mut Commands) 
 
 // ---- observers ----
 
-enum Property {
+#[derive(Event)]
+pub enum Property {
     X(f32),
     Y(f32),
     Rx(f32),
@@ -173,11 +174,8 @@ enum Property {
     CodeF(String),
 }
 
-#[derive(Event)]
-pub struct SetEvent(Entity, Property);
-
 pub fn set_observer(
-    trig: Trigger<SetEvent>,
+    trig: Trigger<Property>,
     mut trans_query: Query<&mut Transform, With<RigidBody>>,
     mut commands: Commands,
     mut lin_velocity_query: Query<&mut LinearVelocity>,
@@ -189,8 +187,8 @@ pub fn set_observer(
     mut tail_query: Query<&mut Tail>,
     mut code_query: Query<&mut Code>,
 ) {
-    let e = trig.event().0;
-    match trig.event().1 {
+    let e = trig.entity();
+    match *trig.event() {
         Property::X(val) => {
             if let Ok(mut t) = trans_query.get_mut(e) {
                 t.translation.x = val;

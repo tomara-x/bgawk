@@ -403,13 +403,13 @@ fn egui_ui(
         ui.label("");
         ui.horizontal(|ui| {
             ui.label("see the");
-            ui.hyperlink_to("FunDSP readme","https://github.com/SamiPerttu/fundsp/");
+            ui.hyperlink_to("FunDSP readme", "https://github.com/SamiPerttu/fundsp/");
             ui.label("and");
-            ui.hyperlink_to("documentation","https://docs.rs/fundsp/latest/fundsp/");
+            ui.hyperlink_to("documentation", "https://docs.rs/fundsp/latest/fundsp/");
         });
         ui.horizontal(|ui| {
             ui.label("and the");
-            ui.hyperlink_to("lapis readme","https://github.com/tomara-x/lapis/");
+            ui.hyperlink_to("lapis readme", "https://github.com/tomara-x/lapis/");
             ui.label("for more info about how they work");
         });
     });
