@@ -509,6 +509,9 @@ const HELP_TEXT: &str = "- hold space and drag/scroll to pan/zoom the camera
     - press delete to delete selected objects
     - press shift+delete to delete any joints connected to
       selected objects
+    - if you don't need objects to gravitate towards each other
+      set the attraction to zero. this will disable that system
+      allowing much better performance
 - in joint mode:
     - drag from one object to another to create a joint
       with the click/release positions as local anchors";
