@@ -48,11 +48,9 @@ fn call_entity(expr: &ExprCall, lapis: &Lapis, commands: &mut Commands) -> Optio
             }
         }
         "spawn" => {
-            let x = eval_float(expr.args.first()?, lapis)?;
-            let y = eval_float(expr.args.get(1)?, lapis)?;
-            let r = eval_float(expr.args.get(2)?, lapis)?;
+            let r = eval_float(expr.args.first()?, lapis)?;
             let e = commands.spawn_empty().id();
-            commands.trigger_targets(InsertDefaults(x, y, r), e);
+            commands.trigger_targets(InsertDefaults(r), e);
             Some(e)
         }
         "joint" => {
@@ -371,7 +369,7 @@ pub fn set_observer(
 }
 
 #[derive(Event)]
-pub struct InsertDefaults(f32, f32, f32);
+pub struct InsertDefaults(f32);
 
 pub fn insert_defaults(
     trig: Trigger<InsertDefaults>,
@@ -381,7 +379,7 @@ pub fn insert_defaults(
     settings: Res<DrawSettings>,
 ) {
     let e = trig.entity();
-    let InsertDefaults(x, y, r) = *trig.event();
+    let r = trig.event().0;
     let material = ColorMaterial {
         color: Srgba::from_u8_array(settings.color).into(),
         alpha_mode: AlphaMode2d::Blend,
@@ -407,11 +405,7 @@ pub fn insert_defaults(
             Restitution::new(settings.restitution),
             Friction::new(settings.friction),
         ),
-        Transform {
-            translation: Vec3::new(x, y, 0.),
-            scale: Vec3::new(r, r, 1.),
-            ..default()
-        },
+        Transform::from_scale(Vec3::new(r, r, 1.)),
         Sides(settings.sides),
         Tail {
             len: settings.tail,
