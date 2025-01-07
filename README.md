@@ -16,14 +16,17 @@ cd bgawk
 cargo run --release
 ```
 
-If you're building bgawk often then you might want to improve your compile times by dyanically linking bevy appending 
-`--features bevy/dynamic_linking` to your build or run commands.
+> [!TIP]
+> if you're building bgawk often then you might want to improve your compile times by dyanically linking bevy
+> by appending `--features bevy/dynamic_linking` to your build or run commands
+> [more info](https://bevyengine.org/learn/quick-start/getting-started/setup/#enable-fast-compiles-optional)
 
-You can configure bgawk via the command line or by placing a `config.toml` at `$HOME/.config/bawk/config.toml`.
-For more information see [src/config.rs](./src/config.rs) or run:
-```
-cargo run -- --help
-```
+> [!TIP]
+> you can configure bgawk via the command line or by placing a `config.toml` at `$HOME/.config/bawk/config.toml`.
+> for more information see [src/config.rs](./src/config.rs) or run:
+> ```
+> cargo run -- --help
+> ```
 
 ## thanks
 
