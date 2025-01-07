@@ -297,10 +297,10 @@ pub fn set_observer(
             }
         }
         Property::Sides(val) => {
-            let sides = (val).clamp(3, 512);
+            let val = val.clamp(3, 512);
             if let Ok(mesh_id) = mesh_ids.get(e) {
                 let mesh = meshes.get_mut(mesh_id).unwrap();
-                *mesh = RegularPolygon::new(1., sides).into();
+                *mesh = RegularPolygon::new(1., val).into();
                 commands
                     .entity(e)
                     .insert((Sides(val), Collider::regular_polygon(1., val)));
