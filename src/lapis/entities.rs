@@ -142,7 +142,7 @@ fn method_entity(expr: &ExprMethodCall, lapis: &Lapis, commands: &mut Commands) 
 
 // ---- observers ----
 
-#[derive(Event)]
+#[derive(Event, Clone)]
 pub enum Property {
     X(f32),
     Y(f32),
@@ -186,8 +186,18 @@ pub fn set_observer(
     mut cm_query: Query<&mut CenterOfMass>,
     mut tail_query: Query<&mut Tail>,
     mut code_query: Query<&mut Code>,
+    selected_query: Query<Entity, With<Selected>>,
 ) {
     let e = trig.entity();
+    // methods applied to PLACEHOLDER affect the selected entities
+    if e == Entity::PLACEHOLDER {
+        let mut targets = Vec::new();
+        for e in selected_query.iter() {
+            targets.push(e);
+        }
+        commands.trigger_targets(trig.event().clone(), targets);
+        return;
+    }
     match *trig.event() {
         Property::X(val) => {
             if let Ok(mut t) = trans_query.get_mut(e) {

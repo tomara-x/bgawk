@@ -89,7 +89,6 @@ fn egui_ui(
                 ui.selectable_value(&mut draw.rigid_body, RigidBody::Static, "Static");
                 ui.selectable_value(&mut draw.rigid_body, RigidBody::Dynamic, "Dynamic");
             });
-            // TODO move to edit?
             ui.horizontal(|ui| {
                 ui.label("collision layer");
                 ui.add(DragValue::new(&mut draw.collision_layer).range(0..=31));
