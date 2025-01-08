@@ -18,20 +18,13 @@ pub fn eval_float(expr: &Expr, lapis: &Lapis) -> Option<f32> {
 fn field_float(expr: &ExprField, lapis: &Lapis) -> Option<f32> {
     let e = path_lit_entity(&expr.base, lapis)?;
     if let Member::Named(ident) = &expr.member {
+        let trans = &lapis.trans_query;
         return match ident.to_string().as_str() {
-            "x" => Some(lapis.trans_query.get(e).ok()?.translation.x),
-            "y" => Some(lapis.trans_query.get(e).ok()?.translation.y),
-            "rx" => Some(lapis.trans_query.get(e).ok()?.scale.x),
-            "ry" => Some(lapis.trans_query.get(e).ok()?.scale.x),
-            "rot" => Some(
-                lapis
-                    .trans_query
-                    .get(e)
-                    .ok()?
-                    .rotation
-                    .to_euler(EulerRot::XYZ)
-                    .2,
-            ),
+            "x" => Some(trans.get(e).ok()?.translation.x),
+            "y" => Some(trans.get(e).ok()?.translation.y),
+            "rx" => Some(trans.get(e).ok()?.scale.x),
+            "ry" => Some(trans.get(e).ok()?.scale.x),
+            "rot" => Some(trans.get(e).ok()?.rotation.to_euler(EulerRot::XYZ).2),
             "mass" => Some(lapis.mass_query.get(e).ok()?.0),
             "vx" => Some(lapis.lin_velocity_query.get(e).ok()?.x),
             "vy" => Some(lapis.lin_velocity_query.get(e).ok()?.y),
