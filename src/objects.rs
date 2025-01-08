@@ -1,10 +1,11 @@
 use crate::{
     interaction::*,
-    lapis::{Lapis, LapisData},
+    lapis::{floats::eval_float, Lapis},
 };
 use avian2d::prelude::*;
 use bevy::{prelude::*, sprite::AlphaMode2d};
 use std::collections::VecDeque;
+use syn::{parse_str, Expr};
 
 pub struct ObjectsPlugin;
 
@@ -253,30 +254,9 @@ fn eval_collisions(
 }
 
 #[allow(clippy::type_complexity)]
-fn sync_links(
-    links_query: Query<(Entity, &Links)>,
-    mut trans_query: Query<&mut Transform>,
-    mut mass_query: Query<&mut Mass>,
-    mut lin_velocity_query: Query<&mut LinearVelocity>,
-    mut ang_velocity_query: Query<&mut AngularVelocity>,
-    mut restitution_query: Query<&mut Restitution>,
-    mut lin_damp_query: Query<&mut LinearDamping>,
-    mut ang_damp_query: Query<&mut AngularDamping>,
-    mut inertia_query: Query<&mut AngularInertia>,
-    (material_ids, mut materials, mesh_ids, mut meshes): (
-        Query<&MeshMaterial2d<ColorMaterial>>,
-        ResMut<Assets<ColorMaterial>>,
-        Query<&Mesh2d>,
-        ResMut<Assets<Mesh>>,
-    ),
-    mut collider_query: Query<&mut Collider>,
-    mut sides_query: Query<&mut Sides>,
-    mut cm_query: Query<&mut CenterOfMass>,
-    mut friction_query: Query<&mut Friction>,
-    mut tail_query: Query<&mut Tail>,
-    lapis_data: ResMut<LapisData>,
-) {
-    for (e, Links(links)) in links_query.iter() {
+fn sync_links(links_query: Query<(Entity, Ref<Links>)>, mut lapis: Lapis) {
+    for (e, l) in links_query.iter() {
+        let links = &l.0;
         for link in links.lines() {
             // links are in the form "property > var" or "property < var"
             let mut link = link.split_ascii_whitespace();
@@ -286,233 +266,527 @@ fn sync_links(
             let (Some(property), Some(dir), Some(var)) = (s0, s1, s2) else {
                 continue;
             };
-            if let Some(var) = lapis_data.smap.get(var) {
+            if let Some(var) = lapis.data.smap.get(var) {
+                let cmd = &mut lapis.commands;
                 match property {
                     "x" => {
-                        let mut trans = trans_query.get_mut(e).unwrap();
                         if dir == "<" {
-                            trans.translation.x = var.value();
+                            cmd.trigger_targets(Property::X(var.value()), e);
                         } else if dir == ">" {
-                            var.set(trans.translation.x);
+                            var.set(lapis.trans_query.get(e).unwrap().translation.x);
                         }
                     }
                     "y" => {
-                        let mut trans = trans_query.get_mut(e).unwrap();
                         if dir == "<" {
-                            trans.translation.y = var.value();
+                            cmd.trigger_targets(Property::Y(var.value()), e);
                         } else if dir == ">" {
-                            var.set(trans.translation.y);
+                            var.set(lapis.trans_query.get(e).unwrap().translation.y);
                         }
                     }
                     "rx" => {
-                        let mut trans = trans_query.get_mut(e).unwrap();
                         if dir == "<" {
-                            trans.scale.x = var.value();
+                            cmd.trigger_targets(Property::Rx(var.value()), e);
                         } else if dir == ">" {
-                            var.set(trans.scale.x);
+                            var.set(lapis.trans_query.get(e).unwrap().scale.x);
                         }
                     }
                     "ry" => {
-                        let mut trans = trans_query.get_mut(e).unwrap();
                         if dir == "<" {
-                            trans.scale.y = var.value();
+                            cmd.trigger_targets(Property::Ry(var.value()), e);
                         } else if dir == ">" {
-                            var.set(trans.scale.y);
+                            var.set(lapis.trans_query.get(e).unwrap().scale.y);
                         }
                     }
                     "rot" => {
-                        let mut trans = trans_query.get_mut(e).unwrap();
                         if dir == "<" {
-                            trans.rotation = Quat::from_rotation_z(var.value());
+                            cmd.trigger_targets(Property::Rot(var.value()), e);
                         } else if dir == ">" {
-                            let rot = &mut trans.rotation.to_euler(EulerRot::XYZ).2;
-                            var.set(*rot);
+                            let trans = lapis.trans_query.get(e).unwrap();
+                            let rot = trans.rotation.to_euler(EulerRot::XYZ).2;
+                            var.set(rot);
                         }
                     }
                     "mass" => {
-                        let mut mass = mass_query.get_mut(e).unwrap();
                         if dir == "<" {
-                            mass.0 = var.value();
+                            cmd.trigger_targets(Property::Mass(var.value()), e);
                         } else if dir == ">" {
-                            var.set(mass.0);
+                            var.set(lapis.mass_query.get_mut(e).unwrap().0);
                         }
                     }
                     "vx" => {
-                        let mut velocity = lin_velocity_query.get_mut(e).unwrap();
                         if dir == "<" {
-                            velocity.x = var.value();
+                            cmd.trigger_targets(Property::Vx(var.value()), e);
                         } else if dir == ">" {
-                            var.set(velocity.x);
+                            var.set(lapis.lin_velocity_query.get(e).unwrap().x);
                         }
                     }
                     "vy" => {
-                        let mut velocity = lin_velocity_query.get_mut(e).unwrap();
                         if dir == "<" {
-                            velocity.y = var.value();
+                            cmd.trigger_targets(Property::Vy(var.value()), e);
                         } else if dir == ">" {
-                            var.set(velocity.y);
+                            var.set(lapis.lin_velocity_query.get(e).unwrap().y);
                         }
                     }
                     "va" => {
-                        let mut velocity = ang_velocity_query.get_mut(e).unwrap();
                         if dir == "<" {
-                            velocity.0 = var.value();
+                            cmd.trigger_targets(Property::Va(var.value()), e);
                         } else if dir == ">" {
-                            var.set(velocity.0);
+                            var.set(lapis.ang_velocity_query.get(e).unwrap().0);
                         }
                     }
                     "vm" => {
-                        let mut v = lin_velocity_query.get_mut(e).unwrap();
+                        let v = lapis.lin_velocity_query.get(e).unwrap();
                         if dir == "<" {
                             let m = var.value();
                             let p = v.y.atan2(v.x);
-                            v.x = m * p.cos();
-                            v.y = m * p.sin();
+                            cmd.trigger_targets(Property::Vx(m * p.cos()), e);
+                            cmd.trigger_targets(Property::Vy(m * p.sin()), e);
                         } else {
                             var.set(v.x.hypot(v.y));
                         }
                     }
                     "vp" => {
-                        let mut v = lin_velocity_query.get_mut(e).unwrap();
+                        let v = lapis.lin_velocity_query.get(e).unwrap();
                         if dir == "<" {
                             let m = v.x.hypot(v.y);
                             let p = var.value();
-                            v.x = m * p.cos();
-                            v.y = m * p.sin();
+                            cmd.trigger_targets(Property::Vx(m * p.cos()), e);
+                            cmd.trigger_targets(Property::Vy(m * p.sin()), e);
                         } else {
                             var.set(v.y.atan2(v.x));
                         }
                     }
                     "restitution" => {
-                        let mut restitution = restitution_query.get_mut(e).unwrap();
                         if dir == "<" {
-                            restitution.coefficient = var.value();
+                            cmd.trigger_targets(Property::Restitution(var.value()), e);
                         } else if dir == ">" {
-                            var.set(restitution.coefficient);
+                            var.set(lapis.restitution_query.get(e).unwrap().coefficient);
                         }
                     }
                     "lindamp" => {
-                        let mut damp = lin_damp_query.get_mut(e).unwrap();
                         if dir == "<" {
-                            damp.0 = var.value();
+                            cmd.trigger_targets(Property::LinDamp(var.value()), e);
                         } else if dir == ">" {
-                            var.set(damp.0);
+                            var.set(lapis.lin_damp_query.get(e).unwrap().0);
                         }
                     }
                     "angdamp" => {
-                        let mut damp = ang_damp_query.get_mut(e).unwrap();
                         if dir == "<" {
-                            damp.0 = var.value();
+                            cmd.trigger_targets(Property::AngDamp(var.value()), e);
                         } else if dir == ">" {
-                            var.set(damp.0);
+                            var.set(lapis.ang_damp_query.get(e).unwrap().0);
                         }
                     }
                     "inertia" => {
-                        let mut inertia = inertia_query.get_mut(e).unwrap();
                         if dir == "<" {
-                            inertia.0 = var.value();
+                            cmd.trigger_targets(Property::Inertia(var.value()), e);
                         } else if dir == ">" {
-                            var.set(inertia.0);
+                            var.set(lapis.inertia_query.get(e).unwrap().0);
                         }
                     }
                     "h" => {
-                        let mat_id = material_ids.get(e).unwrap();
-                        let mat = materials.get_mut(mat_id).unwrap();
                         if dir == "<" {
-                            let mut hsla: Hsla = mat.color.into();
-                            hsla.hue = var.value();
-                            mat.color = hsla.into();
+                            cmd.trigger_targets(Property::H(var.value()), e);
                         } else if dir == ">" {
+                            let mat_id = lapis.material_ids.get(e).unwrap();
+                            let mat = lapis.materials.get(mat_id).unwrap();
                             let hsla: Hsla = mat.color.into();
                             var.set(hsla.hue);
                         }
                     }
                     "s" => {
-                        let mat_id = material_ids.get(e).unwrap();
-                        let mat = materials.get_mut(mat_id).unwrap();
                         if dir == "<" {
-                            let mut hsla: Hsla = mat.color.into();
-                            hsla.saturation = var.value();
-                            mat.color = hsla.into();
+                            cmd.trigger_targets(Property::S(var.value()), e);
                         } else if dir == ">" {
+                            let mat_id = lapis.material_ids.get(e).unwrap();
+                            let mat = lapis.materials.get(mat_id).unwrap();
                             let hsla: Hsla = mat.color.into();
                             var.set(hsla.saturation);
                         }
                     }
                     "l" => {
-                        let mat_id = material_ids.get(e).unwrap();
-                        let mat = materials.get_mut(mat_id).unwrap();
                         if dir == "<" {
-                            let mut hsla: Hsla = mat.color.into();
-                            hsla.lightness = var.value();
-                            mat.color = hsla.into();
+                            cmd.trigger_targets(Property::L(var.value()), e);
                         } else if dir == ">" {
+                            let mat_id = lapis.material_ids.get(e).unwrap();
+                            let mat = lapis.materials.get(mat_id).unwrap();
                             let hsla: Hsla = mat.color.into();
                             var.set(hsla.lightness);
                         }
                     }
                     "a" => {
-                        let mat_id = material_ids.get(e).unwrap();
-                        let mat = materials.get_mut(mat_id).unwrap();
                         if dir == "<" {
-                            let mut hsla: Hsla = mat.color.into();
-                            hsla.alpha = var.value();
-                            mat.color = hsla.into();
+                            cmd.trigger_targets(Property::A(var.value()), e);
                         } else if dir == ">" {
+                            let mat_id = lapis.material_ids.get(e).unwrap();
+                            let mat = lapis.materials.get(mat_id).unwrap();
                             let hsla: Hsla = mat.color.into();
                             var.set(hsla.alpha);
                         }
                     }
                     "sides" => {
                         if dir == "<" {
-                            let sides = (var.value() as u32).clamp(3, 512);
-                            let mesh_id = mesh_ids.get(e).unwrap();
-                            let mesh = meshes.get_mut(mesh_id).unwrap();
-                            *mesh = RegularPolygon::new(1., sides).into();
-                            let mut collider = collider_query.get_mut(e).unwrap();
-                            *collider = Collider::regular_polygon(1., sides);
-                            sides_query.get_mut(e).unwrap().0 = sides;
+                            cmd.trigger_targets(Property::Sides(var.value() as u32), e);
                         } else if dir == ">" {
-                            let sides = sides_query.get(e).unwrap();
-                            var.set(sides.0 as f32);
+                            var.set(lapis.sides_query.get(e).unwrap().0 as f32);
                         }
                     }
                     "cmx" => {
-                        let mut cm = cm_query.get_mut(e).unwrap();
                         if dir == "<" {
-                            cm.0.x = var.value();
+                            cmd.trigger_targets(Property::Cmx(var.value()), e);
                         } else if dir == ">" {
-                            var.set(cm.0.x);
+                            var.set(lapis.cm_query.get(e).unwrap().0.x);
                         }
                     }
                     "cmy" => {
-                        let mut cm = cm_query.get_mut(e).unwrap();
                         if dir == "<" {
-                            cm.0.y = var.value();
+                            cmd.trigger_targets(Property::Cmy(var.value()), e);
                         } else if dir == ">" {
-                            var.set(cm.0.y);
+                            var.set(lapis.cm_query.get(e).unwrap().0.y);
                         }
                     }
                     "friction" => {
-                        let mut fric = friction_query.get_mut(e).unwrap();
                         if dir == "<" {
-                            fric.dynamic_coefficient = var.value();
-                            fric.static_coefficient = var.value();
+                            cmd.trigger_targets(Property::Friction(var.value()), e);
                         } else if dir == ">" {
-                            var.set(fric.dynamic_coefficient);
+                            var.set(lapis.friction_query.get(e).unwrap().dynamic_coefficient);
                         }
                     }
                     "tail" => {
-                        let mut tail = tail_query.get_mut(e).unwrap();
                         if dir == "<" {
-                            tail.len = var.value() as usize;
+                            cmd.trigger_targets(Property::Tail(var.value() as usize), e);
                         } else if dir == ">" {
-                            var.set(tail.len as f32);
+                            var.set(lapis.tail_query.get(e).unwrap().len as f32);
                         }
                     }
                     _ => {}
                 }
+            // assign a float expression
+            } else if dir == "<" || dir == "=" {
+                if let Ok(expr) = parse_str::<Expr>(var) {
+                    if let Some(f) = eval_float(&expr, &lapis) {
+                        if !l.is_changed() {
+                            continue;
+                        }
+                        let cmd = &mut lapis.commands;
+                        match property {
+                            "x" => cmd.trigger_targets(Property::X(f), e),
+                            "y" => cmd.trigger_targets(Property::Y(f), e),
+                            "rx" => cmd.trigger_targets(Property::Rx(f), e),
+                            "ry" => cmd.trigger_targets(Property::Ry(f), e),
+                            "rot" => cmd.trigger_targets(Property::Rot(f), e),
+                            "mass" => cmd.trigger_targets(Property::Mass(f), e),
+                            "vx" => cmd.trigger_targets(Property::Vx(f), e),
+                            "vy" => cmd.trigger_targets(Property::Vy(f), e),
+                            "va" => cmd.trigger_targets(Property::Va(f), e),
+                            "vm" => {
+                                let v = lapis.lin_velocity_query.get(e).unwrap();
+                                let m = f;
+                                let p = v.y.atan2(v.x);
+                                cmd.trigger_targets(Property::Vx(m * p.cos()), e);
+                                cmd.trigger_targets(Property::Vy(m * p.sin()), e);
+                            }
+                            "vp" => {
+                                let v = lapis.lin_velocity_query.get(e).unwrap();
+                                let m = v.x.hypot(v.y);
+                                let p = f;
+                                cmd.trigger_targets(Property::Vx(m * p.cos()), e);
+                                cmd.trigger_targets(Property::Vy(m * p.sin()), e);
+                            }
+                            "restitution" => cmd.trigger_targets(Property::Restitution(f), e),
+                            "lindamp" => cmd.trigger_targets(Property::LinDamp(f), e),
+                            "angdamp" => cmd.trigger_targets(Property::AngDamp(f), e),
+                            "inertia" => cmd.trigger_targets(Property::Inertia(f), e),
+                            "h" => cmd.trigger_targets(Property::H(f), e),
+                            "s" => cmd.trigger_targets(Property::S(f), e),
+                            "l" => cmd.trigger_targets(Property::L(f), e),
+                            "a" => cmd.trigger_targets(Property::A(f), e),
+                            "sides" => cmd.trigger_targets(Property::Sides(f as u32), e),
+                            "cmx" => cmd.trigger_targets(Property::Cmx(f), e),
+                            "cmy" => cmd.trigger_targets(Property::Cmy(f), e),
+                            "friction" => cmd.trigger_targets(Property::Friction(f), e),
+                            "tail" => cmd.trigger_targets(Property::Tail(f as usize), e),
+                            _ => {}
+                        }
+                    }
+                }
             }
         }
     }
+}
+
+// ---- observers ----
+
+#[derive(Event, Clone)]
+pub enum Property {
+    X(f32),
+    Y(f32),
+    Rx(f32),
+    Ry(f32),
+    Rot(f32),
+    Mass(f32),
+    Vx(f32),
+    Vy(f32),
+    Va(f32),
+    Restitution(f32),
+    LinDamp(f32),
+    AngDamp(f32),
+    Inertia(f32),
+    H(f32),
+    S(f32),
+    L(f32),
+    A(f32),
+    Sides(u32),
+    Cmx(f32),
+    Cmy(f32),
+    Friction(f32),
+    Tail(usize),
+    Layer(u32),
+    Dynamic(bool),
+    Sensor(bool),
+    Links(String),
+    CodeI(String),
+    CodeF(String),
+}
+
+pub fn set_observer(
+    trig: Trigger<Property>,
+    mut trans_query: Query<&mut Transform, With<RigidBody>>,
+    mut commands: Commands,
+    mut lin_velocity_query: Query<&mut LinearVelocity>,
+    mesh_ids: Query<&Mesh2d>,
+    mut meshes: ResMut<Assets<Mesh>>,
+    material_ids: Query<&MeshMaterial2d<ColorMaterial>>,
+    mut materials: ResMut<Assets<ColorMaterial>>,
+    mut cm_query: Query<&mut CenterOfMass>,
+    mut tail_query: Query<&mut Tail>,
+    mut code_query: Query<&mut Code>,
+    selected_query: Query<Entity, With<Selected>>,
+) {
+    let e = trig.entity();
+    // methods applied to PLACEHOLDER affect the selected entities
+    if e == Entity::PLACEHOLDER {
+        let mut targets = Vec::new();
+        for e in selected_query.iter() {
+            targets.push(e);
+        }
+        commands.trigger_targets(trig.event().clone(), targets);
+        return;
+    }
+    match *trig.event() {
+        Property::X(val) => {
+            if let Ok(mut t) = trans_query.get_mut(e) {
+                t.translation.x = val;
+            }
+        }
+        Property::Y(val) => {
+            if let Ok(mut t) = trans_query.get_mut(e) {
+                t.translation.y = val;
+            }
+        }
+        Property::Rx(val) => {
+            if let Ok(mut t) = trans_query.get_mut(e) {
+                t.scale.x = val;
+            }
+        }
+        Property::Ry(val) => {
+            if let Ok(mut t) = trans_query.get_mut(e) {
+                t.scale.y = val;
+            }
+        }
+        Property::Rot(val) => {
+            if let Ok(mut t) = trans_query.get_mut(e) {
+                t.rotation = Quat::from_rotation_z(val);
+            }
+        }
+        Property::Mass(val) => {
+            if trans_query.contains(e) {
+                commands.entity(e).insert(Mass(val));
+            }
+        }
+        Property::Vx(val) => {
+            if let Ok(mut v) = lin_velocity_query.get_mut(e) {
+                v.x = val;
+            }
+        }
+        Property::Vy(val) => {
+            if let Ok(mut v) = lin_velocity_query.get_mut(e) {
+                v.y = val;
+            }
+        }
+        Property::Va(val) => {
+            if trans_query.contains(e) {
+                commands.entity(e).insert(AngularVelocity(val));
+            }
+        }
+        Property::Restitution(val) => {
+            if trans_query.contains(e) {
+                commands.entity(e).insert(Restitution::new(val));
+            }
+        }
+        Property::LinDamp(val) => {
+            if trans_query.contains(e) {
+                commands.entity(e).insert(LinearDamping(val));
+            }
+        }
+        Property::AngDamp(val) => {
+            if trans_query.contains(e) {
+                commands.entity(e).insert(AngularDamping(val));
+            }
+        }
+        Property::Inertia(val) => {
+            if trans_query.contains(e) {
+                commands.entity(e).insert(AngularInertia(val));
+            }
+        }
+        Property::H(val) => {
+            if let Ok(mat_id) = material_ids.get(e) {
+                let mat = materials.get_mut(mat_id).unwrap();
+                let mut hsla: Hsla = mat.color.into();
+                hsla.hue = val;
+                mat.color = hsla.into();
+            }
+        }
+        Property::S(val) => {
+            if let Ok(mat_id) = material_ids.get(e) {
+                let mat = materials.get_mut(mat_id).unwrap();
+                let mut hsla: Hsla = mat.color.into();
+                hsla.saturation = val;
+                mat.color = hsla.into();
+            }
+        }
+        Property::L(val) => {
+            if let Ok(mat_id) = material_ids.get(e) {
+                let mat = materials.get_mut(mat_id).unwrap();
+                let mut hsla: Hsla = mat.color.into();
+                hsla.lightness = val;
+                mat.color = hsla.into();
+            }
+        }
+        Property::A(val) => {
+            if let Ok(mat_id) = material_ids.get(e) {
+                let mat = materials.get_mut(mat_id).unwrap();
+                let mut hsla: Hsla = mat.color.into();
+                hsla.alpha = val;
+                mat.color = hsla.into();
+            }
+        }
+        Property::Sides(val) => {
+            let val = val.clamp(3, 512);
+            if let Ok(mesh_id) = mesh_ids.get(e) {
+                let mesh = meshes.get_mut(mesh_id).unwrap();
+                *mesh = RegularPolygon::new(1., val).into();
+                commands
+                    .entity(e)
+                    .insert((Sides(val), Collider::regular_polygon(1., val)));
+            }
+        }
+        Property::Cmx(val) => {
+            if let Ok(mut v) = cm_query.get_mut(e) {
+                v.x = val;
+            }
+        }
+        Property::Cmy(val) => {
+            if let Ok(mut v) = cm_query.get_mut(e) {
+                v.y = val;
+            }
+        }
+        Property::Friction(val) => {
+            if trans_query.contains(e) {
+                commands.entity(e).insert(Friction::new(val));
+            }
+        }
+        Property::Tail(val) => {
+            if let Ok(mut tail) = tail_query.get_mut(e) {
+                tail.len = val;
+            }
+        }
+        Property::Layer(val) => {
+            if trans_query.contains(e) {
+                let layer = 1 << val;
+                commands
+                    .entity(e)
+                    .insert(CollisionLayers::from_bits(layer, layer));
+            }
+        }
+        Property::Dynamic(val) => {
+            if trans_query.contains(e) {
+                if val {
+                    commands.entity(e).insert(RigidBody::Dynamic);
+                } else {
+                    commands.entity(e).insert(RigidBody::Static);
+                }
+            }
+        }
+        Property::Sensor(val) => {
+            if trans_query.contains(e) {
+                if val {
+                    commands.entity(e).insert(Sensor);
+                } else {
+                    commands.entity(e).remove::<Sensor>();
+                }
+            }
+        }
+        Property::Links(ref val) => {
+            if trans_query.contains(e) {
+                commands.entity(e).insert(Links(val.clone()));
+            }
+        }
+        Property::CodeI(ref val) => {
+            if let Ok(mut c) = code_query.get_mut(e) {
+                c.0 = val.clone();
+            }
+        }
+        Property::CodeF(ref val) => {
+            if let Ok(mut c) = code_query.get_mut(e) {
+                c.1 = val.clone();
+            }
+        }
+    }
+}
+
+#[derive(Event)]
+pub struct InsertDefaults(pub f32);
+
+pub fn insert_defaults(
+    trig: Trigger<InsertDefaults>,
+    mut commands: Commands,
+    mut meshes: ResMut<Assets<Mesh>>,
+    mut materials: ResMut<Assets<ColorMaterial>>,
+    settings: Res<DrawSettings>,
+) {
+    let e = trig.entity();
+    let r = trig.event().0;
+    let material = ColorMaterial {
+        color: Srgba::from_u8_array(settings.color).into(),
+        alpha_mode: AlphaMode2d::Blend,
+        ..default()
+    };
+    let mesh_handle = meshes.add(RegularPolygon::new(1., settings.sides));
+    let mat_handle = materials.add(material);
+    let layer = 1 << settings.collision_layer;
+    commands.entity(e).insert((
+        Mesh2d(mesh_handle),
+        MeshMaterial2d(mat_handle),
+        settings.rigid_body,
+        Links(settings.links.clone()),
+        Code(settings.code.0.clone(), settings.code.1.clone()),
+        Mass(r * r * r),
+        AngularInertia(r * r * r),
+        CenterOfMass(settings.center_of_mass),
+        Collider::regular_polygon(1., settings.sides),
+        CollisionLayers::from_bits(layer, layer),
+        (
+            LinearDamping(settings.lin_damp),
+            AngularDamping(settings.ang_damp),
+            Restitution::new(settings.restitution),
+            Friction::new(settings.friction),
+        ),
+        Transform::from_scale(Vec3::new(r, r, 1.)),
+        Sides(settings.sides),
+        Tail {
+            len: settings.tail,
+            ..default()
+        },
+    ));
 }
