@@ -161,93 +161,45 @@ fn attract(
     }
 }
 
+fn replace(code: &str, e1: Entity, e2: Entity) -> String {
+    code.replace("$id", &format!("{}", e1.to_bits()))
+        .replace("$other", &format!("{}", e2.to_bits()))
+}
+
 fn eval_collisions(
     code: Query<&Code>,
     mut lapis: Lapis,
-    trans_query: Query<&Transform>,
-    lin_velocity_query: Query<&LinearVelocity>,
-    ang_velocity_query: Query<&AngularVelocity>,
-    mass_query: Query<&Mass>,
-    inertia_query: Query<&AngularInertia>,
     mut started: EventReader<CollisionStarted>,
     mut ended: EventReader<CollisionEnded>,
 ) {
-    // once we have field access all of these can be removed
-    // keeping the id of self
-    // and add the id of other
-    let search_and_replace = |code: &str, e| {
-        let trans = trans_query.get(e).unwrap();
-        let x = trans.translation.x;
-        let y = trans.translation.y;
-        let rx = trans.scale.x;
-        let ry = trans.scale.x;
-        let rot = trans.rotation.to_euler(EulerRot::XYZ).2;
-        let lin_v = lin_velocity_query.get(e).unwrap();
-        let vx = lin_v.x;
-        let vy = lin_v.y;
-        let va = ang_velocity_query.get(e).unwrap().0;
-        let mass = mass_query.get(e).unwrap().0;
-        let inertia = inertia_query.get(e).unwrap().0;
-        code.replace("$x", &format!("{x}"))
-            .replace("$y", &format!("{y}"))
-            .replace("$rx", &format!("{rx}"))
-            .replace("$ry", &format!("{ry}"))
-            .replace("$rot", &format!("{rot}"))
-            .replace("$vx", &format!("{vx}"))
-            .replace("$vy", &format!("{vy}"))
-            .replace("$va", &format!("{va}"))
-            .replace("$vm", &format!("{}", vx.hypot(vy)))
-            .replace("$vp", &format!("{}", vy.atan2(vx)))
-            .replace("$mass", &format!("{mass}"))
-            .replace("$inertia", &format!("{inertia}"))
-            .replace("$id", &format!("{}", e.to_bits()))
-    };
     if lapis.data.quiet {
         for CollisionStarted(e1, e2) in started.read() {
-            for e in [e1, e2] {
-                let c = code.get(*e).unwrap();
-                if c.0.contains('$') {
-                    let code = search_and_replace(&c.0, *e);
-                    lapis.quiet_eval(&code);
-                } else {
-                    lapis.quiet_eval(&c.0);
-                }
-            }
+            let c = code.get(*e1).unwrap();
+            lapis.quiet_eval(&replace(&c.0, *e1, *e2));
+            let c = code.get(*e2).unwrap();
+            lapis.quiet_eval(&replace(&c.0, *e2, *e1));
         }
         for CollisionEnded(e1, e2) in ended.read() {
-            for e in [e1, e2] {
-                if let Ok(c) = code.get(*e) {
-                    if c.1.contains('$') {
-                        let code = search_and_replace(&c.1, *e);
-                        lapis.quiet_eval(&code);
-                    } else {
-                        lapis.quiet_eval(&c.1);
-                    }
-                }
+            if let Ok(c) = code.get(*e1) {
+                lapis.quiet_eval(&replace(&c.1, *e1, *e2));
+            }
+            if let Ok(c) = code.get(*e2) {
+                lapis.quiet_eval(&replace(&c.1, *e2, *e1));
             }
         }
     } else {
         for CollisionStarted(e1, e2) in started.read() {
-            for e in [e1, e2] {
-                let c = code.get(*e).unwrap();
-                if c.0.contains('$') {
-                    let code = search_and_replace(&c.0, *e);
-                    lapis.eval(&code);
-                } else {
-                    lapis.eval(&c.0);
-                }
-            }
+            let c = code.get(*e1).unwrap();
+            lapis.eval(&replace(&c.0, *e1, *e2));
+            let c = code.get(*e2).unwrap();
+            lapis.eval(&replace(&c.0, *e2, *e1));
         }
         for CollisionEnded(e1, e2) in ended.read() {
-            for e in [e1, e2] {
-                if let Ok(c) = code.get(*e) {
-                    if c.1.contains('$') {
-                        let code = search_and_replace(&c.1, *e);
-                        lapis.eval(&code);
-                    } else {
-                        lapis.eval(&c.1);
-                    }
-                }
+            if let Ok(c) = code.get(*e1) {
+                lapis.eval(&replace(&c.1, *e1, *e2));
+            }
+            if let Ok(c) = code.get(*e2) {
+                lapis.eval(&replace(&c.1, *e2, *e1));
             }
         }
     }
