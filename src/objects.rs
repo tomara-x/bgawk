@@ -21,7 +21,9 @@ impl Plugin for ObjectsPlugin {
         .add_systems(Update, eval_collisions)
         .add_systems(PostUpdate, sync_links)
         .add_systems(Update, update_tail)
-        .insert_resource(AttractionFactor(0.01));
+        .insert_resource(AttractionFactor(0.01))
+        .add_observer(set_observer)
+        .add_observer(insert_defaults);
     }
 }
 

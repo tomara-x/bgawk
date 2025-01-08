@@ -32,9 +32,7 @@ pub struct LapisPlugin;
 
 impl Plugin for LapisPlugin {
     fn build(&self, app: &mut App) {
-        app.insert_resource(LapisData::new())
-            .add_observer(set_observer)
-            .add_observer(insert_defaults);
+        app.insert_resource(LapisData::new());
     }
 }
 
