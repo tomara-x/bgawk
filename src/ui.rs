@@ -488,19 +488,8 @@ tail (tail length in points)";
 
 const CODE_TOOLTIP: &str = "evaluated when this object starts/stops colliding with another\n
 these placeholders will be substituted:
-$x for this object's x position
-$y for y position
-$rx for x radius
-$ry for y radius
-$rot for rotation
-$vx for x velocity
-$vy for y velocity
-$va for angular velocity
-$vm for velocity magnitude (polar)
-$vp for velocity phase (polar)
-$mass
-$inertia
-$id for the entity id";
+$id for this entity's id
+$other for the other entity's id";
 
 const HELP_TEXT: &str = "- hold space and drag/scroll to pan/zoom the camera
 - hold the right mouse button while one object is selected
