@@ -86,38 +86,31 @@ fn method_entity(expr: &ExprMethodCall, lapis: &mut Lapis) -> Option<Entity> {
         return None;
     }
     let val = eval_float(expr.args.first()?, lapis);
+    let cmd = &mut lapis.commands;
     match expr.method.to_string().as_str() {
-        "x" => lapis.commands.trigger_targets(Property::X(val?), e),
-        "y" => lapis.commands.trigger_targets(Property::Y(val?), e),
-        "rx" => lapis.commands.trigger_targets(Property::Rx(val?), e),
-        "ry" => lapis.commands.trigger_targets(Property::Ry(val?), e),
-        "rot" => lapis.commands.trigger_targets(Property::Rot(val?), e),
-        "mass" => lapis.commands.trigger_targets(Property::Mass(val?), e),
-        "vx" => lapis.commands.trigger_targets(Property::Vx(val?), e),
-        "vy" => lapis.commands.trigger_targets(Property::Vy(val?), e),
-        "va" => lapis.commands.trigger_targets(Property::Va(val?), e),
-        "restitution" => lapis
-            .commands
-            .trigger_targets(Property::Restitution(val?), e),
-        "lindamp" => lapis.commands.trigger_targets(Property::LinDamp(val?), e),
-        "angdamp" => lapis.commands.trigger_targets(Property::AngDamp(val?), e),
-        "inertia" => lapis.commands.trigger_targets(Property::Inertia(val?), e),
-        "h" => lapis.commands.trigger_targets(Property::H(val?), e),
-        "s" => lapis.commands.trigger_targets(Property::S(val?), e),
-        "l" => lapis.commands.trigger_targets(Property::L(val?), e),
-        "a" => lapis.commands.trigger_targets(Property::A(val?), e),
-        "sides" => lapis
-            .commands
-            .trigger_targets(Property::Sides(val? as u32), e),
-        "cmx" => lapis.commands.trigger_targets(Property::Cmx(val?), e),
-        "cmy" => lapis.commands.trigger_targets(Property::Cmy(val?), e),
-        "friction" => lapis.commands.trigger_targets(Property::Friction(val?), e),
-        "tail" => lapis
-            .commands
-            .trigger_targets(Property::Tail(val? as usize), e),
-        "layer" => lapis
-            .commands
-            .trigger_targets(Property::Layer(val? as u32), e),
+        "x" => cmd.trigger_targets(Property::X(val?), e),
+        "y" => cmd.trigger_targets(Property::Y(val?), e),
+        "rx" => cmd.trigger_targets(Property::Rx(val?), e),
+        "ry" => cmd.trigger_targets(Property::Ry(val?), e),
+        "rot" => cmd.trigger_targets(Property::Rot(val?), e),
+        "mass" => cmd.trigger_targets(Property::Mass(val?), e),
+        "vx" => cmd.trigger_targets(Property::Vx(val?), e),
+        "vy" => cmd.trigger_targets(Property::Vy(val?), e),
+        "va" => cmd.trigger_targets(Property::Va(val?), e),
+        "restitution" => cmd.trigger_targets(Property::Restitution(val?), e),
+        "lindamp" => cmd.trigger_targets(Property::LinDamp(val?), e),
+        "angdamp" => cmd.trigger_targets(Property::AngDamp(val?), e),
+        "inertia" => cmd.trigger_targets(Property::Inertia(val?), e),
+        "h" => cmd.trigger_targets(Property::H(val?), e),
+        "s" => cmd.trigger_targets(Property::S(val?), e),
+        "l" => cmd.trigger_targets(Property::L(val?), e),
+        "a" => cmd.trigger_targets(Property::A(val?), e),
+        "sides" => cmd.trigger_targets(Property::Sides(val? as u32), e),
+        "cmx" => cmd.trigger_targets(Property::Cmx(val?), e),
+        "cmy" => cmd.trigger_targets(Property::Cmy(val?), e),
+        "friction" => cmd.trigger_targets(Property::Friction(val?), e),
+        "tail" => cmd.trigger_targets(Property::Tail(val? as usize), e),
+        "layer" => cmd.trigger_targets(Property::Layer(val? as u32), e),
         "dynamic" => {
             let b = eval_bool(expr.args.first()?, lapis)?;
             lapis.commands.trigger_targets(Property::Dynamic(b), e);
@@ -129,27 +122,21 @@ fn method_entity(expr: &ExprMethodCall, lapis: &mut Lapis) -> Option<Entity> {
         "links" => {
             if let Expr::Lit(expr) = expr.args.first()? {
                 if let Lit::Str(expr) = &expr.lit {
-                    lapis
-                        .commands
-                        .trigger_targets(Property::Links(expr.value()), e);
+                    cmd.trigger_targets(Property::Links(expr.value()), e);
                 }
             }
         }
         "code_i" => {
             if let Expr::Lit(expr) = expr.args.first()? {
                 if let Lit::Str(expr) = &expr.lit {
-                    lapis
-                        .commands
-                        .trigger_targets(Property::CodeI(expr.value()), e);
+                    cmd.trigger_targets(Property::CodeI(expr.value()), e);
                 }
             }
         }
         "code_f" => {
             if let Expr::Lit(expr) = expr.args.first()? {
                 if let Lit::Str(expr) = &expr.lit {
-                    lapis
-                        .commands
-                        .trigger_targets(Property::CodeF(expr.value()), e);
+                    cmd.trigger_targets(Property::CodeF(expr.value()), e);
                 }
             }
         }
