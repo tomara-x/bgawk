@@ -206,9 +206,8 @@ fn eval_collisions(
 }
 
 #[allow(clippy::type_complexity)]
-fn sync_links(links_query: Query<(Entity, Ref<Links>)>, mut lapis: Lapis) {
-    for (e, l) in links_query.iter() {
-        let links = &l.0;
+fn sync_links(links_query: Query<(Entity, &Links)>, mut lapis: Lapis) {
+    for (e, Links(links)) in links_query.iter() {
         for link in links.lines() {
             // links are in the form "property > var" or "property < var"
             let mut link = link.split_ascii_whitespace();
@@ -417,9 +416,6 @@ fn sync_links(links_query: Query<(Entity, Ref<Links>)>, mut lapis: Lapis) {
             } else if dir == "<" || dir == "=" {
                 if let Ok(expr) = parse_str::<Expr>(var) {
                     if let Some(f) = eval_float(&expr, &lapis) {
-                        if !l.is_changed() {
-                            continue;
-                        }
                         let cmd = &mut lapis.commands;
                         match property {
                             "x" => cmd.trigger_targets(Property::X(f), e),
