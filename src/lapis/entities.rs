@@ -1,5 +1,4 @@
-use crate::{interaction::*, lapis::*, objects::*};
-use avian2d::prelude::*;
+use crate::{interaction::*, lapis::*};
 use bevy::sprite::AlphaMode2d;
 
 //TODO joints not spawned programmatically are not accessible
@@ -7,12 +6,20 @@ use bevy::sprite::AlphaMode2d;
 //      we can avoid this need by making join take coordinates instead and
 //      so it becomes a copy of the spawn_joint system
 
-pub fn eval_entity(expr: &Expr, lapis: &Lapis, commands: &mut Commands) -> Option<Entity> {
+pub fn eval_entity(expr: &Expr, lapis: &mut Lapis) -> Option<Entity> {
     match expr {
-        Expr::Call(expr) => call_entity(expr, lapis, commands),
+        Expr::Call(expr) => call_entity(expr, lapis),
         Expr::Lit(expr) => lit_entity(&expr.lit),
         Expr::Path(expr) => path_entity(&expr.path, lapis),
-        Expr::MethodCall(expr) => method_entity(expr, lapis, commands),
+        Expr::MethodCall(expr) => method_entity(expr, lapis),
+        _ => None,
+    }
+}
+
+pub fn path_lit_entity(expr: &Expr, lapis: &Lapis) -> Option<Entity> {
+    match expr {
+        Expr::Lit(expr) => lit_entity(&expr.lit),
+        Expr::Path(expr) => path_entity(&expr.path, lapis),
         _ => None,
     }
 }
@@ -29,10 +36,10 @@ fn path_entity(expr: &Path, lapis: &Lapis) -> Option<Entity> {
     if k == "Entity" && expr.segments.get(1)?.ident == "PLACEHOLDER" {
         return Some(Entity::PLACEHOLDER);
     }
-    lapis.entitymap.get(&k).copied()
+    lapis.data.entitymap.get(&k).copied()
 }
 
-fn call_entity(expr: &ExprCall, lapis: &Lapis, commands: &mut Commands) -> Option<Entity> {
+fn call_entity(expr: &ExprCall, lapis: &mut Lapis) -> Option<Entity> {
     let func = nth_path_ident(&expr.func, 0)?;
     match func.as_str() {
         "Entity" => {
@@ -49,19 +56,19 @@ fn call_entity(expr: &ExprCall, lapis: &Lapis, commands: &mut Commands) -> Optio
         }
         "spawn" => {
             let r = eval_float(expr.args.first()?, lapis)?;
-            let e = commands.spawn_empty().id();
-            commands.trigger_targets(InsertDefaults(r), e);
+            let e = lapis.commands.spawn_empty().id();
+            lapis.commands.trigger_targets(InsertDefaults(r), e);
             Some(e)
         }
         "joint" => {
-            let e1 = eval_entity(expr.args.first()?, lapis, commands)?;
-            let e2 = eval_entity(expr.args.get(1)?, lapis, commands)?;
+            let e1 = eval_entity(expr.args.first()?, lapis)?;
+            let e2 = eval_entity(expr.args.get(1)?, lapis)?;
             let joint_type = nth_path_ident(expr.args.get(2)?, 0)?;
             match joint_type.as_str() {
-                "fixed" => Some(commands.spawn(FixedJoint::new(e1, e2)).id()),
-                "distance" => Some(commands.spawn(DistanceJoint::new(e1, e2)).id()),
-                "prismatic" => Some(commands.spawn(PrismaticJoint::new(e1, e2)).id()),
-                "revolute" => Some(commands.spawn(RevoluteJoint::new(e1, e2)).id()),
+                "fixed" => Some(lapis.commands.spawn(FixedJoint::new(e1, e2)).id()),
+                "distance" => Some(lapis.commands.spawn(DistanceJoint::new(e1, e2)).id()),
+                "prismatic" => Some(lapis.commands.spawn(PrismaticJoint::new(e1, e2)).id()),
+                "revolute" => Some(lapis.commands.spawn(RevoluteJoint::new(e1, e2)).id()),
                 _ => None,
             }
             // TODO: trigger to read the joint settings resource like spawn does
@@ -70,66 +77,80 @@ fn call_entity(expr: &ExprCall, lapis: &Lapis, commands: &mut Commands) -> Optio
     }
 }
 
-fn method_entity(expr: &ExprMethodCall, lapis: &Lapis, commands: &mut Commands) -> Option<Entity> {
-    let e = eval_entity(&expr.receiver, lapis, commands)?;
+fn method_entity(expr: &ExprMethodCall, lapis: &mut Lapis) -> Option<Entity> {
+    let e = eval_entity(&expr.receiver, lapis)?;
     // this being here allows some nonsense like
     // let var = entity.despawn();
     // which doesn't assign anything to var but does despawn entity
     if expr.method == "despawn" {
-        commands.get_entity(e)?.try_despawn();
+        lapis.commands.get_entity(e)?.try_despawn();
         return None;
     }
     let val = eval_float(expr.args.first()?, lapis);
     match expr.method.to_string().as_str() {
-        "x" => commands.trigger_targets(Property::X(val?), e),
-        "y" => commands.trigger_targets(Property::Y(val?), e),
-        "rx" => commands.trigger_targets(Property::Rx(val?), e),
-        "ry" => commands.trigger_targets(Property::Ry(val?), e),
-        "rot" => commands.trigger_targets(Property::Rot(val?), e),
-        "mass" => commands.trigger_targets(Property::Mass(val?), e),
-        "vx" => commands.trigger_targets(Property::Vx(val?), e),
-        "vy" => commands.trigger_targets(Property::Vy(val?), e),
-        "va" => commands.trigger_targets(Property::Va(val?), e),
-        "restitution" => commands.trigger_targets(Property::Restitution(val?), e),
-        "lindamp" => commands.trigger_targets(Property::LinDamp(val?), e),
-        "angdamp" => commands.trigger_targets(Property::AngDamp(val?), e),
-        "inertia" => commands.trigger_targets(Property::Inertia(val?), e),
-        "h" => commands.trigger_targets(Property::H(val?), e),
-        "s" => commands.trigger_targets(Property::S(val?), e),
-        "l" => commands.trigger_targets(Property::L(val?), e),
-        "a" => commands.trigger_targets(Property::A(val?), e),
-        "sides" => commands.trigger_targets(Property::Sides(val? as u32), e),
-        "cmx" => commands.trigger_targets(Property::Cmx(val?), e),
-        "cmy" => commands.trigger_targets(Property::Cmy(val?), e),
-        "friction" => commands.trigger_targets(Property::Friction(val?), e),
-        "tail" => commands.trigger_targets(Property::Tail(val? as usize), e),
-        "layer" => commands.trigger_targets(Property::Layer(val? as u32), e),
+        "x" => lapis.commands.trigger_targets(Property::X(val?), e),
+        "y" => lapis.commands.trigger_targets(Property::Y(val?), e),
+        "rx" => lapis.commands.trigger_targets(Property::Rx(val?), e),
+        "ry" => lapis.commands.trigger_targets(Property::Ry(val?), e),
+        "rot" => lapis.commands.trigger_targets(Property::Rot(val?), e),
+        "mass" => lapis.commands.trigger_targets(Property::Mass(val?), e),
+        "vx" => lapis.commands.trigger_targets(Property::Vx(val?), e),
+        "vy" => lapis.commands.trigger_targets(Property::Vy(val?), e),
+        "va" => lapis.commands.trigger_targets(Property::Va(val?), e),
+        "restitution" => lapis
+            .commands
+            .trigger_targets(Property::Restitution(val?), e),
+        "lindamp" => lapis.commands.trigger_targets(Property::LinDamp(val?), e),
+        "angdamp" => lapis.commands.trigger_targets(Property::AngDamp(val?), e),
+        "inertia" => lapis.commands.trigger_targets(Property::Inertia(val?), e),
+        "h" => lapis.commands.trigger_targets(Property::H(val?), e),
+        "s" => lapis.commands.trigger_targets(Property::S(val?), e),
+        "l" => lapis.commands.trigger_targets(Property::L(val?), e),
+        "a" => lapis.commands.trigger_targets(Property::A(val?), e),
+        "sides" => lapis
+            .commands
+            .trigger_targets(Property::Sides(val? as u32), e),
+        "cmx" => lapis.commands.trigger_targets(Property::Cmx(val?), e),
+        "cmy" => lapis.commands.trigger_targets(Property::Cmy(val?), e),
+        "friction" => lapis.commands.trigger_targets(Property::Friction(val?), e),
+        "tail" => lapis
+            .commands
+            .trigger_targets(Property::Tail(val? as usize), e),
+        "layer" => lapis
+            .commands
+            .trigger_targets(Property::Layer(val? as u32), e),
         "dynamic" => {
             let b = eval_bool(expr.args.first()?, lapis)?;
-            commands.trigger_targets(Property::Dynamic(b), e);
+            lapis.commands.trigger_targets(Property::Dynamic(b), e);
         }
         "sensor" => {
             let b = eval_bool(expr.args.first()?, lapis)?;
-            commands.trigger_targets(Property::Sensor(b), e);
+            lapis.commands.trigger_targets(Property::Sensor(b), e);
         }
         "links" => {
             if let Expr::Lit(expr) = expr.args.first()? {
                 if let Lit::Str(expr) = &expr.lit {
-                    commands.trigger_targets(Property::Links(expr.value()), e);
+                    lapis
+                        .commands
+                        .trigger_targets(Property::Links(expr.value()), e);
                 }
             }
         }
         "code_i" => {
             if let Expr::Lit(expr) = expr.args.first()? {
                 if let Lit::Str(expr) = &expr.lit {
-                    commands.trigger_targets(Property::CodeI(expr.value()), e);
+                    lapis
+                        .commands
+                        .trigger_targets(Property::CodeI(expr.value()), e);
                 }
             }
         }
         "code_f" => {
             if let Expr::Lit(expr) = expr.args.first()? {
                 if let Lit::Str(expr) = &expr.lit {
-                    commands.trigger_targets(Property::CodeF(expr.value()), e);
+                    lapis
+                        .commands
+                        .trigger_targets(Property::CodeF(expr.value()), e);
                 }
             }
         }

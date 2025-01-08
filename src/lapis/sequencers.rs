@@ -27,7 +27,7 @@ pub fn seq_methods(expr: &ExprMethodCall, lapis: &mut Lapis) -> Option<()> {
             let end_time = eval_float(expr.args.get(1)?, lapis)? as f64;
             let fade_out = eval_float(expr.args.get(2)?, lapis)? as f64;
             let k = nth_path_ident(&expr.receiver, 0)?;
-            let seq = &mut lapis.seqmap.get_mut(&k)?;
+            let seq = &mut lapis.data.seqmap.get_mut(&k)?;
             seq.edit(id, end_time, fade_out);
         }
         "edit_relative" => {
@@ -35,19 +35,19 @@ pub fn seq_methods(expr: &ExprMethodCall, lapis: &mut Lapis) -> Option<()> {
             let end_time = eval_float(expr.args.get(1)?, lapis)? as f64;
             let fade_out = eval_float(expr.args.get(2)?, lapis)? as f64;
             let k = nth_path_ident(&expr.receiver, 0)?;
-            let seq = &mut lapis.seqmap.get_mut(&k)?;
+            let seq = &mut lapis.data.seqmap.get_mut(&k)?;
             seq.edit_relative(id, end_time, fade_out);
         }
         "set_sample_rate" => {
             let arg = expr.args.first()?;
             let sr = eval_float(arg, lapis)? as f64;
             let k = nth_path_ident(&expr.receiver, 0)?;
-            let seq = &mut lapis.seqmap.get_mut(&k)?;
+            let seq = &mut lapis.data.seqmap.get_mut(&k)?;
             seq.set_sample_rate(sr);
         }
         "reset" => {
             let k = nth_path_ident(&expr.receiver, 0)?;
-            let seq = &mut lapis.seqmap.get_mut(&k)?;
+            let seq = &mut lapis.data.seqmap.get_mut(&k)?;
             seq.reset();
         }
         _ => {}
@@ -59,7 +59,7 @@ pub fn path_seq<'a>(expr: &'a Expr, lapis: &'a Lapis) -> Option<&'a Sequencer> {
     match expr {
         Expr::Path(expr) => {
             let k = expr.path.segments.first()?.ident.to_string();
-            lapis.seqmap.get(&k)
+            lapis.data.seqmap.get(&k)
         }
         _ => None,
     }
@@ -76,7 +76,7 @@ pub fn method_eventid(expr: &Expr, lapis: &mut Lapis) -> Option<EventId> {
                 let fade_out = eval_float(expr.args.get(4)?, lapis)? as f64;
                 let unit = Box::new(eval_net(expr.args.get(5)?, lapis)?);
                 let k = nth_path_ident(&expr.receiver, 0)?;
-                let seq = &mut lapis.seqmap.get_mut(&k)?;
+                let seq = &mut lapis.data.seqmap.get_mut(&k)?;
                 let duration = end_time - start_time;
                 if unit.inputs() != 0
                     || unit.outputs() != seq.outputs()
@@ -95,7 +95,7 @@ pub fn method_eventid(expr: &Expr, lapis: &mut Lapis) -> Option<EventId> {
                 let fade_out = eval_float(expr.args.get(4)?, lapis)? as f64;
                 let unit = Box::new(eval_net(expr.args.get(5)?, lapis)?);
                 let k = nth_path_ident(&expr.receiver, 0)?;
-                let seq = &mut lapis.seqmap.get_mut(&k)?;
+                let seq = &mut lapis.data.seqmap.get_mut(&k)?;
                 let duration = end_time - start_time;
                 if unit.inputs() != 0
                     || unit.outputs() != seq.outputs()
@@ -114,7 +114,7 @@ pub fn method_eventid(expr: &Expr, lapis: &mut Lapis) -> Option<EventId> {
                 let fade_out = eval_float(expr.args.get(4)?, lapis)? as f64;
                 let unit = Box::new(eval_net(expr.args.get(5)?, lapis)?);
                 let k = nth_path_ident(&expr.receiver, 0)?;
-                let seq = &mut lapis.seqmap.get_mut(&k)?;
+                let seq = &mut lapis.data.seqmap.get_mut(&k)?;
                 if unit.inputs() != 0
                     || unit.outputs() != seq.outputs()
                     || fade_in > duration
@@ -132,5 +132,5 @@ pub fn method_eventid(expr: &Expr, lapis: &mut Lapis) -> Option<EventId> {
 
 pub fn path_eventid(expr: &Expr, lapis: &Lapis) -> Option<EventId> {
     let k = nth_path_ident(expr, 0)?;
-    lapis.eventmap.get(&k).copied()
+    lapis.data.eventmap.get(&k).copied()
 }

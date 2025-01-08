@@ -11,7 +11,7 @@ pub fn eval_shared(expr: &Expr, lapis: &Lapis) -> Option<Shared> {
 
 fn path_shared(expr: &Path, lapis: &Lapis) -> Option<Shared> {
     let k = expr.segments.first()?.ident.to_string();
-    lapis.smap.get(&k).cloned()
+    lapis.data.smap.get(&k).cloned()
 }
 
 fn call_shared(expr: &ExprCall, lapis: &Lapis) -> Option<Shared> {
@@ -30,7 +30,7 @@ pub fn shared_methods(expr: &ExprMethodCall, lapis: &mut Lapis) {
         if let Some(arg) = expr.args.first() {
             if let Some(value) = eval_float(arg, lapis) {
                 if let Some(k) = nth_path_ident(&expr.receiver, 0) {
-                    if let Some(shared) = &mut lapis.smap.get_mut(&k) {
+                    if let Some(shared) = &mut lapis.data.smap.get_mut(&k) {
                         shared.set(value);
                     }
                 }

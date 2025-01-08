@@ -7,8 +7,22 @@ pub fn eval_bool(expr: &Expr, lapis: &Lapis) -> Option<bool> {
         Expr::Paren(expr) => eval_bool(&expr.expr, lapis),
         Expr::Path(expr) => path_bool(&expr.path, lapis),
         Expr::Unary(expr) => unary_bool(expr, lapis),
+        Expr::Field(expr) => field_bool(expr, lapis),
         _ => None,
     }
+}
+
+fn field_bool(expr: &ExprField, lapis: &Lapis) -> Option<bool> {
+    let e = path_lit_entity(&expr.base, lapis)?;
+    if let Member::Named(ident) = &expr.member {
+        if ident == "sensor" {
+            return Some(lapis.sensor_query.contains(e));
+        } else if ident == "dynamic" {
+            let body = lapis.body_query.get(e).ok()?;
+            return Some(*body == RigidBody::Dynamic);
+        }
+    }
+    None
 }
 
 fn lit_bool(expr: &Lit) -> Option<bool> {
@@ -46,7 +60,7 @@ fn bin_expr_bool(expr: &ExprBinary, lapis: &Lapis) -> Option<bool> {
 
 fn path_bool(expr: &Path, lapis: &Lapis) -> Option<bool> {
     let k = expr.segments.first()?.ident.to_string();
-    lapis.bmap.get(&k).copied()
+    lapis.data.bmap.get(&k).copied()
 }
 
 fn unary_bool(expr: &ExprUnary, lapis: &Lapis) -> Option<bool> {

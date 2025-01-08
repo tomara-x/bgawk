@@ -10,21 +10,83 @@ pub fn eval_float(expr: &Expr, lapis: &Lapis) -> Option<f32> {
         Expr::Unary(expr) => unary_float(expr, lapis),
         Expr::MethodCall(expr) => method_float(expr, lapis),
         Expr::Index(expr) => index_float(expr, lapis),
+        Expr::Field(expr) => field_float(expr, lapis),
         _ => None,
     }
+}
+
+fn field_float(expr: &ExprField, lapis: &Lapis) -> Option<f32> {
+    let e = path_lit_entity(&expr.base, lapis)?;
+    if let Member::Named(ident) = &expr.member {
+        return match ident.to_string().as_str() {
+            "x" => Some(lapis.trans_query.get(e).ok()?.translation.x),
+            "y" => Some(lapis.trans_query.get(e).ok()?.translation.y),
+            "rx" => Some(lapis.trans_query.get(e).ok()?.scale.x),
+            "ry" => Some(lapis.trans_query.get(e).ok()?.scale.x),
+            "rot" => Some(
+                lapis
+                    .trans_query
+                    .get(e)
+                    .ok()?
+                    .rotation
+                    .to_euler(EulerRot::XYZ)
+                    .2,
+            ),
+            "mass" => Some(lapis.mass_query.get(e).ok()?.0),
+            "vx" => Some(lapis.lin_velocity_query.get(e).ok()?.x),
+            "vy" => Some(lapis.lin_velocity_query.get(e).ok()?.y),
+            "va" => Some(lapis.ang_velocity_query.get(e).ok()?.0),
+            "restitution" => Some(lapis.restitution_query.get(e).ok()?.coefficient),
+            "lindamp" => Some(lapis.lin_damp_query.get(e).ok()?.0),
+            "angdamp" => Some(lapis.ang_damp_query.get(e).ok()?.0),
+            "inertia" => Some(lapis.inertia_query.get(e).ok()?.0),
+            "h" => {
+                let mat_id = lapis.material_ids.get(e).ok()?;
+                let mat = lapis.materials.get(mat_id)?;
+                let hsla: Hsla = mat.color.into();
+                Some(hsla.hue)
+            }
+            "s" => {
+                let mat_id = lapis.material_ids.get(e).ok()?;
+                let mat = lapis.materials.get(mat_id)?;
+                let hsla: Hsla = mat.color.into();
+                Some(hsla.saturation)
+            }
+            "l" => {
+                let mat_id = lapis.material_ids.get(e).ok()?;
+                let mat = lapis.materials.get(mat_id)?;
+                let hsla: Hsla = mat.color.into();
+                Some(hsla.lightness)
+            }
+            "a" => {
+                let mat_id = lapis.material_ids.get(e).ok()?;
+                let mat = lapis.materials.get(mat_id)?;
+                let hsla: Hsla = mat.color.into();
+                Some(hsla.alpha)
+            }
+            "sides" => Some(lapis.sides_query.get(e).ok()?.0 as f32),
+            "cmx" => Some(lapis.cm_query.get(e).ok()?.x),
+            "cmy" => Some(lapis.cm_query.get(e).ok()?.y),
+            "friction" => Some(lapis.friction_query.get(e).ok()?.dynamic_coefficient),
+            "tail" => Some(lapis.tail_query.get(e).ok()?.len as f32),
+            "layer" => Some(lapis.layer_query.get(e).ok()?.memberships.0 as f32),
+            _ => None,
+        };
+    }
+    None
 }
 
 fn index_float(expr: &ExprIndex, lapis: &Lapis) -> Option<f32> {
     let k = nth_path_ident(&expr.expr, 0)?;
     let index = eval_usize(&expr.index, lapis)?;
-    lapis.vmap.get(&k)?.get(index).copied()
+    lapis.data.vmap.get(&k)?.get(index).copied()
 }
 
 fn method_float(expr: &ExprMethodCall, lapis: &Lapis) -> Option<f32> {
     match expr.method.to_string().as_str() {
         "value" => {
             let k = nth_path_ident(&expr.receiver, 0)?;
-            let shared = &mut lapis.smap.get(&k)?;
+            let shared = &mut lapis.data.smap.get(&k)?;
             Some(shared.value())
         }
         "floor" => Some(eval_float(&expr.receiver, lapis)?.floor()),
@@ -98,7 +160,7 @@ fn method_float(expr: &ExprMethodCall, lapis: &Lapis) -> Option<f32> {
         }
         "at" => {
             let k = nth_path_ident(&expr.receiver, 0)?;
-            let wave = lapis.wmap.get(&k)?;
+            let wave = lapis.data.wmap.get(&k)?;
             let arg0 = expr.args.first()?;
             let arg1 = expr.args.get(1)?;
             let chan = eval_usize(arg0, lapis)?;
@@ -111,46 +173,46 @@ fn method_float(expr: &ExprMethodCall, lapis: &Lapis) -> Option<f32> {
         }
         "channels" => {
             let k = nth_path_ident(&expr.receiver, 0)?;
-            let wave = lapis.wmap.get(&k)?;
+            let wave = lapis.data.wmap.get(&k)?;
             Some(wave.channels() as f32)
         }
         "len" | "length" => {
             let k = nth_path_ident(&expr.receiver, 0)?;
-            if let Some(wave) = lapis.wmap.get(&k) {
+            if let Some(wave) = lapis.data.wmap.get(&k) {
                 Some(wave.len() as f32)
             } else {
-                let vec = lapis.vmap.get(&k)?;
+                let vec = lapis.data.vmap.get(&k)?;
                 Some(vec.len() as f32)
             }
         }
         "duration" => {
             let k = nth_path_ident(&expr.receiver, 0)?;
-            let wave = lapis.wmap.get(&k)?;
+            let wave = lapis.data.wmap.get(&k)?;
             Some(wave.duration() as f32)
         }
         "amplitude" => {
             let k = nth_path_ident(&expr.receiver, 0)?;
-            let wave = lapis.wmap.get(&k)?;
+            let wave = lapis.data.wmap.get(&k)?;
             Some(wave.amplitude())
         }
         "size" => {
             let k = nth_path_ident(&expr.receiver, 0)?;
-            let net = lapis.gmap.get(&k)?;
+            let net = lapis.data.gmap.get(&k)?;
             Some(net.size() as f32)
         }
         "inputs" => {
             let k = nth_path_ident(&expr.receiver, 0)?;
-            let net = lapis.gmap.get(&k)?;
+            let net = lapis.data.gmap.get(&k)?;
             Some(net.inputs() as f32)
         }
         "outputs" => {
             let k = nth_path_ident(&expr.receiver, 0)?;
-            let net = lapis.gmap.get(&k)?;
+            let net = lapis.data.gmap.get(&k)?;
             Some(net.outputs() as f32)
         }
         "inputs_in" => {
             let k = nth_path_ident(&expr.receiver, 0)?;
-            let net = lapis.gmap.get(&k)?;
+            let net = lapis.data.gmap.get(&k)?;
             let id = path_nodeid(expr.args.first()?, lapis)?;
             if net.contains(id) {
                 Some(net.inputs_in(id) as f32)
@@ -160,7 +222,7 @@ fn method_float(expr: &ExprMethodCall, lapis: &Lapis) -> Option<f32> {
         }
         "outputs_in" => {
             let k = nth_path_ident(&expr.receiver, 0)?;
-            let net = lapis.gmap.get(&k)?;
+            let net = lapis.data.gmap.get(&k)?;
             let id = path_nodeid(expr.args.first()?, lapis)?;
             if net.contains(id) {
                 Some(net.outputs_in(id) as f32)
@@ -170,18 +232,18 @@ fn method_float(expr: &ExprMethodCall, lapis: &Lapis) -> Option<f32> {
         }
         "first" => {
             let k = nth_path_ident(&expr.receiver, 0)?;
-            let vec = &mut lapis.vmap.get(&k)?;
+            let vec = &mut lapis.data.vmap.get(&k)?;
             vec.first().copied()
         }
         "last" => {
             let k = nth_path_ident(&expr.receiver, 0)?;
-            let vec = &mut lapis.vmap.get(&k)?;
+            let vec = &mut lapis.data.vmap.get(&k)?;
             vec.last().copied()
         }
         "get" => {
             let index = eval_usize(expr.args.first()?, lapis)?;
             let k = nth_path_ident(&expr.receiver, 0)?;
-            let vec = &mut lapis.vmap.get(&k)?;
+            let vec = &mut lapis.data.vmap.get(&k)?;
             vec.get(index).copied()
         }
         _ => None,
@@ -214,7 +276,7 @@ fn path_float(expr: &Path, lapis: &Lapis) -> Option<f32> {
     if let Some(c) = constant_float(&k) {
         return Some(c);
     }
-    lapis.fmap.get(&k).copied()
+    lapis.data.fmap.get(&k).copied()
 }
 
 fn unary_float(expr: &ExprUnary, lapis: &Lapis) -> Option<f32> {
@@ -368,11 +430,11 @@ pub fn float_bin_assign(expr: &ExprBinary, lapis: &mut Lapis) -> Option<()> {
     let right = eval_float(&expr.right, lapis)?;
     let k = nth_path_ident(&expr.left, 0)?;
     match expr.op {
-        BinOp::AddAssign(_) => *lapis.fmap.get_mut(&k)? += right,
-        BinOp::SubAssign(_) => *lapis.fmap.get_mut(&k)? -= right,
-        BinOp::MulAssign(_) => *lapis.fmap.get_mut(&k)? *= right,
-        BinOp::DivAssign(_) => *lapis.fmap.get_mut(&k)? /= right,
-        BinOp::RemAssign(_) => *lapis.fmap.get_mut(&k)? %= right,
+        BinOp::AddAssign(_) => *lapis.data.fmap.get_mut(&k)? += right,
+        BinOp::SubAssign(_) => *lapis.data.fmap.get_mut(&k)? -= right,
+        BinOp::MulAssign(_) => *lapis.data.fmap.get_mut(&k)? *= right,
+        BinOp::DivAssign(_) => *lapis.data.fmap.get_mut(&k)? /= right,
+        BinOp::RemAssign(_) => *lapis.data.fmap.get_mut(&k)? %= right,
         _ => {}
     }
     None

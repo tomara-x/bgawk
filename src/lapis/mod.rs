@@ -1,4 +1,6 @@
-use bevy::prelude::*;
+use crate::objects::*;
+use avian2d::prelude::*;
+use bevy::{ecs::system::SystemParam, prelude::*};
 use cpal::{
     traits::{DeviceTrait, HostTrait, StreamTrait},
     FromSample, SizedSample,
@@ -30,14 +32,14 @@ pub struct LapisPlugin;
 
 impl Plugin for LapisPlugin {
     fn build(&self, app: &mut App) {
-        app.insert_resource(Lapis::new())
+        app.insert_resource(LapisData::new())
             .add_observer(set_observer)
             .add_observer(insert_defaults);
     }
 }
 
 #[derive(Resource)]
-pub struct Lapis {
+pub struct LapisData {
     pub input: String,
     pub buffer: String,
     pub fmap: HashMap<String, f32>,
@@ -60,14 +62,14 @@ pub struct Lapis {
     pub help: bool,
 }
 
-impl Lapis {
+impl LapisData {
     pub fn new() -> Self {
         let (slot, slot_back) = Slot::new(Box::new(dc(0.) | dc(0.)));
         let (ls, lr) = bounded(4096);
         let (rs, rr) = bounded(4096);
         default_out_device(slot_back);
         default_in_device(ls, rs);
-        Lapis {
+        LapisData {
             input: String::new(),
             buffer: String::new(),
             fmap: HashMap::new(),
@@ -90,98 +92,125 @@ impl Lapis {
             help: false,
         }
     }
+}
+
+#[derive(SystemParam)]
+pub struct Lapis<'w, 's> {
+    pub data: ResMut<'w, LapisData>,
+    pub commands: Commands<'w, 's>,
+    pub trans_query: Query<'w, 's, &'static Transform>,
+    pub mass_query: Query<'w, 's, &'static Mass>,
+    pub lin_velocity_query: Query<'w, 's, &'static LinearVelocity>,
+    pub ang_velocity_query: Query<'w, 's, &'static AngularVelocity>,
+    pub restitution_query: Query<'w, 's, &'static Restitution>,
+    pub lin_damp_query: Query<'w, 's, &'static LinearDamping>,
+    pub ang_damp_query: Query<'w, 's, &'static AngularDamping>,
+    pub inertia_query: Query<'w, 's, &'static AngularInertia>,
+    pub sides_query: Query<'w, 's, &'static Sides>,
+    pub material_ids: Query<'w, 's, &'static MeshMaterial2d<ColorMaterial>>,
+    pub materials: Res<'w, Assets<ColorMaterial>>,
+    pub cm_query: Query<'w, 's, &'static CenterOfMass>,
+    pub friction_query: Query<'w, 's, &'static Friction>,
+    pub tail_query: Query<'w, 's, &'static Tail>,
+    pub layer_query: Query<'w, 's, &'static CollisionLayers>,
+    pub body_query: Query<'w, 's, &'static RigidBody>,
+    pub sensor_query: Query<'w, 's, &'static Sensor>,
+}
+
+impl Lapis<'_, '_> {
     pub fn drop(&mut self, k: &String) {
-        self.fmap.remove(k);
-        self.vmap.remove(k);
-        self.gmap.remove(k);
-        self.idmap.remove(k);
-        self.bmap.remove(k);
-        self.smap.remove(k);
-        self.wmap.remove(k);
-        self.seqmap.remove(k);
-        self.eventmap.remove(k);
-        self.srcmap.remove(k);
-        self.entitymap.remove(k);
+        self.data.fmap.remove(k);
+        self.data.vmap.remove(k);
+        self.data.gmap.remove(k);
+        self.data.idmap.remove(k);
+        self.data.bmap.remove(k);
+        self.data.smap.remove(k);
+        self.data.wmap.remove(k);
+        self.data.seqmap.remove(k);
+        self.data.eventmap.remove(k);
+        self.data.srcmap.remove(k);
+        self.data.entitymap.remove(k);
     }
-    pub fn eval(&mut self, input: &str, commands: &mut Commands) {
+    pub fn eval(&mut self, input: &str) {
         if !input.is_empty() {
-            self.buffer.push('\n');
-            self.buffer.push_str(input);
+            self.data.buffer.push('\n');
+            self.data.buffer.push_str(input);
             match parse_str::<Stmt>(&format!("{{{}}}", input)) {
                 Ok(stmt) => {
-                    eval_stmt(stmt, self, false, commands);
+                    eval_stmt(stmt, self, false);
                 }
                 Err(err) => {
-                    self.buffer.push_str(&format!("\n// error: {}", err));
+                    self.data.buffer.push_str(&format!("\n// error: {}", err));
                 }
             }
         }
     }
-    pub fn eval_input(&mut self, commands: &mut Commands) {
-        if !self.input.is_empty() {
-            match parse_str::<Stmt>(&format!("{{{}}}", self.input)) {
+    pub fn eval_input(&mut self) {
+        if !self.data.input.is_empty() {
+            let input = &std::mem::take(&mut self.data.input);
+            match parse_str::<Stmt>(&format!("{{{}}}", input)) {
                 Ok(stmt) => {
-                    self.buffer.push('\n');
-                    self.buffer.push_str(&std::mem::take(&mut self.input));
-                    eval_stmt(stmt, self, false, commands);
+                    self.data.buffer.push('\n');
+                    self.data.buffer.push_str(input);
+                    eval_stmt(stmt, self, false);
                 }
                 Err(err) => {
-                    self.buffer.push_str(&format!("\n// error: {}", err));
+                    self.data.buffer.push_str(&format!("\n// error: {}", err));
                 }
             }
         }
     }
-    pub fn quiet_eval(&mut self, input: &str, commands: &mut Commands) {
+    pub fn quiet_eval(&mut self, input: &str) {
         if let Ok(stmt) = parse_str::<Stmt>(&format!("{{{}}}", input)) {
-            eval_stmt(stmt, self, true, commands);
+            eval_stmt(stmt, self, true);
         }
     }
 }
 
 #[allow(clippy::map_entry)]
-fn eval_stmt(s: Stmt, lapis: &mut Lapis, quiet: bool, commands: &mut Commands) {
+fn eval_stmt(s: Stmt, lapis: &mut Lapis, quiet: bool) {
     match s {
         Stmt::Local(expr) => {
             if let Some(k) = pat_ident(&expr.pat) {
                 if let Some(expr) = expr.init {
                     if let Some(v) = eval_float(&expr.expr, lapis) {
                         lapis.drop(&k);
-                        lapis.fmap.insert(k, v);
+                        lapis.data.fmap.insert(k, v);
                     } else if let Some(v) = eval_net(&expr.expr, lapis) {
                         lapis.drop(&k);
-                        lapis.gmap.insert(k, v);
+                        lapis.data.gmap.insert(k, v);
                     } else if let Some(arr) = eval_vec(&expr.expr, lapis) {
                         lapis.drop(&k);
-                        lapis.vmap.insert(k, arr);
+                        lapis.data.vmap.insert(k, arr);
                     } else if let Some(id) =
                         method_nodeid(&expr.expr, lapis).or(path_nodeid(&expr.expr, lapis))
                     {
                         lapis.drop(&k);
-                        lapis.idmap.insert(k, id);
+                        lapis.data.idmap.insert(k, id);
                     } else if let Some(b) = eval_bool(&expr.expr, lapis) {
                         lapis.drop(&k);
-                        lapis.bmap.insert(k, b);
+                        lapis.data.bmap.insert(k, b);
                     } else if let Some(s) = eval_shared(&expr.expr, lapis) {
                         lapis.drop(&k);
-                        lapis.smap.insert(k, s);
+                        lapis.data.smap.insert(k, s);
                     } else if let Some(w) = eval_wave(&expr.expr, lapis) {
                         lapis.drop(&k);
                         let wave = Arc::new(w);
-                        lapis.wmap.insert(k, wave);
+                        lapis.data.wmap.insert(k, wave);
                     } else if let Some(seq) = call_seq(&expr.expr, lapis) {
                         lapis.drop(&k);
-                        lapis.seqmap.insert(k, seq);
+                        lapis.data.seqmap.insert(k, seq);
                     } else if let Some(source) = eval_source(&expr.expr, lapis) {
                         lapis.drop(&k);
-                        lapis.srcmap.insert(k, source);
+                        lapis.data.srcmap.insert(k, source);
                     } else if let Some(event) =
                         method_eventid(&expr.expr, lapis).or(path_eventid(&expr.expr, lapis))
                     {
                         lapis.drop(&k);
-                        lapis.eventmap.insert(k, event);
-                    } else if let Some(entity) = eval_entity(&expr.expr, lapis, commands) {
+                        lapis.data.eventmap.insert(k, event);
+                    } else if let Some(entity) = eval_entity(&expr.expr, lapis) {
                         lapis.drop(&k);
-                        lapis.entitymap.insert(k, entity);
+                        lapis.data.entitymap.insert(k, entity);
                     }
                 }
             }
@@ -193,43 +222,43 @@ fn eval_stmt(s: Stmt, lapis: &mut Lapis, quiet: bool, commands: &mut Commands) {
                         return;
                     };
                     if let Some(f) = eval_float(&expr.right, lapis) {
-                        if let Some(var) = lapis.fmap.get_mut(&ident) {
+                        if let Some(var) = lapis.data.fmap.get_mut(&ident) {
                             *var = f;
                         }
-                    } else if lapis.gmap.contains_key(&ident) {
+                    } else if lapis.data.gmap.contains_key(&ident) {
                         if let Some(g) = eval_net(&expr.right, lapis) {
-                            lapis.gmap.insert(ident, g);
+                            lapis.data.gmap.insert(ident, g);
                         }
-                    } else if lapis.vmap.contains_key(&ident) {
+                    } else if lapis.data.vmap.contains_key(&ident) {
                         if let Some(a) = eval_vec(&expr.right, lapis) {
-                            lapis.vmap.insert(ident, a);
+                            lapis.data.vmap.insert(ident, a);
                         }
                     } else if let Some(id) =
                         method_nodeid(&expr.right, lapis).or(path_nodeid(&expr.right, lapis))
                     {
-                        if let Some(var) = lapis.idmap.get_mut(&ident) {
+                        if let Some(var) = lapis.data.idmap.get_mut(&ident) {
                             *var = id;
                         }
                     } else if let Some(b) = eval_bool(&expr.right, lapis) {
-                        if let Some(var) = lapis.bmap.get_mut(&ident) {
+                        if let Some(var) = lapis.data.bmap.get_mut(&ident) {
                             *var = b;
                         }
                     } else if let Some(s) = eval_shared(&expr.right, lapis) {
-                        if let Some(var) = lapis.smap.get_mut(&ident) {
+                        if let Some(var) = lapis.data.smap.get_mut(&ident) {
                             *var = s;
                         }
                     } else if let Some(s) = eval_source(&expr.right, lapis) {
-                        if let Some(var) = lapis.srcmap.get_mut(&ident) {
+                        if let Some(var) = lapis.data.srcmap.get_mut(&ident) {
                             *var = s;
                         }
                     } else if let Some(event) =
                         method_eventid(&expr.right, lapis).or(path_eventid(&expr.right, lapis))
                     {
-                        if let Some(var) = lapis.eventmap.get_mut(&ident) {
+                        if let Some(var) = lapis.data.eventmap.get_mut(&ident) {
                             *var = event;
                         }
-                    } else if let Some(entity) = eval_entity(&expr.right, lapis, commands) {
-                        if let Some(var) = lapis.entitymap.get_mut(&ident) {
+                    } else if let Some(entity) = eval_entity(&expr.right, lapis) {
+                        if let Some(var) = lapis.data.entitymap.get_mut(&ident) {
                             *var = entity;
                         }
                     }
@@ -238,7 +267,7 @@ fn eval_stmt(s: Stmt, lapis: &mut Lapis, quiet: bool, commands: &mut Commands) {
                     if let Some(k) = nth_path_ident(&left.expr, 0) {
                         if let Some(index) = eval_usize(&left.index, lapis) {
                             if let Some(right) = eval_float(&expr.right, lapis) {
-                                if let Some(vec) = lapis.vmap.get_mut(&k) {
+                                if let Some(vec) = lapis.data.vmap.get_mut(&k) {
                                     if let Some(v) = vec.get_mut(index) {
                                         *v = right;
                                     }
@@ -251,11 +280,11 @@ fn eval_stmt(s: Stmt, lapis: &mut Lapis, quiet: bool, commands: &mut Commands) {
                     if let Lit::Str(left) = left.lit {
                         if let Expr::Lit(right) = *expr.right {
                             if let Some(shortcut) = parse_shortcut(left.value()) {
-                                lapis.keys.retain(|x| x.0 != shortcut);
+                                lapis.data.keys.retain(|x| x.0 != shortcut);
                                 if let Lit::Str(right) = right.lit {
                                     let code = right.value();
                                     if !code.is_empty() {
-                                        lapis.keys.push((shortcut, code));
+                                        lapis.data.keys.push((shortcut, code));
                                     }
                                 }
                             }
@@ -270,26 +299,26 @@ fn eval_stmt(s: Stmt, lapis: &mut Lapis, quiet: bool, commands: &mut Commands) {
                 };
                 let bounds = range_bounds(&expr.expr, lapis);
                 let arr = eval_vec(&expr.expr, lapis);
-                let tmp = lapis.fmap.remove(&ident);
+                let tmp = lapis.data.fmap.remove(&ident);
                 if let Some((r0, r1)) = bounds {
                     for i in r0..r1 {
-                        lapis.fmap.insert(ident.clone(), i as f32);
+                        lapis.data.fmap.insert(ident.clone(), i as f32);
                         for stmt in &expr.body.stmts {
-                            eval_stmt(stmt.clone(), lapis, quiet, commands);
+                            eval_stmt(stmt.clone(), lapis, quiet);
                         }
                     }
                 } else if let Some(arr) = arr {
                     for i in arr {
-                        lapis.fmap.insert(ident.clone(), i);
+                        lapis.data.fmap.insert(ident.clone(), i);
                         for stmt in &expr.body.stmts {
-                            eval_stmt(stmt.clone(), lapis, quiet, commands);
+                            eval_stmt(stmt.clone(), lapis, quiet);
                         }
                     }
                 }
                 if let Some(old) = tmp {
-                    lapis.fmap.insert(ident, old);
+                    lapis.data.fmap.insert(ident, old);
                 } else {
-                    lapis.fmap.remove(&ident);
+                    lapis.data.fmap.remove(&ident);
                 }
             }
             Expr::If(expr) => {
@@ -300,61 +329,64 @@ fn eval_stmt(s: Stmt, lapis: &mut Lapis, quiet: bool, commands: &mut Commands) {
                             label: None,
                             block: expr.then_branch,
                         });
-                        eval_stmt(Stmt::Expr(expr, None), lapis, quiet, commands);
+                        eval_stmt(Stmt::Expr(expr, None), lapis, quiet);
                     } else if let Some((_, else_branch)) = expr.else_branch {
-                        eval_stmt(Stmt::Expr(*else_branch, None), lapis, quiet, commands);
+                        eval_stmt(Stmt::Expr(*else_branch, None), lapis, quiet);
                     }
                 }
             }
             Expr::Block(expr) => {
                 for stmt in expr.block.stmts {
-                    eval_stmt(stmt, lapis, quiet, commands);
+                    eval_stmt(stmt, lapis, quiet);
                 }
             }
             _ => {
                 if let Some(n) = eval_float(&expr, lapis) {
                     if !quiet {
-                        lapis.buffer.push_str(&format!("\n// {:?}", n));
+                        lapis.data.buffer.push_str(&format!("\n// {:?}", n));
                     }
                 } else if let Some(arr) = eval_vec(&expr, lapis) {
                     if !quiet {
-                        lapis.buffer.push_str(&format!("\n// {:?}", arr));
+                        lapis.data.buffer.push_str(&format!("\n// {:?}", arr));
                     }
                 } else if let Some(mut g) = eval_net_cloned(&expr, lapis) {
                     if !quiet {
                         let info = g.display().replace('\n', "\n// ");
-                        lapis.buffer.push_str(&format!("\n// {}", info));
+                        lapis.data.buffer.push_str(&format!("\n// {}", info));
                         lapis
+                            .data
                             .buffer
                             .push_str(&format!("Size           : {}", g.size()));
                     }
                 } else if let Some(id) = method_nodeid(&expr, lapis).or(path_nodeid(&expr, lapis)) {
                     if !quiet {
-                        lapis.buffer.push_str(&format!("\n// {:?}", id));
+                        lapis.data.buffer.push_str(&format!("\n// {:?}", id));
                     }
                 } else if let Some(b) = eval_bool(&expr, lapis) {
                     if !quiet {
-                        lapis.buffer.push_str(&format!("\n// {:?}", b));
+                        lapis.data.buffer.push_str(&format!("\n// {:?}", b));
                     }
                 } else if let Some(s) = eval_shared(&expr, lapis) {
                     if !quiet {
                         lapis
+                            .data
                             .buffer
                             .push_str(&format!("\n// Shared({})", s.value()));
                     }
                 } else if let Some(w) = path_wave(&expr, lapis) {
                     if !quiet {
-                        lapis.buffer.push_str(&format!(
+                        let info = format!(
                             "\n// Wave(ch:{}, sr:{}, len:{}, dur:{})",
                             w.channels(),
                             w.sample_rate(),
                             w.len(),
                             w.duration()
-                        ));
+                        );
+                        lapis.data.buffer.push_str(&info);
                     }
                 } else if let Some(w) = eval_wave(&expr, lapis) {
                     if !quiet {
-                        lapis.buffer.push_str(&format!(
+                        lapis.data.buffer.push_str(&format!(
                             "\n// Wave(ch:{}, sr:{}, len:{}, dur:{})",
                             w.channels(),
                             w.sample_rate(),
@@ -371,19 +403,19 @@ fn eval_stmt(s: Stmt, lapis: &mut Lapis, quiet: bool, commands: &mut Commands) {
                             seq.has_backend(),
                             seq.replay_events()
                         );
-                        lapis.buffer.push_str(&info);
+                        lapis.data.buffer.push_str(&info);
                     }
                 } else if let Some(source) = eval_source(&expr, lapis) {
-                    lapis.buffer.push_str(&format!("\n// {:?}", source));
+                    lapis.data.buffer.push_str(&format!("\n// {:?}", source));
                 } else if let Some(event) =
                     method_eventid(&expr, lapis).or(path_eventid(&expr, lapis))
                 {
                     if !quiet {
-                        lapis.buffer.push_str(&format!("\n// {:?}", event));
+                        lapis.data.buffer.push_str(&format!("\n// {:?}", event));
                     }
-                } else if let Some(entity) = eval_entity(&expr, lapis, commands) {
+                } else if let Some(entity) = eval_entity(&expr, lapis) {
                     if !quiet {
-                        lapis.buffer.push_str(&format!("\n// {:?}", entity));
+                        lapis.data.buffer.push_str(&format!("\n// {:?}", entity));
                     }
                 } else if let Expr::Binary(expr) = expr {
                     float_bin_assign(&expr, lapis);
@@ -392,13 +424,18 @@ fn eval_stmt(s: Stmt, lapis: &mut Lapis, quiet: bool, commands: &mut Commands) {
                         "play" => {
                             if let Some(g) = eval_net(&expr.receiver, lapis) {
                                 if g.inputs() == 0 && g.outputs() == 1 {
-                                    lapis.slot.set(Fade::Smooth, 0.01, Box::new(g | dc(0.)));
-                                } else if g.inputs() == 0 && g.outputs() == 2 {
-                                    lapis.slot.set(Fade::Smooth, 0.01, Box::new(g));
-                                } else {
                                     lapis
+                                        .data
                                         .slot
-                                        .set(Fade::Smooth, 0.01, Box::new(dc(0.) | dc(0.)));
+                                        .set(Fade::Smooth, 0.01, Box::new(g | dc(0.)));
+                                } else if g.inputs() == 0 && g.outputs() == 2 {
+                                    lapis.data.slot.set(Fade::Smooth, 0.01, Box::new(g));
+                                } else {
+                                    lapis.data.slot.set(
+                                        Fade::Smooth,
+                                        0.01,
+                                        Box::new(dc(0.) | dc(0.)),
+                                    );
                                 }
                             }
                         }
@@ -411,7 +448,7 @@ fn eval_stmt(s: Stmt, lapis: &mut Lapis, quiet: bool, commands: &mut Commands) {
                             };
                             let mut output = Vec::new();
                             if let Some(k) = nth_path_ident(&expr.receiver, 0) {
-                                if let Some(g) = &mut lapis.gmap.get_mut(&k) {
+                                if let Some(g) = &mut lapis.data.gmap.get_mut(&k) {
                                     if g.inputs() != in_arr.len() {
                                         return;
                                     }
@@ -427,28 +464,32 @@ fn eval_stmt(s: Stmt, lapis: &mut Lapis, quiet: bool, commands: &mut Commands) {
                             }
                             if let Some(out) = expr.args.get(1) {
                                 if let Some(k) = nth_path_ident(out, 0) {
-                                    if let Some(var) = lapis.vmap.get_mut(&k) {
+                                    if let Some(var) = lapis.data.vmap.get_mut(&k) {
                                         *var = output;
                                     }
                                 }
                             } else if !quiet {
-                                lapis.buffer.push_str(&format!("\n// {:?}", output));
+                                lapis.data.buffer.push_str(&format!("\n// {:?}", output));
                             }
                         }
                         "play_backend" => {
                             if let Some(k) = nth_path_ident(&expr.receiver, 0) {
-                                if let Some(g) = &mut lapis.gmap.get_mut(&k) {
+                                if let Some(g) = &mut lapis.data.gmap.get_mut(&k) {
                                     if !g.has_backend() {
                                         let g = g.backend();
                                         if g.inputs() == 0 && g.outputs() == 2 {
-                                            lapis.slot.set(Fade::Smooth, 0.01, Box::new(g));
+                                            lapis.data.slot.set(Fade::Smooth, 0.01, Box::new(g));
                                         }
                                     }
-                                } else if let Some(seq) = &mut lapis.seqmap.get_mut(&k) {
+                                } else if let Some(seq) = &mut lapis.data.seqmap.get_mut(&k) {
                                     if !seq.has_backend() {
                                         let backend = seq.backend();
                                         if backend.outputs() == 2 {
-                                            lapis.slot.set(Fade::Smooth, 0.01, Box::new(backend));
+                                            lapis.data.slot.set(
+                                                Fade::Smooth,
+                                                0.01,
+                                                Box::new(backend),
+                                            );
                                         }
                                     }
                                 }
@@ -461,8 +502,9 @@ fn eval_stmt(s: Stmt, lapis: &mut Lapis, quiet: bool, commands: &mut Commands) {
                         }
                         "error" if !quiet => {
                             if let Some(k) = nth_path_ident(&expr.receiver, 0) {
-                                if let Some(g) = &mut lapis.gmap.get_mut(&k) {
-                                    lapis.buffer.push_str(&format!("\n// {:?}", g.error()));
+                                if let Some(g) = &mut lapis.data.gmap.get_mut(&k) {
+                                    let error = format!("\n// {:?}", g.error());
+                                    lapis.data.buffer.push_str(&error);
                                 }
                             }
                         }

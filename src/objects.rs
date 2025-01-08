@@ -1,8 +1,10 @@
-use crate::{interaction::*, lapis::floats::*, lapis::Lapis};
+use crate::{
+    interaction::*,
+    lapis::{Lapis, LapisData},
+};
 use avian2d::prelude::*;
 use bevy::{prelude::*, sprite::AlphaMode2d};
 use std::collections::VecDeque;
-use syn::*;
 
 pub struct ObjectsPlugin;
 
@@ -160,7 +162,7 @@ fn attract(
 
 fn eval_collisions(
     code: Query<&Code>,
-    mut lapis: ResMut<Lapis>,
+    mut lapis: Lapis,
     trans_query: Query<&Transform>,
     lin_velocity_query: Query<&LinearVelocity>,
     ang_velocity_query: Query<&AngularVelocity>,
@@ -168,8 +170,10 @@ fn eval_collisions(
     inertia_query: Query<&AngularInertia>,
     mut started: EventReader<CollisionStarted>,
     mut ended: EventReader<CollisionEnded>,
-    mut commands: Commands,
 ) {
+    // once we have field access all of these can be removed
+    // keeping the id of self
+    // and add the id of other
     let search_and_replace = |code: &str, e| {
         let trans = trans_query.get(e).unwrap();
         let x = trans.translation.x;
@@ -197,15 +201,15 @@ fn eval_collisions(
             .replace("$inertia", &format!("{inertia}"))
             .replace("$id", &format!("{}", e.to_bits()))
     };
-    if lapis.quiet {
+    if lapis.data.quiet {
         for CollisionStarted(e1, e2) in started.read() {
             for e in [e1, e2] {
                 let c = code.get(*e).unwrap();
                 if c.0.contains('$') {
                     let code = search_and_replace(&c.0, *e);
-                    lapis.quiet_eval(&code, &mut commands);
+                    lapis.quiet_eval(&code);
                 } else {
-                    lapis.quiet_eval(&c.0, &mut commands);
+                    lapis.quiet_eval(&c.0);
                 }
             }
         }
@@ -214,9 +218,9 @@ fn eval_collisions(
                 if let Ok(c) = code.get(*e) {
                     if c.1.contains('$') {
                         let code = search_and_replace(&c.1, *e);
-                        lapis.quiet_eval(&code, &mut commands);
+                        lapis.quiet_eval(&code);
                     } else {
-                        lapis.quiet_eval(&c.1, &mut commands);
+                        lapis.quiet_eval(&c.1);
                     }
                 }
             }
@@ -227,9 +231,9 @@ fn eval_collisions(
                 let c = code.get(*e).unwrap();
                 if c.0.contains('$') {
                     let code = search_and_replace(&c.0, *e);
-                    lapis.eval(&code, &mut commands);
+                    lapis.eval(&code);
                 } else {
-                    lapis.eval(&c.0, &mut commands);
+                    lapis.eval(&c.0);
                 }
             }
         }
@@ -238,9 +242,9 @@ fn eval_collisions(
                 if let Ok(c) = code.get(*e) {
                     if c.1.contains('$') {
                         let code = search_and_replace(&c.1, *e);
-                        lapis.eval(&code, &mut commands);
+                        lapis.eval(&code);
                     } else {
-                        lapis.eval(&c.1, &mut commands);
+                        lapis.eval(&c.1);
                     }
                 }
             }
@@ -270,7 +274,7 @@ fn sync_links(
     mut cm_query: Query<&mut CenterOfMass>,
     mut friction_query: Query<&mut Friction>,
     mut tail_query: Query<&mut Tail>,
-    lapis: Res<Lapis>,
+    lapis_data: ResMut<LapisData>,
 ) {
     for (e, Links(links)) in links_query.iter() {
         for link in links.lines() {
@@ -282,7 +286,7 @@ fn sync_links(
             let (Some(property), Some(dir), Some(var)) = (s0, s1, s2) else {
                 continue;
             };
-            if let Some(var) = lapis.smap.get(var) {
+            if let Some(var) = lapis_data.smap.get(var) {
                 match property {
                     "x" => {
                         let mut trans = trans_query.get_mut(e).unwrap();
@@ -507,89 +511,6 @@ fn sync_links(
                         }
                     }
                     _ => {}
-                }
-            // assign a float expression
-            } else if dir == "<" || dir == "=" {
-                if let Ok(expr) = parse_str::<Expr>(var) {
-                    if let Some(f) = eval_float(&expr, &lapis) {
-                        match property {
-                            "x" => trans_query.get_mut(e).unwrap().translation.x = f,
-                            "y" => trans_query.get_mut(e).unwrap().translation.y = f,
-                            "rx" => trans_query.get_mut(e).unwrap().scale.x = f,
-                            "ry" => trans_query.get_mut(e).unwrap().scale.y = f,
-                            "rot" => {
-                                trans_query.get_mut(e).unwrap().rotation = Quat::from_rotation_z(f)
-                            }
-                            "mass" => mass_query.get_mut(e).unwrap().0 = f,
-                            "vx" => lin_velocity_query.get_mut(e).unwrap().x = f,
-                            "vy" => lin_velocity_query.get_mut(e).unwrap().y = f,
-                            "va" => ang_velocity_query.get_mut(e).unwrap().0 = f,
-                            "vm" => {
-                                let mut v = lin_velocity_query.get_mut(e).unwrap();
-                                let m = f;
-                                let p = v.y.atan2(v.x);
-                                v.x = m * p.cos();
-                                v.y = m * p.sin();
-                            }
-                            "vp" => {
-                                let mut v = lin_velocity_query.get_mut(e).unwrap();
-                                let m = v.x.hypot(v.y);
-                                let p = f;
-                                v.x = m * p.cos();
-                                v.y = m * p.sin();
-                            }
-                            "restitution" => restitution_query.get_mut(e).unwrap().coefficient = f,
-                            "lindamp" => lin_damp_query.get_mut(e).unwrap().0 = f,
-                            "angdamp" => ang_damp_query.get_mut(e).unwrap().0 = f,
-                            "inertia" => inertia_query.get_mut(e).unwrap().0 = f,
-                            "h" => {
-                                let mat_id = material_ids.get(e).unwrap();
-                                let mat = materials.get_mut(mat_id).unwrap();
-                                let mut hsla: Hsla = mat.color.into();
-                                hsla.hue = f;
-                                mat.color = hsla.into();
-                            }
-                            "s" => {
-                                let mat_id = material_ids.get(e).unwrap();
-                                let mat = materials.get_mut(mat_id).unwrap();
-                                let mut hsla: Hsla = mat.color.into();
-                                hsla.saturation = f;
-                                mat.color = hsla.into();
-                            }
-                            "l" => {
-                                let mat_id = material_ids.get(e).unwrap();
-                                let mat = materials.get_mut(mat_id).unwrap();
-                                let mut hsla: Hsla = mat.color.into();
-                                hsla.lightness = f;
-                                mat.color = hsla.into();
-                            }
-                            "a" => {
-                                let mat_id = material_ids.get(e).unwrap();
-                                let mat = materials.get_mut(mat_id).unwrap();
-                                let mut hsla: Hsla = mat.color.into();
-                                hsla.alpha = f;
-                                mat.color = hsla.into();
-                            }
-                            "sides" => {
-                                let sides = (f as u32).clamp(3, 512);
-                                let mesh_id = mesh_ids.get(e).unwrap();
-                                let mesh = meshes.get_mut(mesh_id).unwrap();
-                                *mesh = RegularPolygon::new(1., sides).into();
-                                let mut collider = collider_query.get_mut(e).unwrap();
-                                *collider = Collider::regular_polygon(1., sides);
-                                sides_query.get_mut(e).unwrap().0 = sides;
-                            }
-                            "cmx" => cm_query.get_mut(e).unwrap().0.x = f,
-                            "cmy" => cm_query.get_mut(e).unwrap().0.y = f,
-                            "friction" => {
-                                let mut fric = friction_query.get_mut(e).unwrap();
-                                fric.dynamic_coefficient = f;
-                                fric.static_coefficient = f;
-                            }
-                            "tail" => tail_query.get_mut(e).unwrap().len = f as usize,
-                            _ => {}
-                        }
-                    }
                 }
             }
         }
