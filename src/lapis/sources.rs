@@ -4,7 +4,7 @@ fn method_source(expr: &ExprMethodCall, lapis: &Lapis) -> Option<Source> {
     match expr.method.to_string().as_str() {
         "source" => {
             if let Some(k) = nth_path_ident(&expr.receiver, 0) {
-                if let Some(g) = &mut lapis.gmap.get(&k) {
+                if let Some(g) = &mut lapis.data.gmap.get(&k) {
                     let arg0 = expr.args.first();
                     let arg1 = expr.args.get(1);
                     if let (Some(arg0), Some(arg1)) = (arg0, arg1) {
@@ -22,7 +22,7 @@ fn method_source(expr: &ExprMethodCall, lapis: &Lapis) -> Option<Source> {
         }
         "output_source" => {
             if let Some(k) = nth_path_ident(&expr.receiver, 0) {
-                if let Some(g) = &mut lapis.gmap.get(&k) {
+                if let Some(g) = &mut lapis.data.gmap.get(&k) {
                     let arg0 = expr.args.first();
                     if let Some(arg0) = arg0 {
                         let chan = eval_usize(arg0, lapis);
@@ -69,7 +69,7 @@ pub fn eval_source(expr: &Expr, lapis: &Lapis) -> Option<Source> {
                 }
                 None
             } else {
-                lapis.srcmap.get(&seg0.to_string()).copied()
+                lapis.data.srcmap.get(&seg0.to_string()).copied()
             }
         }
         Expr::MethodCall(expr) => method_source(expr, lapis),

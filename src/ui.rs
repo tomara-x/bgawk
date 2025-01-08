@@ -2,7 +2,7 @@ use crate::{interaction::*, lapis::*, objects::*};
 use avian2d::prelude::*;
 use bevy::{
     app::{App, Plugin, Update},
-    prelude::{Commands, GizmoConfigStore, Query, Res, ResMut, Resource, Time, Virtual, With},
+    prelude::{GizmoConfigStore, Query, Res, ResMut, Resource, Time, Virtual, With},
 };
 use bevy_egui::{EguiContexts, EguiPlugin};
 use egui::*;
@@ -35,7 +35,7 @@ pub struct ZoomFactor(pub f32);
 
 fn egui_ui(
     mut contexts: EguiContexts,
-    mut lapis: ResMut<Lapis>,
+    mut lapis: Lapis,
     mut draw: ResMut<DrawSettings>,
     mut gravity: ResMut<Gravity>,
     mut selected: Query<(&mut Code, &mut Links), With<Selected>>,
@@ -49,7 +49,6 @@ fn egui_ui(
     mut config_store: ResMut<GizmoConfigStore>,
     mut zoom_factor: ResMut<ZoomFactor>,
     mut win: Query<&mut bevy::prelude::Window>,
-    mut commands: Commands,
 ) {
     let ctx = contexts.ctx_mut();
     let theme = CodeTheme::from_memory(ctx, &ctx.style());
@@ -58,17 +57,17 @@ fn egui_ui(
         layout_job.wrap.max_width = wrap_width;
         ui.fonts(|f| f.layout_job(layout_job))
     };
-    if lapis.keys_active {
-        if lapis.quiet {
-            for (shortcut, code) in lapis.keys.clone() {
+    if lapis.data.keys_active {
+        if lapis.data.quiet {
+            for (shortcut, code) in lapis.data.keys.clone() {
                 if ctx.input_mut(|i| i.consume_shortcut(&shortcut)) {
-                    lapis.quiet_eval(&code, &mut commands);
+                    lapis.quiet_eval(&code);
                 }
             }
         } else {
-            for (shortcut, code) in lapis.keys.clone() {
+            for (shortcut, code) in lapis.data.keys.clone() {
                 if ctx.input_mut(|i| i.consume_shortcut(&shortcut)) {
-                    lapis.eval(&code, &mut commands);
+                    lapis.eval(&code);
                 }
             }
         }
@@ -277,14 +276,14 @@ fn egui_ui(
         .default_pos([900., 10.])
         .show(ctx, |ui| {
             ui.horizontal(|ui| {
-                ui.toggle_value(&mut lapis.quiet, "quiet?")
+                ui.toggle_value(&mut lapis.data.quiet, "quiet?")
                     .on_hover_text("don't log collision/keybinding evaluation");
-                ui.toggle_value(&mut lapis.keys_active, "keys?")
+                ui.toggle_value(&mut lapis.data.keys_active, "keys?")
                     .on_hover_text("enable keybindings");
             });
             ScrollArea::vertical().stick_to_bottom(true).show(ui, |ui| {
                 ui.add(
-                    TextEdit::multiline(&mut lapis.buffer)
+                    TextEdit::multiline(&mut lapis.data.buffer)
                         .code_editor()
                         .desired_rows(1)
                         .desired_width(f32::INFINITY)
@@ -304,14 +303,14 @@ fn egui_ui(
                         .layouter(&mut layouter),
                 );
             });
-            lapis.quiet_eval(&update_code.0, &mut commands);
+            lapis.quiet_eval(&update_code.0);
             ScrollArea::vertical().show(ui, |ui| {
                 ui.horizontal(|ui| {
                     ui.with_layout(Layout::right_to_left(Align::TOP), |ui| {
                         let execute = ui.button("e");
                         let input_focused = ui
                             .add(
-                                TextEdit::multiline(&mut lapis.input)
+                                TextEdit::multiline(&mut lapis.data.input)
                                     .hint_text("type code then press ctrl+enter")
                                     .code_editor()
                                     .desired_rows(5)
@@ -323,7 +322,7 @@ fn egui_ui(
                         if input_focused && ctx.input_mut(|i| i.consume_shortcut(&shortcut))
                             || execute.clicked()
                         {
-                            lapis.eval_input(&mut commands);
+                            lapis.eval_input();
                         }
                     });
                 });
@@ -341,77 +340,81 @@ fn egui_ui(
             ui.label(format!("distance: {}", cursor.i.distance(cursor.f)));
             ui.horizontal(|ui| {
                 if ui.button("help").clicked() {
-                    lapis.help = !lapis.help;
+                    lapis.data.help = !lapis.data.help;
                 }
                 if ui.button("about").clicked() {
-                    lapis.about = !lapis.about;
+                    lapis.data.about = !lapis.data.about;
                 }
             });
         });
-    Window::new("about").open(&mut lapis.about).show(ctx, |ui| {
-        ui.label("this is a toy for playing with physics and sound");
-        ui.label("lapis is a FunDSP interpreter");
-        ui.horizontal(|ui| {
-            ui.label("FunDSP:");
-            ui.hyperlink_to(
-                "github.com/SamiPerttu/fundsp",
-                "https://github.com/SamiPerttu/fundsp/",
-            );
+    Window::new("about")
+        .open(&mut lapis.data.about)
+        .show(ctx, |ui| {
+            ui.label("this is a toy for playing with physics and sound");
+            ui.label("lapis is a FunDSP interpreter");
+            ui.horizontal(|ui| {
+                ui.label("FunDSP:");
+                ui.hyperlink_to(
+                    "github.com/SamiPerttu/fundsp",
+                    "https://github.com/SamiPerttu/fundsp/",
+                );
+            });
+            ui.horizontal(|ui| {
+                ui.label("FunDSP doc:");
+                ui.hyperlink_to(
+                    "docs.rs/fundsp/latest/fundsp",
+                    "https://docs.rs/fundsp/latest/fundsp/",
+                );
+            });
+            ui.horizontal(|ui| {
+                ui.label("lapis:");
+                ui.hyperlink_to(
+                    "github.com/tomara-x/lapis",
+                    "https://github.com/tomara-x/lapis/",
+                );
+            });
+            ui.horizontal(|ui| {
+                ui.label("lapis mirror:");
+                ui.hyperlink_to(
+                    "codeberg.org/tomara-x/lapis",
+                    "https://codeberg.org/tomara-x/lapis/",
+                );
+            });
+            ui.horizontal(|ui| {
+                ui.label("repo:");
+                ui.hyperlink_to(
+                    "github.com/tomara-x/bgawk",
+                    "https://github.com/tomara-x/bgawk/",
+                );
+            });
+            ui.horizontal(|ui| {
+                ui.label("mirror:");
+                ui.hyperlink_to(
+                    "codeberg.org/tomara-x/bgawk",
+                    "https://codeberg.org/tomara-x/bgawk/",
+                );
+            });
+            ui.label("an amy universe piece");
+            ui.label("courtesy of the alphabet mafia");
+            ui.small("made in africa");
         });
-        ui.horizontal(|ui| {
-            ui.label("FunDSP doc:");
-            ui.hyperlink_to(
-                "docs.rs/fundsp/latest/fundsp",
-                "https://docs.rs/fundsp/latest/fundsp/",
-            );
+    Window::new("help")
+        .open(&mut lapis.data.help)
+        .show(ctx, |ui| {
+            ui.label(HELP_TEXT);
+            ui.label("");
+            ui.horizontal(|ui| {
+                ui.label("see the");
+                ui.hyperlink_to("FunDSP readme", "https://github.com/SamiPerttu/fundsp/");
+                ui.label("and");
+                ui.hyperlink_to("documentation", "https://docs.rs/fundsp/latest/fundsp/");
+            });
+            ui.horizontal(|ui| {
+                ui.label("and the");
+                ui.hyperlink_to("lapis readme", "https://github.com/tomara-x/lapis/");
+                ui.label("for more info about how they work");
+            });
         });
-        ui.horizontal(|ui| {
-            ui.label("lapis:");
-            ui.hyperlink_to(
-                "github.com/tomara-x/lapis",
-                "https://github.com/tomara-x/lapis/",
-            );
-        });
-        ui.horizontal(|ui| {
-            ui.label("lapis mirror:");
-            ui.hyperlink_to(
-                "codeberg.org/tomara-x/lapis",
-                "https://codeberg.org/tomara-x/lapis/",
-            );
-        });
-        ui.horizontal(|ui| {
-            ui.label("repo:");
-            ui.hyperlink_to(
-                "github.com/tomara-x/bgawk",
-                "https://github.com/tomara-x/bgawk/",
-            );
-        });
-        ui.horizontal(|ui| {
-            ui.label("mirror:");
-            ui.hyperlink_to(
-                "codeberg.org/tomara-x/bgawk",
-                "https://codeberg.org/tomara-x/bgawk/",
-            );
-        });
-        ui.label("an amy universe piece");
-        ui.label("courtesy of the alphabet mafia");
-        ui.small("made in africa");
-    });
-    Window::new("help").open(&mut lapis.help).show(ctx, |ui| {
-        ui.label(HELP_TEXT);
-        ui.label("");
-        ui.horizontal(|ui| {
-            ui.label("see the");
-            ui.hyperlink_to("FunDSP readme", "https://github.com/SamiPerttu/fundsp/");
-            ui.label("and");
-            ui.hyperlink_to("documentation", "https://docs.rs/fundsp/latest/fundsp/");
-        });
-        ui.horizontal(|ui| {
-            ui.label("and the");
-            ui.hyperlink_to("lapis readme", "https://github.com/tomara-x/lapis/");
-            ui.label("for more info about how they work");
-        });
-    });
 }
 
 fn links_line(ui: &mut Ui, buffer: &mut String) {
@@ -485,19 +488,8 @@ tail (tail length in points)";
 
 const CODE_TOOLTIP: &str = "evaluated when this object starts/stops colliding with another\n
 these placeholders will be substituted:
-$x for this object's x position
-$y for y position
-$rx for x radius
-$ry for y radius
-$rot for rotation
-$vx for x velocity
-$vy for y velocity
-$va for angular velocity
-$vm for velocity magnitude (polar)
-$vp for velocity phase (polar)
-$mass
-$inertia
-$id for the entity id";
+$id for this entity's id
+$other for the other entity's id";
 
 const HELP_TEXT: &str = "- hold space and drag/scroll to pan/zoom the camera
 - hold the right mouse button while one object is selected
