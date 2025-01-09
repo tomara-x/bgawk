@@ -62,7 +62,7 @@ fn field_float(expr: &ExprField, lapis: &Lapis) -> Option<f32> {
             "cmy" => Some(lapis.cm_query.get(e).ok()?.y),
             "friction" => Some(lapis.friction_query.get(e).ok()?.dynamic_coefficient),
             "tail" => Some(lapis.tail_query.get(e).ok()?.len as f32),
-            "layer" => Some(lapis.layer_query.get(e).ok()?.memberships.0 as f32),
+            "layer" => Some(lapis.layer_query.get(e).ok()?.memberships.0.ilog2() as f32),
             _ => None,
         };
     }

@@ -653,7 +653,7 @@ pub fn set_observer(
         }
         Property::Layer(val) => {
             if trans_query.contains(e) {
-                let layer = 1 << val;
+                let layer = 1 << val.clamp(0, 31);
                 commands
                     .entity(e)
                     .insert(CollisionLayers::from_bits(layer, layer));
