@@ -18,6 +18,7 @@ pub struct Config {
     /// start with paused time
     #[arg(long, default_value_t = false)]
     pub pause: bool,
+
     /// start in full screen mode
     #[arg(long, default_value_t = false)]
     pub fullscreen: bool,
@@ -39,6 +40,10 @@ pub struct Config {
 
     #[arg(long, default_value_t = 720.0)]
     pub win_height: f32,
+
+    /// hex code
+    #[arg(long)]
+    pub clear_color: String,
 }
 
 impl Plugin for ConfigPlugin {
@@ -64,6 +69,7 @@ fn configure(
     mut attraction_factor: ResMut<AttractionFactor>,
     mut scale_factor: ResMut<ScaleFactor>,
     mut win: Query<&mut Window>,
+    mut clear_color: ResMut<ClearColor>,
 ) {
     if config.pause {
         time.pause();
@@ -81,5 +87,9 @@ fn configure(
 
     if config.fullscreen {
         win.single_mut().mode = WindowMode::Fullscreen(MonitorSelection::Current);
+    }
+
+    if let Ok(color) = Srgba::hex(config.clear_color.clone()) {
+        clear_color.0 = color.into();
     }
 }
