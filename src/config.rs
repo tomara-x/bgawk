@@ -1,9 +1,7 @@
 use crate::objects::AttractionFactor;
 use crate::ui::ScaleFactor;
 use avian2d::prelude::Gravity;
-use bevy::app::{App, Plugin, PostStartup};
-use bevy::prelude::{Query, Res, ResMut, Resource, Window};
-use bevy::time::{Time, Virtual};
+use bevy::{prelude::*, window::WindowMode};
 use clap::Parser;
 use figment::{
     providers::{Format, Serialized, Toml},
@@ -17,8 +15,12 @@ pub struct ConfigPlugin;
 #[derive(Parser, Debug, Resource, Serialize, Deserialize)]
 #[command(version, about, long_about = None)]
 pub struct Config {
+    /// start with paused time
     #[arg(long, default_value_t = false)]
     pub pause: bool,
+    /// start in full screen mode
+    #[arg(long, default_value_t = false)]
+    pub fullscreen: bool,
 
     #[arg(long, default_value_t = 0.0)]
     pub gravity_x: f32,
@@ -76,4 +78,8 @@ fn configure(
     let res = &mut win.single_mut().resolution;
     res.set_scale_factor(config.scale_factor);
     res.set(config.win_width, config.win_height);
+
+    if config.fullscreen {
+        win.single_mut().mode = WindowMode::Fullscreen(MonitorSelection::Current);
+    }
 }

@@ -2,7 +2,10 @@ use crate::{interaction::*, lapis::*, objects::*};
 use avian2d::prelude::*;
 use bevy::{
     app::{App, Plugin, Update},
-    prelude::{GizmoConfigStore, Query, Res, ResMut, Resource, Time, Virtual, With},
+    prelude::{
+        GizmoConfigStore, MonitorSelection, Query, Res, ResMut, Resource, Time, Virtual, With,
+    },
+    window::WindowMode,
 };
 use bevy_egui::{EguiContexts, EguiPlugin};
 use egui::*;
@@ -170,6 +173,13 @@ fn egui_ui(
                     if factor.changed() {
                         win.single_mut().resolution.set_scale_factor(scale_factor.0);
                     }
+                });
+                ui.horizontal(|ui| {
+                    let fullscreen = WindowMode::Fullscreen(MonitorSelection::Current);
+                    let windowed = WindowMode::Windowed;
+                    ui.label("win mode");
+                    ui.selectable_value(&mut win.single_mut().mode, fullscreen, "fullscreen");
+                    ui.selectable_value(&mut win.single_mut().mode, windowed, "windowed");
                 });
             });
             ui.separator();
