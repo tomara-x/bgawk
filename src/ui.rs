@@ -15,7 +15,7 @@ impl Plugin for UiPlugin {
     fn build(&self, app: &mut App) {
         app.add_plugins(EguiPlugin)
             .init_resource::<InsertComponents>()
-            .insert_resource(ZoomFactor(1.))
+            .insert_resource(ScaleFactor(1.))
             .init_resource::<UpdateCode>()
             .add_systems(Update, egui_ui);
     }
@@ -31,7 +31,7 @@ struct InsertComponents {
 }
 
 #[derive(Resource)]
-pub struct ZoomFactor(pub f32);
+pub struct ScaleFactor(pub f32);
 
 fn egui_ui(
     mut contexts: EguiContexts,
@@ -47,7 +47,7 @@ fn egui_ui(
     mut insert: ResMut<InsertComponents>,
     cursor: Res<CursorInfo>,
     mut config_store: ResMut<GizmoConfigStore>,
-    mut zoom_factor: ResMut<ZoomFactor>,
+    mut scale_factor: ResMut<ScaleFactor>,
     mut win: Query<&mut bevy::prelude::Window>,
 ) {
     let ctx = contexts.ctx_mut();
@@ -161,14 +161,14 @@ fn egui_ui(
             });
             ui.collapsing("ui settings", |ui| {
                 ui.horizontal(|ui| {
-                    ui.label("zoom factor");
+                    ui.label("scale factor");
                     let factor = ui.add(
-                        DragValue::new(&mut zoom_factor.0)
+                        DragValue::new(&mut scale_factor.0)
                             .range(0.5..=4.)
                             .speed(0.1),
                     );
                     if factor.changed() {
-                        win.single_mut().resolution.set_scale_factor(zoom_factor.0);
+                        win.single_mut().resolution.set_scale_factor(scale_factor.0);
                     }
                 });
             });

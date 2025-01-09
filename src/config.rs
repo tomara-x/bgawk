@@ -1,5 +1,5 @@
 use crate::objects::AttractionFactor;
-use crate::ui::ZoomFactor;
+use crate::ui::ScaleFactor;
 use avian2d::prelude::Gravity;
 use bevy::app::{App, Plugin, PostStartup};
 use bevy::prelude::{Query, Res, ResMut, Resource, Window};
@@ -30,7 +30,13 @@ pub struct Config {
     pub attraction: f32,
 
     #[arg(long, default_value_t = 1.0)]
-    pub zoom: f32,
+    pub scale_factor: f32,
+
+    #[arg(long, default_value_t = 1280.0)]
+    pub win_width: f32,
+
+    #[arg(long, default_value_t = 720.0)]
+    pub win_height: f32,
 }
 
 impl Plugin for ConfigPlugin {
@@ -54,7 +60,7 @@ fn configure(
     mut time: ResMut<Time<Virtual>>,
     mut gravity: ResMut<Gravity>,
     mut attraction_factor: ResMut<AttractionFactor>,
-    mut zoom_factor: ResMut<ZoomFactor>,
+    mut scale_factor: ResMut<ScaleFactor>,
     mut win: Query<&mut Window>,
 ) {
     if config.pause {
@@ -66,6 +72,8 @@ fn configure(
 
     attraction_factor.0 = config.attraction;
 
-    zoom_factor.0 = config.zoom;
-    win.single_mut().resolution.set_scale_factor(config.zoom);
+    scale_factor.0 = config.scale_factor;
+    let res = &mut win.single_mut().resolution;
+    res.set_scale_factor(config.scale_factor);
+    res.set(config.win_width, config.win_height);
 }
