@@ -1,3 +1,4 @@
+use crate::joints::*;
 use crate::lapis::*;
 
 //TODO joints not spawned programmatically are not accessible
@@ -84,6 +85,8 @@ fn method_entity(expr: &ExprMethodCall, lapis: &mut Lapis) -> Option<Entity> {
     if expr.method == "despawn" {
         lapis.commands.get_entity(e)?.try_despawn();
         return None;
+    } else if expr.method == "disjoint" {
+        lapis.commands.trigger_targets(Disjoint, e);
     }
     let val = eval_float(expr.args.first()?, lapis);
     let cmd = &mut lapis.commands;

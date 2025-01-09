@@ -12,7 +12,8 @@ impl Plugin for JointsPlugin {
                 .after(update_cursor_info)
                 .run_if(resource_equals(EguiFocused(false)))
                 .run_if(resource_equals(Mode::Joint)),
-        );
+        )
+        .add_observer(disjoint_observer);
     }
 }
 
@@ -107,6 +108,42 @@ fn spawn_joint(
                     );
                 }
             }
+        }
+    }
+}
+
+// ---- observers ----
+
+#[derive(Event, Clone)]
+pub struct Disjoint;
+
+pub fn disjoint_observer(
+    trig: Trigger<Disjoint>,
+    mut commands: Commands,
+    fixed: Query<(Entity, &FixedJoint)>,
+    distance: Query<(Entity, &DistanceJoint)>,
+    revolute: Query<(Entity, &RevoluteJoint)>,
+    prismatic: Query<(Entity, &PrismaticJoint)>,
+) {
+    let object = trig.entity();
+    for (e, j) in fixed.iter() {
+        if j.entity1 == object || j.entity2 == object {
+            commands.entity(e).despawn();
+        }
+    }
+    for (e, j) in distance.iter() {
+        if j.entity1 == object || j.entity2 == object {
+            commands.entity(e).despawn();
+        }
+    }
+    for (e, j) in revolute.iter() {
+        if j.entity1 == object || j.entity2 == object {
+            commands.entity(e).despawn();
+        }
+    }
+    for (e, j) in prismatic.iter() {
+        if j.entity1 == object || j.entity2 == object {
+            commands.entity(e).despawn();
         }
     }
 }
