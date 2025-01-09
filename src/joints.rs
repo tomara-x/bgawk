@@ -14,6 +14,7 @@ impl Plugin for JointsPlugin {
                 .run_if(resource_equals(Mode::Joint)),
         )
         .add_observer(disjoint_observer)
+        .add_observer(replace_joint)
         .add_observer(joint_points);
     }
 }
@@ -114,6 +115,90 @@ fn spawn_joint(
 }
 
 // ---- observers ----
+
+#[derive(Event)]
+pub struct ReplaceJoint(pub JointType);
+
+fn replace_joint(
+    trig: Trigger<ReplaceJoint>,
+    mut commands: Commands,
+    fixed: Query<&FixedJoint>,
+    distance: Query<&DistanceJoint>,
+    revolute: Query<&RevoluteJoint>,
+    prismatic: Query<&PrismaticJoint>,
+) {
+    let e = trig.entity();
+    let joint_type = &trig.event().0;
+    let e1;
+    let e2;
+    let anchors;
+    let compliance;
+    if let Ok(j) = fixed.get(e) {
+        e1 = j.entity1;
+        e2 = j.entity2;
+        anchors = (j.local_anchor1, j.local_anchor2);
+        compliance = j.compliance;
+    } else if let Ok(j) = distance.get(e) {
+        e1 = j.entity1;
+        e2 = j.entity2;
+        anchors = (j.local_anchor1, j.local_anchor2);
+        compliance = j.compliance;
+    } else if let Ok(j) = prismatic.get(e) {
+        e1 = j.entity1;
+        e2 = j.entity2;
+        anchors = (j.local_anchor1, j.local_anchor2);
+        compliance = j.compliance;
+    } else if let Ok(j) = revolute.get(e) {
+        e1 = j.entity1;
+        e2 = j.entity2;
+        anchors = (j.local_anchor1, j.local_anchor2);
+        compliance = j.compliance;
+    } else {
+        return;
+    }
+    match joint_type {
+        JointType::Fixed => {
+            commands.entity(e)
+                .clear()
+                .insert(
+                    FixedJoint::new(e1, e2)
+                        .with_compliance(compliance)
+                        .with_local_anchor_1(anchors.0)
+                        .with_local_anchor_2(anchors.1),
+                );
+        }
+        JointType::Distance => {
+            commands.entity(e)
+                .clear()
+                .insert(
+                    DistanceJoint::new(e1, e2)
+                        .with_compliance(compliance)
+                        .with_local_anchor_1(anchors.0)
+                        .with_local_anchor_2(anchors.1)
+                );
+        }
+        JointType::Prismatic => {
+            commands.entity(e)
+                .clear()
+                .insert(
+                    PrismaticJoint::new(e1, e2)
+                        .with_compliance(compliance)
+                        .with_local_anchor_1(anchors.0)
+                        .with_local_anchor_2(anchors.1)
+                );
+        }
+        JointType::Revolute => {
+            commands.entity(e)
+                .clear()
+                .insert(
+                    RevoluteJoint::new(e1, e2)
+                        .with_compliance(compliance)
+                        .with_local_anchor_1(anchors.0)
+                        .with_local_anchor_2(anchors.1)
+                );
+        }
+    }
+}
 
 #[derive(Event)]
 pub struct Disjoint;

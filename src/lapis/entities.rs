@@ -1,5 +1,6 @@
 use crate::joints::*;
 use crate::lapis::*;
+use crate::interaction::*;
 
 pub fn eval_entity(expr: &Expr, lapis: &mut Lapis) -> Option<Entity> {
     match expr {
@@ -134,6 +135,20 @@ fn method_entity(expr: &ExprMethodCall, lapis: &mut Lapis) -> Option<Entity> {
             if let Expr::Lit(expr) = expr.args.first()? {
                 if let Lit::Str(expr) = &expr.lit {
                     cmd.trigger_targets(Property::CodeF(expr.value()), e);
+                }
+            }
+        }
+        // joint methods
+        "joint_type" => {
+            if let Expr::Lit(expr) = expr.args.first()? {
+                if let Lit::Str(expr) = &expr.lit {
+                    match expr.value().as_str() {
+                        "fixed" => cmd.trigger_targets(ReplaceJoint(JointType::Fixed), e),
+                        "distance" => cmd.trigger_targets(ReplaceJoint(JointType::Distance), e),
+                        "prismatic" => cmd.trigger_targets(ReplaceJoint(JointType::Prismatic), e),
+                        "revolute" => cmd.trigger_targets(ReplaceJoint(JointType::Revolute), e),
+                        _ => {}
+                    }
                 }
             }
         }
