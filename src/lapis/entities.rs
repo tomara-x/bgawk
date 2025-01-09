@@ -1,11 +1,6 @@
 use crate::joints::*;
 use crate::lapis::*;
 
-//TODO joints not spawned programmatically are not accessible
-//TODO do we need Vec<Entity>? can we spawn structures like grids?
-//      we can avoid this need by making join take coordinates instead and
-//      so it becomes a copy of the spawn_joint system
-
 pub fn eval_entity(expr: &Expr, lapis: &mut Lapis) -> Option<Entity> {
     match expr {
         Expr::Call(expr) => call_entity(expr, lapis),
@@ -61,17 +56,15 @@ fn call_entity(expr: &ExprCall, lapis: &mut Lapis) -> Option<Entity> {
             Some(e)
         }
         "joint" => {
-            let e1 = eval_entity(expr.args.first()?, lapis)?;
-            let e2 = eval_entity(expr.args.get(1)?, lapis)?;
-            let joint_type = nth_path_ident(expr.args.get(2)?, 0)?;
-            match joint_type.as_str() {
-                "fixed" => Some(lapis.commands.spawn(FixedJoint::new(e1, e2)).id()),
-                "distance" => Some(lapis.commands.spawn(DistanceJoint::new(e1, e2)).id()),
-                "prismatic" => Some(lapis.commands.spawn(PrismaticJoint::new(e1, e2)).id()),
-                "revolute" => Some(lapis.commands.spawn(RevoluteJoint::new(e1, e2)).id()),
-                _ => None,
-            }
-            // TODO: trigger to read the joint settings resource like spawn does
+            let x1 = eval_float(expr.args.first()?, lapis)?;
+            let y1 = eval_float(expr.args.get(1)?, lapis)?;
+            let x2 = eval_float(expr.args.get(2)?, lapis)?;
+            let y2 = eval_float(expr.args.get(3)?, lapis)?;
+            let e = lapis.commands.spawn_empty().id();
+            let i = Vec2::new(x1, y1);
+            let f = Vec2::new(x2, y2);
+            lapis.commands.trigger_targets(JointPoints(i, f), e);
+            Some(e)
         }
         _ => None,
     }
@@ -87,6 +80,7 @@ fn method_entity(expr: &ExprMethodCall, lapis: &mut Lapis) -> Option<Entity> {
         return None;
     } else if expr.method == "disjoint" {
         lapis.commands.trigger_targets(Disjoint, e);
+        return None;
     }
     let val = eval_float(expr.args.first()?, lapis);
     let cmd = &mut lapis.commands;
