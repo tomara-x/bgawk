@@ -145,12 +145,13 @@ impl Lapis<'_, '_> {
     }
     pub fn eval_input(&mut self) {
         if !self.data.input.is_empty() {
-            let input = &std::mem::take(&mut self.data.input);
-            match parse_str::<Stmt>(&format!("{{{}}}", input)) {
+            match parse_str::<Stmt>(&format!("{{{}}}", self.data.input)) {
                 Ok(stmt) => {
                     self.data.buffer.push('\n');
-                    self.data.buffer.push_str(input);
+                    let input = self.data.input.clone();
+                    self.data.buffer.push_str(&input);
                     eval_stmt(stmt, self, false);
+                    self.data.input.clear();
                 }
                 Err(err) => {
                     self.data.buffer.push_str(&format!("\n// error: {}", err));
