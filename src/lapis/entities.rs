@@ -1,6 +1,6 @@
+use crate::interaction::*;
 use crate::joints::*;
 use crate::lapis::*;
-use crate::interaction::*;
 
 pub fn eval_entity(expr: &Expr, lapis: &mut Lapis) -> Option<Entity> {
     match expr {

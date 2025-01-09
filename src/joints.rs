@@ -158,44 +158,36 @@ fn replace_joint(
     }
     match joint_type {
         JointType::Fixed => {
-            commands.entity(e)
-                .clear()
-                .insert(
-                    FixedJoint::new(e1, e2)
-                        .with_compliance(compliance)
-                        .with_local_anchor_1(anchors.0)
-                        .with_local_anchor_2(anchors.1),
-                );
+            commands.entity(e).clear().insert(
+                FixedJoint::new(e1, e2)
+                    .with_compliance(compliance)
+                    .with_local_anchor_1(anchors.0)
+                    .with_local_anchor_2(anchors.1),
+            );
         }
         JointType::Distance => {
-            commands.entity(e)
-                .clear()
-                .insert(
-                    DistanceJoint::new(e1, e2)
-                        .with_compliance(compliance)
-                        .with_local_anchor_1(anchors.0)
-                        .with_local_anchor_2(anchors.1)
-                );
+            commands.entity(e).clear().insert(
+                DistanceJoint::new(e1, e2)
+                    .with_compliance(compliance)
+                    .with_local_anchor_1(anchors.0)
+                    .with_local_anchor_2(anchors.1),
+            );
         }
         JointType::Prismatic => {
-            commands.entity(e)
-                .clear()
-                .insert(
-                    PrismaticJoint::new(e1, e2)
-                        .with_compliance(compliance)
-                        .with_local_anchor_1(anchors.0)
-                        .with_local_anchor_2(anchors.1)
-                );
+            commands.entity(e).clear().insert(
+                PrismaticJoint::new(e1, e2)
+                    .with_compliance(compliance)
+                    .with_local_anchor_1(anchors.0)
+                    .with_local_anchor_2(anchors.1),
+            );
         }
         JointType::Revolute => {
-            commands.entity(e)
-                .clear()
-                .insert(
-                    RevoluteJoint::new(e1, e2)
-                        .with_compliance(compliance)
-                        .with_local_anchor_1(anchors.0)
-                        .with_local_anchor_2(anchors.1)
-                );
+            commands.entity(e).clear().insert(
+                RevoluteJoint::new(e1, e2)
+                    .with_compliance(compliance)
+                    .with_local_anchor_1(anchors.0)
+                    .with_local_anchor_2(anchors.1),
+            );
         }
     }
 }
