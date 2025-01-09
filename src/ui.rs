@@ -2,6 +2,10 @@ use crate::{interaction::*, lapis::*, objects::*};
 use avian2d::prelude::*;
 use bevy::{
     app::{App, Plugin, Update},
+    core_pipeline::{
+        bloom::{Bloom, BloomCompositeMode},
+        tonemapping::Tonemapping,
+    },
     prelude::{
         ClearColor, ColorToPacked, GizmoConfigStore, MonitorSelection, Query, Res, ResMut,
         Resource, Srgba, Time, Virtual, With,
@@ -51,9 +55,12 @@ fn egui_ui(
     mut insert: ResMut<InsertComponents>,
     cursor: Res<CursorInfo>,
     mut config_store: ResMut<GizmoConfigStore>,
-    mut scale_factor: ResMut<ScaleFactor>,
-    mut win: Query<&mut bevy::prelude::Window>,
-    mut clear_color: ResMut<ClearColor>,
+    (mut scale_factor, mut win, mut clear_color): (
+        ResMut<ScaleFactor>,
+        Query<&mut bevy::prelude::Window>,
+        ResMut<ClearColor>,
+    ),
+    (mut bloom, mut tonemapping): (Query<&mut Bloom>, Query<&mut Tonemapping>),
 ) {
     let ctx = contexts.ctx_mut();
     let theme = CodeTheme::from_memory(ctx, &ctx.style());
@@ -188,6 +195,99 @@ fn egui_ui(
                     let mut tmp = clear_color.0.to_srgba().to_u8_array();
                     ui.color_edit_button_srgba_unmultiplied(&mut tmp);
                     clear_color.0 = Srgba::from_u8_array(tmp).into();
+                });
+                ui.collapsing("bloom", |ui| {
+                    let bloom = &mut bloom.single_mut();
+                    ui.horizontal(|ui| {
+                        ui.label("intensity");
+                        ui.add(DragValue::new(&mut bloom.intensity).speed(0.1));
+                    });
+                    ui.horizontal(|ui| {
+                        ui.label("low freq boost");
+                        ui.add(DragValue::new(&mut bloom.low_frequency_boost).speed(0.1));
+                    });
+                    ui.horizontal(|ui| {
+                        ui.label("lf boost curvature");
+                        ui.add(DragValue::new(&mut bloom.low_frequency_boost_curvature).speed(0.1));
+                    });
+                    ui.horizontal(|ui| {
+                        ui.label("hight pass freq");
+                        ui.add(DragValue::new(&mut bloom.high_pass_frequency).speed(0.1));
+                    });
+                    ui.horizontal(|ui| {
+                        ui.label("prefilter threshold");
+                        ui.add(DragValue::new(&mut bloom.prefilter.threshold).speed(0.1));
+                    });
+                    ui.horizontal(|ui| {
+                        ui.label("threshold softness");
+                        ui.add(DragValue::new(&mut bloom.prefilter.threshold_softness).speed(0.1));
+                    });
+                    ui.horizontal(|ui| {
+                        ui.label("composite");
+                        let conserving = BloomCompositeMode::EnergyConserving;
+                        let additive = BloomCompositeMode::Additive;
+                        ui.selectable_value(
+                            &mut bloom.composite_mode,
+                            conserving,
+                            "energy conserving",
+                        );
+                        ui.selectable_value(&mut bloom.composite_mode, additive, "additive");
+                    });
+                    ui.horizontal(|ui| {
+                        ui.label("max mip dimension");
+                        ui.add(DragValue::new(&mut bloom.max_mip_dimension).range(1..=1024));
+                    });
+                    ui.horizontal(|ui| {
+                        ui.label("uv offset");
+                        ui.add(DragValue::new(&mut bloom.uv_offset).speed(0.1));
+                    });
+                });
+                ui.horizontal(|ui| {
+                    ui.label("tonemapping");
+                    egui::ComboBox::from_label("")
+                        .selected_text(format!("{:?}", tonemapping.single()))
+                        .show_ui(ui, |ui| {
+                            ui.selectable_value(
+                                &mut *tonemapping.single_mut(),
+                                Tonemapping::None,
+                                "None",
+                            );
+                            ui.selectable_value(
+                                &mut *tonemapping.single_mut(),
+                                Tonemapping::Reinhard,
+                                "Reinhard",
+                            );
+                            ui.selectable_value(
+                                &mut *tonemapping.single_mut(),
+                                Tonemapping::ReinhardLuminance,
+                                "ReinhardLuminance",
+                            );
+                            ui.selectable_value(
+                                &mut *tonemapping.single_mut(),
+                                Tonemapping::AcesFitted,
+                                "AcesFitted",
+                            );
+                            ui.selectable_value(
+                                &mut *tonemapping.single_mut(),
+                                Tonemapping::AgX,
+                                "AgX",
+                            );
+                            ui.selectable_value(
+                                &mut *tonemapping.single_mut(),
+                                Tonemapping::SomewhatBoringDisplayTransform,
+                                "SomewhatBoringDisplayTransform",
+                            );
+                            ui.selectable_value(
+                                &mut *tonemapping.single_mut(),
+                                Tonemapping::TonyMcMapface,
+                                "TonyMcMapface",
+                            );
+                            ui.selectable_value(
+                                &mut *tonemapping.single_mut(),
+                                Tonemapping::BlenderFilmic,
+                                "BlenderFilmic",
+                            );
+                        });
                 });
             });
             ui.separator();
