@@ -42,7 +42,7 @@ pub struct Config {
     pub win_height: f32,
 
     /// hex code
-    #[arg(long)]
+    #[arg(long, default_value_t = String::from("000000"))]
     pub clear_color: String,
 }
 
