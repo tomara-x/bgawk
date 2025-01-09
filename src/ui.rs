@@ -3,7 +3,8 @@ use avian2d::prelude::*;
 use bevy::{
     app::{App, Plugin, Update},
     prelude::{
-        GizmoConfigStore, MonitorSelection, Query, Res, ResMut, Resource, Time, Virtual, With,
+        ClearColor, ColorToPacked, GizmoConfigStore, MonitorSelection, Query, Res, ResMut,
+        Resource, Srgba, Time, Virtual, With,
     },
     window::WindowMode,
 };
@@ -52,6 +53,7 @@ fn egui_ui(
     mut config_store: ResMut<GizmoConfigStore>,
     mut scale_factor: ResMut<ScaleFactor>,
     mut win: Query<&mut bevy::prelude::Window>,
+    mut clear_color: ResMut<ClearColor>,
 ) {
     let ctx = contexts.ctx_mut();
     let theme = CodeTheme::from_memory(ctx, &ctx.style());
@@ -180,6 +182,12 @@ fn egui_ui(
                     ui.label("win mode");
                     ui.selectable_value(&mut win.single_mut().mode, fullscreen, "fullscreen");
                     ui.selectable_value(&mut win.single_mut().mode, windowed, "windowed");
+                });
+                ui.horizontal(|ui| {
+                    ui.label("clear color");
+                    let mut tmp = clear_color.0.to_srgba().to_u8_array();
+                    ui.color_edit_button_srgba_unmultiplied(&mut tmp);
+                    clear_color.0 = Srgba::from_u8_array(tmp).into();
                 });
             });
             ui.separator();
