@@ -15,6 +15,7 @@ impl Plugin for JointsPlugin {
         )
         .add_observer(disjoint_observer)
         .add_observer(replace_joint)
+        .add_observer(set_joint_property)
         .add_observer(joint_points);
     }
 }
@@ -115,6 +116,80 @@ fn spawn_joint(
 }
 
 // ---- observers ----
+
+#[derive(Event, Clone)]
+pub enum JointProperty {
+    Compliance(f32),
+    Anchor1(f32, f32),
+    Anchor2(f32, f32),
+    Limits(f32, f32),
+    Rest(f32),
+    FreeAxis(f32, f32),
+}
+
+pub fn set_joint_property(
+    trig: Trigger<JointProperty>,
+    mut fixed: Query<&mut FixedJoint>,
+    mut distance: Query<&mut DistanceJoint>,
+    mut revolute: Query<&mut RevoluteJoint>,
+    mut prismatic: Query<&mut PrismaticJoint>,
+) {
+    let e = trig.entity();
+    match *trig.event() {
+        JointProperty::Compliance(val) => {
+            if let Ok(mut j) = fixed.get_mut(e) {
+                j.compliance = val / 100000.;
+            } else if let Ok(mut j) = distance.get_mut(e) {
+                j.compliance = val / 100000.;
+            } else if let Ok(mut j) = revolute.get_mut(e) {
+                j.compliance = val / 100000.;
+            } else if let Ok(mut j) = prismatic.get_mut(e) {
+                j.compliance = val / 100000.;
+            }
+        }
+        JointProperty::Anchor1(x, y) => {
+            if let Ok(mut j) = fixed.get_mut(e) {
+                j.local_anchor1 = Vec2::new(x, y);
+            } else if let Ok(mut j) = distance.get_mut(e) {
+                j.local_anchor1 = Vec2::new(x, y);
+            } else if let Ok(mut j) = revolute.get_mut(e) {
+                j.local_anchor1 = Vec2::new(x, y);
+            } else if let Ok(mut j) = prismatic.get_mut(e) {
+                j.local_anchor1 = Vec2::new(x, y);
+            }
+        }
+        JointProperty::Anchor2(x, y) => {
+            if let Ok(mut j) = fixed.get_mut(e) {
+                j.local_anchor2 = Vec2::new(x, y);
+            } else if let Ok(mut j) = distance.get_mut(e) {
+                j.local_anchor2 = Vec2::new(x, y);
+            } else if let Ok(mut j) = revolute.get_mut(e) {
+                j.local_anchor2 = Vec2::new(x, y);
+            } else if let Ok(mut j) = prismatic.get_mut(e) {
+                j.local_anchor2 = Vec2::new(x, y);
+            }
+        }
+        JointProperty::Limits(min, max) => {
+            if let Ok(mut j) = distance.get_mut(e) {
+                j.length_limits = Some(DistanceLimit::new(min, max));
+            } else if let Ok(mut j) = prismatic.get_mut(e) {
+                j.free_axis_limits = Some(DistanceLimit::new(min, max));
+            } else if let Ok(mut j) = revolute.get_mut(e) {
+                j.angle_limit = Some(AngleLimit::new(min, max));
+            }
+        }
+        JointProperty::Rest(val) => {
+            if let Ok(mut j) = distance.get_mut(e) {
+                j.rest_length = val;
+            }
+        }
+        JointProperty::FreeAxis(x, y) => {
+            if let Ok(mut j) = prismatic.get_mut(e) {
+                j.free_axis = Vec2::new(x, y);
+            }
+        }
+    }
+}
 
 #[derive(Event)]
 pub struct ReplaceJoint(pub JointType);

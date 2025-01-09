@@ -84,6 +84,7 @@ fn method_entity(expr: &ExprMethodCall, lapis: &mut Lapis) -> Option<Entity> {
         return None;
     }
     let val = eval_float(expr.args.first()?, lapis);
+    let val2 = eval_float(expr.args.get(1)?, lapis);
     let cmd = &mut lapis.commands;
     match expr.method.to_string().as_str() {
         "x" => cmd.trigger_targets(Property::X(val?), e),
@@ -152,6 +153,12 @@ fn method_entity(expr: &ExprMethodCall, lapis: &mut Lapis) -> Option<Entity> {
                 }
             }
         }
+        "compliance" => cmd.trigger_targets(JointProperty::Compliance(val?), e),
+        "anchor1" => cmd.trigger_targets(JointProperty::Anchor1(val?, val2?), e),
+        "anchor2" => cmd.trigger_targets(JointProperty::Anchor2(val?, val2?), e),
+        "limits" => cmd.trigger_targets(JointProperty::Limits(val?, val2?), e),
+        "rest" => cmd.trigger_targets(JointProperty::Rest(val?), e),
+        "free_axis" => cmd.trigger_targets(JointProperty::FreeAxis(val?, val2?), e),
         _ => return None,
     }
     Some(e)
