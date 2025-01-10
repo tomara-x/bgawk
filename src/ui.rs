@@ -472,72 +472,10 @@ fn egui_ui(
         });
     Window::new("about")
         .open(&mut lapis.data.about)
-        .show(ctx, |ui| {
-            ui.label("this is a toy for playing with physics and sound");
-            ui.label("lapis is a FunDSP interpreter");
-            ui.horizontal(|ui| {
-                ui.label("FunDSP:");
-                ui.hyperlink_to(
-                    "github.com/SamiPerttu/fundsp",
-                    "https://github.com/SamiPerttu/fundsp/",
-                );
-            });
-            ui.horizontal(|ui| {
-                ui.label("FunDSP doc:");
-                ui.hyperlink_to(
-                    "docs.rs/fundsp/latest/fundsp",
-                    "https://docs.rs/fundsp/latest/fundsp/",
-                );
-            });
-            ui.horizontal(|ui| {
-                ui.label("lapis:");
-                ui.hyperlink_to(
-                    "github.com/tomara-x/lapis",
-                    "https://github.com/tomara-x/lapis/",
-                );
-            });
-            ui.horizontal(|ui| {
-                ui.label("lapis mirror:");
-                ui.hyperlink_to(
-                    "codeberg.org/tomara-x/lapis",
-                    "https://codeberg.org/tomara-x/lapis/",
-                );
-            });
-            ui.horizontal(|ui| {
-                ui.label("repo:");
-                ui.hyperlink_to(
-                    "github.com/tomara-x/bgawk",
-                    "https://github.com/tomara-x/bgawk/",
-                );
-            });
-            ui.horizontal(|ui| {
-                ui.label("mirror:");
-                ui.hyperlink_to(
-                    "codeberg.org/tomara-x/bgawk",
-                    "https://codeberg.org/tomara-x/bgawk/",
-                );
-            });
-            ui.label("an amy universe piece");
-            ui.label("courtesy of the alphabet mafia");
-            ui.small("made in africa");
-        });
+        .show(ctx, about_window_function);
     Window::new("help")
         .open(&mut lapis.data.help)
-        .show(ctx, |ui| {
-            ui.label(HELP_TEXT);
-            ui.label("");
-            ui.horizontal(|ui| {
-                ui.label("see the");
-                ui.hyperlink_to("FunDSP readme", "https://github.com/SamiPerttu/fundsp/");
-                ui.label("and");
-                ui.hyperlink_to("documentation", "https://docs.rs/fundsp/latest/fundsp/");
-            });
-            ui.horizontal(|ui| {
-                ui.label("and the");
-                ui.hyperlink_to("lapis readme", "https://github.com/tomara-x/lapis/");
-                ui.label("for more info about how they work");
-            });
-        });
+        .show(ctx, help_window_function);
 }
 
 fn links_line(ui: &mut Ui, buffer: &mut String) {
@@ -570,6 +508,229 @@ fn code_line(
                 .layouter(layouter),
         )
         .on_hover_text(CODE_TOOLTIP);
+    });
+}
+
+fn about_window_function(ui: &mut Ui) {
+    ui.label("this is a toy for playing with physics and sound");
+    ui.label("lapis is a FunDSP interpreter");
+    ui.horizontal(|ui| {
+        ui.label("FunDSP:");
+        ui.hyperlink_to(
+            "github.com/SamiPerttu/fundsp",
+            "https://github.com/SamiPerttu/fundsp/",
+        );
+    });
+    ui.horizontal(|ui| {
+        ui.label("FunDSP doc:");
+        ui.hyperlink_to(
+            "docs.rs/fundsp/latest/fundsp",
+            "https://docs.rs/fundsp/latest/fundsp/",
+        );
+    });
+    ui.horizontal(|ui| {
+        ui.label("lapis:");
+        ui.hyperlink_to(
+            "github.com/tomara-x/lapis",
+            "https://github.com/tomara-x/lapis/",
+        );
+    });
+    ui.horizontal(|ui| {
+        ui.label("lapis mirror:");
+        ui.hyperlink_to(
+            "codeberg.org/tomara-x/lapis",
+            "https://codeberg.org/tomara-x/lapis/",
+        );
+    });
+    ui.horizontal(|ui| {
+        ui.label("repo:");
+        ui.hyperlink_to(
+            "github.com/tomara-x/bgawk",
+            "https://github.com/tomara-x/bgawk/",
+        );
+    });
+    ui.horizontal(|ui| {
+        ui.label("mirror:");
+        ui.hyperlink_to(
+            "codeberg.org/tomara-x/bgawk",
+            "https://codeberg.org/tomara-x/bgawk/",
+        );
+    });
+    ui.label("an amy universe piece");
+    ui.label("courtesy of the alphabet mafia");
+    ui.small("made in africa");
+}
+
+fn help_window_function(ui: &mut Ui) {
+    ScrollArea::vertical().show(ui, |ui| {
+        CollapsingHeader::new("general")
+            .default_open(true)
+            .show(ui, |ui| {
+                ui.label(
+                    "- hold space and drag/scroll to pan/zoom the camera
+(or to cancel creating an object)
+- hold the right mouse button while one object is selected
+  to track it with the camera
+- in edit mode:
+    - press ctrl+a to select all objects
+    - when selecting objects, hold shift to add to selection
+      or hold ctrl to remove from selection
+    - press delete to delete selected objects
+    - press shift+delete to delete any joints connected to
+      selected objects
+    - if you don't need objects to gravitate towards each
+      other set the attraction to zero. this will disable
+      that system allowing much better performance
+- in joint mode:
+    - drag from one object to another to create a joint
+      with the click/release positions as local anchors",
+                );
+            });
+        ui.collapsing("entity creation/deletion", |ui| {
+            ui.label("- to spawn an object with values from draw settings:");
+            ui.code("spawn(r); // r is radius");
+            ui.label("- to create a joint between 2 points:");
+            ui.label("(those points must intersect 2 objects)");
+            ui.code("joint(x1, y1, x2, y2);");
+            ui.label("- both of those functions return an id which can be assigned");
+            ui.code(
+                "let e1 = spawn(10);
+let e2 = spawn(20).x(200);
+let joint = joint(0,0,200,0);",
+            );
+            ui.label("- to despawn an entity (object or joint)");
+            ui.code("entity.despawn()");
+        });
+        ui.collapsing("PLACEHOLDER", |ui| {
+            ui.label("you can create a temporary placeholder entity");
+            ui.code("let entity = Entity::PLACEHOLDER;");
+            ui.label("methods applied to this affect all selected objects");
+        });
+        ui.collapsing("object methods", |ui| {
+            ui.label("these methods can be called on objects");
+            ui.label("all of which return the entity id");
+            ui.horizontal(|ui| {
+                ui.label("so ");
+                ui.code("entity.x(f).y(f).mass(f);");
+                ui.label("is valid");
+            });
+            ui.monospace(
+                "- entity.x(f)
+- entity.y(f)
+- entity.rx(f) // x radius
+- entity.ry(f)
+- entity.rot(f) // rotation
+- entity.mass(f)
+- entity.vx(f) // x velocity
+- entity.vy(f)
+- entity.va(f) // angular velocity
+- entity.restitution(f)
+- entity.lindamp(f) // linear damping
+- entity.angdamp(f) // angular damping
+- entity.inertia(f)
+- entity.h(f)  // hue
+- entity.s(f)  // saturation
+- entity.l(f)  // lightness 
+- entity.a(f)  // alpha
+- entity.sides(f)
+- entity.cmx(f)  // x center of mass
+- entity.cmy(f)
+- entity.friction(f)
+- entity.tail(f)  // tail length (in points)
+- entity.layer(f)  // collision layer
+
+- entity.dynamic(bool) // dynamic or static
+- entity.sensor(bool) // sensors don't collide
+
+// str must be \"in quotes\"
+- entity.links(str)  // links text
+- entity.code_i(str) // collision start code
+- entity.code_f(str) // collision end
+
+// despawns joints connected to this object
+- entity.disjoint()
+",
+            );
+        });
+        ui.collapsing("object fields", |ui| {
+            ui.label("you can get properties of objects");
+            ui.label("fun stuff in collision code ;)");
+            ui.monospace(
+                "- entity.x
+- entity.y
+- entity.rx
+- entity.ry
+- entity.rot
+- entity.mass
+- entity.vx
+- entity.vy
+- entity.va
+- entity.restitution
+- entity.lindamp
+- entity.angdamp
+- entity.inertia
+- entity.h
+- entity.s
+- entity.l
+- entity.a
+- entity.sides
+- entity.cmx
+- entity.cmy
+- entity.friction
+- entity.tail
+- entity.layer
+- entity.dynamic // bool
+- entity.sensor // bool",
+            );
+        });
+        ui.collapsing("joint methods", |ui| {
+            ui.monospace(
+                "// 0 = fixed, 1 = distance,
+// 2 = prismatic, 3 = revolute
+- entity.joint_type(f)
+
+- entity.compliance(f)
+- entity.anchor1(f, f)
+- entity.anchor2(f, f)
+
+// distance / free axis / angle limits
+- entity.limits(f, f)
+
+// distance joint rest length
+- entity.rest(f)
+
+// prismatic joint free axis
+- entity.free_axis(f, f)",
+            );
+        });
+        ui.collapsing("joint fields", |ui| {
+            ui.monospace(
+                "- entity.joint_type //same numbers as method
+- entity.compliance
+- entity.anchor1x
+- entity.anchor1y
+- entity.anchor2x
+- entity.anchor2y
+- entity.min
+- entity.max
+- entity.rest
+- entity.axis_x
+- entity.axis_y
+",
+            );
+        });
+        ui.label("");
+        ui.horizontal(|ui| {
+            ui.label("see the");
+            ui.hyperlink_to("FunDSP readme", "https://github.com/SamiPerttu/fundsp/");
+            ui.label("and");
+            ui.hyperlink_to("documentation", "https://docs.rs/fundsp/latest/fundsp/");
+        });
+        ui.horizontal(|ui| {
+            ui.label("and the");
+            ui.hyperlink_to("lapis readme", "https://github.com/tomara-x/lapis/");
+            ui.label("for more info about how they work");
+        });
     });
 }
 
@@ -613,20 +774,3 @@ const CODE_TOOLTIP: &str = "evaluated when this object starts/stops colliding wi
 these placeholders will be substituted:
 $id for this entity's id
 $other for the other entity's id";
-
-const HELP_TEXT: &str = "- hold space and drag/scroll to pan/zoom the camera
-- hold the right mouse button while one object is selected
-  to track it with the camera
-- in edit mode:
-    - press ctrl+a to select all objects
-    - when selecting objects, hold shift to add to selection
-      or hold ctrl to remove from selection
-    - press delete to delete selected objects
-    - press shift+delete to delete any joints connected to
-      selected objects
-    - if you don't need objects to gravitate towards each other
-      set the attraction to zero. this will disable that system
-      allowing much better performance
-- in joint mode:
-    - drag from one object to another to create a joint
-      with the click/release positions as local anchors";
