@@ -277,7 +277,13 @@ fn eval_stmt(s: Stmt, lapis: &mut Lapis, quiet: bool) {
                 }
                 Expr::Lit(left) => {
                     if let Lit::Str(left) = left.lit {
-                        if let Expr::Lit(right) = *expr.right {
+                        if let Some(b) = eval_bool(&expr.right, lapis) {
+                            match left.value().as_str() {
+                                "keys" => lapis.data.keys_active = b,
+                                "quiet" => lapis.data.quiet = b,
+                                _ => {}
+                            }
+                        } else if let Expr::Lit(right) = *expr.right {
                             if let Some(shortcut) = parse_shortcut(left.value()) {
                                 lapis.data.keys.retain(|x| x.0 != shortcut);
                                 if let Lit::Str(right) = right.lit {
