@@ -13,7 +13,7 @@ impl Plugin for JointsPlugin {
                 .run_if(resource_equals(EguiFocused(false)))
                 .run_if(resource_equals(Mode::Joint)),
         )
-        .add_observer(disjoint_observer)
+        .add_observer(disjoint)
         .add_observer(replace_joint)
         .add_observer(set_joint_property)
         .add_observer(joint_points);
@@ -270,7 +270,7 @@ fn replace_joint(
 #[derive(Event)]
 pub struct Disjoint;
 
-fn disjoint_observer(
+fn disjoint(
     trig: Trigger<Disjoint>,
     mut commands: Commands,
     fixed: Query<(Entity, &FixedJoint)>,

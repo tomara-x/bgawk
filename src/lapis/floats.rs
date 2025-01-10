@@ -63,6 +63,7 @@ fn field_float(expr: &ExprField, lapis: &Lapis) -> Option<f32> {
             "friction" => Some(lapis.friction_query.get(e).ok()?.dynamic_coefficient),
             "tail" => Some(lapis.tail_query.get(e).ok()?.len as f32),
             "layer" => Some(lapis.layer_query.get(e).ok()?.memberships.0.ilog2() as f32),
+            // joint fields
             "joint_type" => {
                 if lapis.fixed_query.contains(e) {
                     Some(0.)
@@ -76,6 +77,96 @@ fn field_float(expr: &ExprField, lapis: &Lapis) -> Option<f32> {
                     None
                 }
             }
+            "compliance" => {
+                if let Ok(j) = lapis.fixed_query.get(e) {
+                    Some(j.compliance * 100000.)
+                } else if let Ok(j) = lapis.distance_query.get(e) {
+                    Some(j.compliance * 100000.)
+                } else if let Ok(j) = lapis.prismatic_query.get(e) {
+                    Some(j.compliance * 100000.)
+                } else if let Ok(j) = lapis.revolute_query.get(e) {
+                    Some(j.compliance * 100000.)
+                } else {
+                    None
+                }
+            }
+            "anchor1x" => {
+                if let Ok(j) = lapis.fixed_query.get(e) {
+                    Some(j.local_anchor1.x)
+                } else if let Ok(j) = lapis.distance_query.get(e) {
+                    Some(j.local_anchor1.x)
+                } else if let Ok(j) = lapis.prismatic_query.get(e) {
+                    Some(j.local_anchor1.x)
+                } else if let Ok(j) = lapis.revolute_query.get(e) {
+                    Some(j.local_anchor1.x)
+                } else {
+                    None
+                }
+            }
+            "anchor1y" => {
+                if let Ok(j) = lapis.fixed_query.get(e) {
+                    Some(j.local_anchor1.y)
+                } else if let Ok(j) = lapis.distance_query.get(e) {
+                    Some(j.local_anchor1.y)
+                } else if let Ok(j) = lapis.prismatic_query.get(e) {
+                    Some(j.local_anchor1.y)
+                } else if let Ok(j) = lapis.revolute_query.get(e) {
+                    Some(j.local_anchor1.y)
+                } else {
+                    None
+                }
+            }
+            "anchor2x" => {
+                if let Ok(j) = lapis.fixed_query.get(e) {
+                    Some(j.local_anchor2.x)
+                } else if let Ok(j) = lapis.distance_query.get(e) {
+                    Some(j.local_anchor2.x)
+                } else if let Ok(j) = lapis.prismatic_query.get(e) {
+                    Some(j.local_anchor2.x)
+                } else if let Ok(j) = lapis.revolute_query.get(e) {
+                    Some(j.local_anchor2.x)
+                } else {
+                    None
+                }
+            }
+            "anchor2y" => {
+                if let Ok(j) = lapis.fixed_query.get(e) {
+                    Some(j.local_anchor2.y)
+                } else if let Ok(j) = lapis.distance_query.get(e) {
+                    Some(j.local_anchor2.y)
+                } else if let Ok(j) = lapis.prismatic_query.get(e) {
+                    Some(j.local_anchor2.y)
+                } else if let Ok(j) = lapis.revolute_query.get(e) {
+                    Some(j.local_anchor2.y)
+                } else {
+                    None
+                }
+            }
+            "min" => {
+                if let Ok(j) = lapis.distance_query.get(e) {
+                    Some(j.length_limits?.min)
+                } else if let Ok(j) = lapis.prismatic_query.get(e) {
+                    Some(j.free_axis_limits?.min)
+                } else if let Ok(j) = lapis.revolute_query.get(e) {
+                    Some(j.angle_limit?.min)
+                } else {
+                    None
+                }
+            }
+            "max" => {
+                if let Ok(j) = lapis.distance_query.get(e) {
+                    Some(j.length_limits?.max)
+                } else if let Ok(j) = lapis.prismatic_query.get(e) {
+                    Some(j.free_axis_limits?.max)
+                } else if let Ok(j) = lapis.revolute_query.get(e) {
+                    Some(j.angle_limit?.max)
+                } else {
+                    None
+                }
+            }
+            "rest" => Some(lapis.distance_query.get(e).ok()?.rest_length),
+            "axis_x" => Some(lapis.prismatic_query.get(e).ok()?.free_axis.x),
+            "axis_y" => Some(lapis.prismatic_query.get(e).ok()?.free_axis.y),
             _ => None,
         };
     }
