@@ -139,19 +139,13 @@ fn method_entity(expr: &ExprMethodCall, lapis: &mut Lapis) -> Option<Entity> {
             }
         }
         // joint methods
-        "joint_type" => {
-            if let Expr::Lit(expr) = expr.args.first()? {
-                if let Lit::Str(expr) = &expr.lit {
-                    match expr.value().as_str() {
-                        "fixed" => cmd.trigger_targets(ReplaceJoint(JointType::Fixed), e),
-                        "distance" => cmd.trigger_targets(ReplaceJoint(JointType::Distance), e),
-                        "prismatic" => cmd.trigger_targets(ReplaceJoint(JointType::Prismatic), e),
-                        "revolute" => cmd.trigger_targets(ReplaceJoint(JointType::Revolute), e),
-                        _ => {}
-                    }
-                }
-            }
-        }
+        "joint_type" => match val?.trunc() {
+            0. => cmd.trigger_targets(ReplaceJoint(JointType::Fixed), e),
+            1. => cmd.trigger_targets(ReplaceJoint(JointType::Distance), e),
+            2. => cmd.trigger_targets(ReplaceJoint(JointType::Prismatic), e),
+            3. => cmd.trigger_targets(ReplaceJoint(JointType::Revolute), e),
+            _ => {}
+        },
         "compliance" => cmd.trigger_targets(JointProperty::Compliance(val?), e),
         "anchor1" => {
             let val2 = eval_float(expr.args.get(1)?, lapis)?;

@@ -113,6 +113,10 @@ pub struct Lapis<'w, 's> {
     pub layer_query: Query<'w, 's, &'static CollisionLayers>,
     pub body_query: Query<'w, 's, &'static RigidBody>,
     pub sensor_query: Query<'w, 's, &'static Sensor>,
+    pub fixed_query: Query<'w, 's, &'static FixedJoint>,
+    pub distance_query: Query<'w, 's, &'static DistanceJoint>,
+    pub revolute_query: Query<'w, 's, &'static RevoluteJoint>,
+    pub prismatic_query: Query<'w, 's, &'static PrismaticJoint>,
 }
 
 impl Lapis<'_, '_> {

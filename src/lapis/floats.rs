@@ -63,6 +63,19 @@ fn field_float(expr: &ExprField, lapis: &Lapis) -> Option<f32> {
             "friction" => Some(lapis.friction_query.get(e).ok()?.dynamic_coefficient),
             "tail" => Some(lapis.tail_query.get(e).ok()?.len as f32),
             "layer" => Some(lapis.layer_query.get(e).ok()?.memberships.0.ilog2() as f32),
+            "joint_type" => {
+                if lapis.fixed_query.contains(e) {
+                    Some(0.)
+                } else if lapis.distance_query.contains(e) {
+                    Some(1.)
+                } else if lapis.prismatic_query.contains(e) {
+                    Some(2.)
+                } else if lapis.revolute_query.contains(e) {
+                    Some(3.)
+                } else {
+                    None
+                }
+            }
             _ => None,
         };
     }
