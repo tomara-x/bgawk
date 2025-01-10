@@ -719,6 +719,14 @@ let joint = joint(0,0,200,0);",
 ",
             );
         });
+        ui.collapsing("entity/float conversion", |ui| {
+            ui.label("you can convert an entity to 2 floats");
+            ui.code("let floats = entity.to_floats();");
+            ui.label("and convert a [f, f] back to an entity");
+            ui.code("let same = Entity::from_floats(floats);");
+            ui.label("this is useful for storing a collection of entities");
+            ui.label("(too lazy to implement arrays for entities :p)");
+        });
         ui.label("");
         ui.horizontal(|ui| {
             ui.label("see the");

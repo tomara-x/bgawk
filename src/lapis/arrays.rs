@@ -39,6 +39,15 @@ fn method_vec(expr: &ExprMethodCall, lapis: &Lapis) -> Option<Vec<f32>> {
             let k = nth_path_ident(&expr.receiver, 0)?;
             lapis.data.vmap.get(&k).cloned()
         }
+        "to_floats" => {
+            let e = path_lit_entity(&expr.receiver, lapis)?;
+            let bits = e.to_bits();
+            let h = (bits >> u32::BITS) as u32;
+            let l = bits as u32;
+            let h = f32::from_bits(h);
+            let l = f32::from_bits(l);
+            Some(vec![h, l])
+        }
         _ => None,
     }
 }

@@ -47,6 +47,15 @@ fn call_entity(expr: &ExprCall, lapis: &mut Lapis) -> Option<Entity> {
                     }
                     None
                 }
+                "from_floats" => {
+                    let arr = eval_vec(expr.args.first()?, lapis)?;
+                    let h = arr.first()?;
+                    let l = arr.get(1)?;
+                    let h = h.to_bits();
+                    let l = l.to_bits();
+                    let bits = ((h as u64) << u32::BITS) | (l as u64);
+                    Entity::try_from_bits(bits).ok()
+                }
                 _ => None,
             }
         }
