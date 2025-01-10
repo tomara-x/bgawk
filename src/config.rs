@@ -1,5 +1,4 @@
-use crate::objects::AttractionFactor;
-use crate::ui::ScaleFactor;
+use crate::{lapis::Lapis, objects::AttractionFactor, ui::ScaleFactor};
 use avian2d::prelude::Gravity;
 use bevy::{prelude::*, window::WindowMode};
 use clap::Parser;
@@ -22,6 +21,14 @@ pub struct Config {
     /// start in full screen mode
     #[arg(long, default_value_t = false)]
     pub fullscreen: bool,
+
+    /// enable lapis quiet evaluation
+    #[arg(long, default_value_t = false)]
+    pub lapis_quiet: bool,
+
+    /// enable lapis keybindings
+    #[arg(long, default_value_t = false)]
+    pub lapis_keys: bool,
 
     #[arg(long, default_value_t = 0.0)]
     pub gravity_x: f32,
@@ -70,6 +77,7 @@ fn configure(
     mut scale_factor: ResMut<ScaleFactor>,
     mut win: Query<&mut Window>,
     mut clear_color: ResMut<ClearColor>,
+    mut lapis: Lapis,
 ) {
     if config.pause {
         time.pause();
@@ -92,4 +100,7 @@ fn configure(
     if let Ok(color) = Srgba::hex(config.clear_color.clone()) {
         clear_color.0 = color.into();
     }
+
+    lapis.data.keys_active = config.lapis_keys;
+    lapis.data.quiet = config.lapis_quiet;
 }
