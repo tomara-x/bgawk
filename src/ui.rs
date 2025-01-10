@@ -390,8 +390,11 @@ fn egui_ui(
             }
         }
     });
+    let res = &win.single().resolution;
+    let (w, h) = (res.width(), res.height());
     Window::new("lapis output")
-        .default_pos([900., 10.])
+        .pivot(Align2::RIGHT_TOP)
+        .default_pos([w - 15., 15.])
         .show(ctx, |ui| {
             ui.horizontal(|ui| {
                 ui.toggle_value(&mut lapis.data.quiet, "quiet?")
@@ -410,7 +413,8 @@ fn egui_ui(
             });
         });
     Window::new("lapis input")
-        .default_pos([900., 560.])
+        .pivot(Align2::RIGHT_BOTTOM)
+        .default_pos([w - 15., h - 15.])
         .show(ctx, |ui| {
             ui.collapsing("update code", |ui| {
                 ui.add(
@@ -448,7 +452,8 @@ fn egui_ui(
         });
     Window::new("info")
         .default_open(false)
-        .default_pos([10., 580.])
+        .pivot(Align2::LEFT_BOTTOM)
+        .default_pos([15., h - 15.])
         .show(ctx, |ui| {
             let (conf, _) = config_store.config_mut::<PhysicsGizmos>();
             ui.toggle_value(&mut conf.enabled, "debug?")
