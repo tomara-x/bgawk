@@ -7,7 +7,7 @@ repository = "https://github.com/tomara-x/bgawk"
 license = "MIT OR Apache-2.0"
 
 [dependencies.bevy]
-version = "0.15"
+version = "0.15.1"
 default-features = false
 features = [
     "multi_threaded",
@@ -21,7 +21,7 @@ features = [
 ]
 
 [dependencies.avian2d]
-version = "0.2"
+version = "0.2.0"
 default-features = false
 features = [
     "2d",
@@ -33,18 +33,18 @@ features = [
 ]
 
 [dependencies]
-bevy_pancam = "0.16"
-bevy_egui = "0.32"
-egui = "0.30"
-egui_extras = { version = "0.30", default-features = false, features = ["syntect"] }
-fundsp = {version = "0.20", git = "https://github.com/SamiPerttu/fundsp"}
+bevy_pancam = "0.16.0"
+bevy_egui = "0.32.0"
+egui = "0.30.0"
+egui_extras = { version = "0.30.0", default-features = false, features = ["syntect"] }
+fundsp = {version = "0.20.0", git = "https://github.com/SamiPerttu/fundsp"}
 cpal = {version = "0.15.3", features = ["jack"]}
-syn = {version = "2.0", features = ["full", "extra-traits"]}
-crossbeam-channel = "0.5"
-clap = { version = "4.5.23", features = ["derive"] }
+syn = {version = "2.0.96", features = ["full", "extra-traits"]}
+crossbeam-channel = "0.5.14"
+clap = { version = "4.5.26", features = ["derive"] }
 figment = { version = "0.10.19", features = ["toml"]}
 xdg = "2.5.2"
-serde = { version = "1.0.215", features = ["derive"] }
+serde = { version = "1.0.217", features = ["derive"] }
 
 # smol amount of optimization for our stuff
 [profile.dev]
