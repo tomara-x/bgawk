@@ -176,10 +176,12 @@ fn eval_collisions(
 ) {
     if lapis.data.quiet {
         for CollisionStarted(e1, e2) in started.read() {
-            let c = code.get(*e1).unwrap();
-            lapis.quiet_eval(&replace(&c.0, *e1, *e2));
-            let c = code.get(*e2).unwrap();
-            lapis.quiet_eval(&replace(&c.0, *e2, *e1));
+            if let Ok(c) = code.get(*e1) {
+                lapis.quiet_eval(&replace(&c.0, *e1, *e2));
+            }
+            if let Ok(c) = code.get(*e2) {
+                lapis.quiet_eval(&replace(&c.0, *e2, *e1));
+            }
         }
         for CollisionEnded(e1, e2) in ended.read() {
             if let Ok(c) = code.get(*e1) {
@@ -191,10 +193,12 @@ fn eval_collisions(
         }
     } else {
         for CollisionStarted(e1, e2) in started.read() {
-            let c = code.get(*e1).unwrap();
-            lapis.eval(&replace(&c.0, *e1, *e2));
-            let c = code.get(*e2).unwrap();
-            lapis.eval(&replace(&c.0, *e2, *e1));
+            if let Ok(c) = code.get(*e1) {
+                lapis.eval(&replace(&c.0, *e1, *e2));
+            }
+            if let Ok(c) = code.get(*e2) {
+                lapis.eval(&replace(&c.0, *e2, *e1));
+            }
         }
         for CollisionEnded(e1, e2) in ended.read() {
             if let Ok(c) = code.get(*e1) {
