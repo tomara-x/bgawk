@@ -146,19 +146,18 @@ fn attract(
     if !factor.0.is_normal() {
         return;
     }
-    for (e1, l1) in layers.iter() {
-        for (e2, l2) in layers.iter() {
-            if l1 == l2 && e1 != e2 {
-                let [mut e1, mut e2] = query.many_mut([e1, e2]);
-                let m1 = e1.0 .0;
-                let m2 = e2.0 .0;
-                let p1 = e1.1 .0;
-                let p2 = e2.1 .0;
-                let r = p1.distance_squared(p2);
-                if r > 1. {
-                    e1.2 .0 += (p2 - p1) * m2 / r * factor.0;
-                    e2.2 .0 += (p1 - p2) * m1 / r * factor.0;
-                }
+    let mut combinations = layers.iter_combinations();
+    while let Some([(e1, l1), (e2, l2)]) = combinations.fetch_next() {
+        if l1 == l2 {
+            let [mut e1, mut e2] = query.many_mut([e1, e2]);
+            let m1 = e1.0 .0;
+            let m2 = e2.0 .0;
+            let p1 = e1.1 .0;
+            let p2 = e2.1 .0;
+            let r = p1.distance_squared(p2);
+            if r > 1. {
+                e1.2 .0 += (p2 - p1) * m2 / r * factor.0;
+                e2.2 .0 += (p1 - p2) * m1 / r * factor.0;
             }
         }
     }
