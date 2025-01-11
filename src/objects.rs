@@ -124,6 +124,7 @@ fn spawn(
                 len: settings.tail,
                 ..default()
             },
+            SleepingDisabled,
         ));
         if settings.sensor {
             e.insert(Sensor);
@@ -738,5 +739,6 @@ pub fn insert_defaults(
             len: settings.tail,
             ..default()
         },
+        SleepingDisabled,
     ));
 }

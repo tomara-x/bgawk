@@ -592,14 +592,14 @@ fn help_window_function(ui: &mut Ui) {
             ui.label("- to create a joint between 2 points:");
             ui.label("(those points must intersect 2 objects)");
             ui.code("joint(x1, y1, x2, y2);");
-            ui.label("- both of those functions return an id which can be assigned");
+            ui.label("- both of these functions return an id which can be assigned");
             ui.code(
                 "let e1 = spawn(10);
 let e2 = spawn(20).x(200);
 let joint = joint(0,0,200,0);",
             );
             ui.label("- to despawn an entity (object or joint)");
-            ui.code("entity.despawn()");
+            ui.code("entity.despawn();");
         });
         ui.collapsing("PLACEHOLDER", |ui| {
             ui.label("you can create a temporary placeholder entity");
