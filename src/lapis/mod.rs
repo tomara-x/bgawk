@@ -32,7 +32,16 @@ pub struct LapisPlugin;
 
 impl Plugin for LapisPlugin {
     fn build(&self, app: &mut App) {
-        app.insert_resource(LapisData::new());
+        app.insert_resource(LapisData::new())
+            .add_systems(Update, toggle_help);
+    }
+}
+
+fn toggle_help(keyboard_input: Res<ButtonInput<KeyCode>>, mut lapis: ResMut<LapisData>) {
+    if keyboard_input.just_pressed(KeyCode::F1) {
+        lapis.help = !lapis.help;
+    } else if keyboard_input.just_pressed(KeyCode::Escape) {
+        lapis.help = false;
     }
 }
 
