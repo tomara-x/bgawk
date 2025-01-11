@@ -563,11 +563,8 @@ fn about_window_function(ui: &mut Ui) {
 
 fn help_window_function(ui: &mut Ui) {
     ScrollArea::vertical().show(ui, |ui| {
-        CollapsingHeader::new("general")
-            .default_open(true)
-            .show(ui, |ui| {
-                ui.label(
-                    "- hold space and drag/scroll to pan/zoom the camera
+        ui.label(
+            "- hold space and drag/scroll to pan/zoom the camera
 (or to cancel creating an object)
 - hold the right mouse button while one object is selected
   to track it with the camera
@@ -580,12 +577,9 @@ fn help_window_function(ui: &mut Ui) {
       selected objects
     - if you don't need objects to gravitate towards each
       other set the attraction to zero. this will disable
-      that system allowing much better performance
-- in joint mode:
-    - drag from one object to another to create a joint
-      with the click/release positions as local anchors",
-                );
-            });
+      that system allowing much better performance",
+        );
+        ui.strong("entities through lapis:");
         ui.collapsing("entity creation/deletion", |ui| {
             ui.label("- to spawn an object with values from draw settings:");
             ui.code("spawn(r); // r is radius");
