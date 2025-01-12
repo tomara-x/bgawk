@@ -1,6 +1,5 @@
 use crate::lapis::*;
 
-#[allow(clippy::map_entry)]
 pub fn eval_stmt(s: Stmt, lapis: &mut Lapis) -> String {
     let mut buffer = String::new();
     match s {
@@ -229,6 +228,7 @@ fn eval_local(expr: &syn::Local, lapis: &mut Lapis) {
     }
 }
 
+#[allow(clippy::map_entry)]
 fn eval_assign(expr: &ExprAssign, lapis: &mut Lapis) {
     match &*expr.left {
         Expr::Path(_) => {
