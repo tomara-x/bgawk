@@ -25,7 +25,7 @@ fn eval_expr(expr: Expr, lapis: &mut Lapis, buffer: &mut String) {
         let info = g.display().replace('\n', "\n// ");
         buffer.push_str(&format!("\n// {}", info));
         buffer.push_str(&format!("Size           : {}", g.size()));
-    } else if let Some(id) = method_nodeid(&expr, lapis).or(path_nodeid(&expr, lapis)) {
+    } else if let Some(id) = eval_nodeid(&expr, lapis) {
         buffer.push_str(&format!("\n// {:?}", id));
     } else if let Some(b) = eval_bool(&expr, lapis) {
         buffer.push_str(&format!("\n// {:?}", b));
@@ -194,9 +194,7 @@ fn eval_local(expr: &syn::Local, lapis: &mut Lapis) {
             } else if let Some(arr) = eval_vec(&expr.expr, lapis) {
                 lapis.drop(&k);
                 lapis.data.vmap.insert(k, arr);
-            } else if let Some(id) =
-                method_nodeid(&expr.expr, lapis).or(path_nodeid(&expr.expr, lapis))
-            {
+            } else if let Some(id) = eval_nodeid(&expr.expr, lapis) {
                 lapis.drop(&k);
                 lapis.data.idmap.insert(k, id);
             } else if let Some(b) = eval_bool(&expr.expr, lapis) {
@@ -245,9 +243,7 @@ fn eval_assign(expr: &ExprAssign, lapis: &mut Lapis) {
                 if let Some(a) = eval_vec(&expr.right, lapis) {
                     lapis.data.vmap.insert(ident, a);
                 }
-            } else if let Some(id) =
-                method_nodeid(&expr.right, lapis).or(path_nodeid(&expr.right, lapis))
-            {
+            } else if let Some(id) = eval_nodeid(&expr.right, lapis) {
                 if let Some(var) = lapis.data.idmap.get_mut(&ident) {
                     *var = id;
                 }
