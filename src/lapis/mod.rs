@@ -163,11 +163,10 @@ impl Lapis<'_, '_> {
             match parse_str::<Stmt>(&format!("{{{}}}", self.data.input)) {
                 Ok(stmt) => {
                     self.data.buffer.push('\n');
-                    let input = self.data.input.clone();
+                    let input = std::mem::take(&mut self.data.input);
                     let out = eval_stmt(stmt, self);
                     self.data.buffer.push_str(&input);
                     self.data.buffer.push_str(&out);
-                    self.data.input.clear();
                 }
                 Err(err) => {
                     self.data.buffer.push_str(&format!("\n// error: {}", err));
