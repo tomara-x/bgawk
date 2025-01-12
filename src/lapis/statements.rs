@@ -58,7 +58,7 @@ fn eval_expr(expr: Expr, lapis: &mut Lapis, buffer: &mut String) {
         buffer.push_str(&info);
     } else if let Some(source) = eval_source(&expr, lapis) {
         buffer.push_str(&format!("\n// {:?}", source));
-    } else if let Some(event) = method_eventid(&expr, lapis).or(path_eventid(&expr, lapis)) {
+    } else if let Some(event) = eval_eventid(&expr, lapis) {
         buffer.push_str(&format!("\n// {:?}", event));
     } else if let Some(entity) = eval_entity(&expr, lapis) {
         buffer.push_str(&format!("\n// {:?}", entity));
@@ -215,9 +215,7 @@ fn eval_local(expr: &syn::Local, lapis: &mut Lapis) {
             } else if let Some(source) = eval_source(&expr.expr, lapis) {
                 lapis.drop(&k);
                 lapis.data.srcmap.insert(k, source);
-            } else if let Some(event) =
-                method_eventid(&expr.expr, lapis).or(path_eventid(&expr.expr, lapis))
-            {
+            } else if let Some(event) = eval_eventid(&expr.expr, lapis) {
                 lapis.drop(&k);
                 lapis.data.eventmap.insert(k, event);
             } else if let Some(entity) = eval_entity(&expr.expr, lapis) {
@@ -265,9 +263,7 @@ fn eval_assign(expr: &ExprAssign, lapis: &mut Lapis) {
                 if let Some(var) = lapis.data.srcmap.get_mut(&ident) {
                     *var = s;
                 }
-            } else if let Some(event) =
-                method_eventid(&expr.right, lapis).or(path_eventid(&expr.right, lapis))
-            {
+            } else if let Some(event) = eval_eventid(&expr.right, lapis) {
                 if let Some(var) = lapis.data.eventmap.get_mut(&ident) {
                     *var = event;
                 }
