@@ -33,7 +33,7 @@ features = [
 ]
 
 [dependencies]
-bevy_pancam = "0.16.0"
+bevy_pancam = "0.17.0"
 bevy_egui = "0.32.0"
 egui = "0.30.0"
 egui_extras = { version = "0.30.0", default-features = false, features = ["syntect"] }
