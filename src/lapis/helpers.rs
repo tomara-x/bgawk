@@ -2,6 +2,51 @@ use crate::lapis::*;
 use egui::{Key, KeyboardShortcut, Modifiers};
 use syn::punctuated::Punctuated;
 
+pub fn device_commands(expr: ExprCall, lapis: &mut Lapis, buffer: &mut String) -> Option<()> {
+    let func = nth_path_ident(&expr.func, 0)?;
+    match func.as_str() {
+        "list_in_devices" => {
+            let hosts = cpal::platform::ALL_HOSTS;
+            buffer.push_str("\n// input devices:\n");
+            for (i, host) in hosts.iter().enumerate() {
+                buffer.push_str(&format!("// {}: {:?}:\n", i, host));
+                if let Ok(devices) = cpal::platform::host_from_id(*host).unwrap().input_devices() {
+                    for (j, device) in devices.enumerate() {
+                        buffer.push_str(&format!("//     {}: {:?}\n", j, device.name()));
+                    }
+                }
+            }
+        }
+        "list_out_devices" => {
+            let hosts = cpal::platform::ALL_HOSTS;
+            buffer.push_str("\n// output devices:\n");
+            for (i, host) in hosts.iter().enumerate() {
+                buffer.push_str(&format!("// {}: {:?}:\n", i, host));
+                if let Ok(devices) = cpal::platform::host_from_id(*host)
+                    .unwrap()
+                    .output_devices()
+                {
+                    for (j, device) in devices.enumerate() {
+                        buffer.push_str(&format!("//     {}: {:?}\n", j, device.name()));
+                    }
+                }
+            }
+        }
+        "set_in_device" => {
+            let h = eval_usize(expr.args.first()?, lapis)?;
+            let d = eval_usize(expr.args.get(1)?, lapis)?;
+            lapis.commands.trigger(InDevice(h, d));
+        }
+        "set_out_device" => {
+            let h = eval_usize(expr.args.first()?, lapis)?;
+            let d = eval_usize(expr.args.get(1)?, lapis)?;
+            lapis.commands.trigger(OutDevice(h, d));
+        }
+        _ => {}
+    }
+    None
+}
+
 pub fn parse_shortcut(mut k: String) -> Option<KeyboardShortcut> {
     k = k.replace(char::is_whitespace, "");
     let mut modifiers = Modifiers::NONE;

@@ -64,6 +64,8 @@ fn eval_expr(expr: Expr, lapis: &mut Lapis, buffer: &mut String) {
         buffer.push_str(&format!("\n// {:?}", entity));
     } else if let Expr::Binary(expr) = expr {
         float_bin_assign(&expr, lapis);
+    } else if let Expr::Call(expr) = expr {
+        device_commands(expr, lapis, buffer);
     } else if let Expr::MethodCall(expr) = expr {
         match expr.method.to_string().as_str() {
             "play" => {
