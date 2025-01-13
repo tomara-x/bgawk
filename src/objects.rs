@@ -22,7 +22,7 @@ impl Plugin for ObjectsPlugin {
         .add_systems(PostUpdate, sync_links)
         .add_systems(Update, update_tail)
         .insert_resource(AttractionFactor(0.01))
-        .add_observer(set_observer)
+        .add_observer(set_property)
         .add_observer(insert_defaults);
     }
 }
@@ -512,7 +512,7 @@ pub enum Property {
     CodeF(String),
 }
 
-pub fn set_observer(
+pub fn set_property(
     trig: Trigger<Property>,
     mut trans_query: Query<&mut Transform, With<RigidBody>>,
     mut commands: Commands,
