@@ -25,7 +25,7 @@ cargo run --release
 > [more info](https://bevyengine.org/learn/quick-start/getting-started/setup/#enable-fast-compiles-optional)
 
 > [!TIP]
-> you can configure bgawk via the command line or by placing settings at `$HOME/.config/bawk/config.toml`.
+> you can configure bgawk via the command line or by placing settings at `$HOME/.config/bgawk/config.toml`.
 > for more information see [src/config.rs](./src/config.rs) or run:
 > ```
 > cargo run -- --help
