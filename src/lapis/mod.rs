@@ -151,19 +151,17 @@ impl Lapis<'_, '_> {
     }
 }
 
-struct OutStream(Stream);
-struct InStream(Stream);
+struct OutStream(Option<Stream>);
+struct InStream(Option<Stream>);
 
 fn init_lapis(world: &mut World) {
     let (slot, slot_back) = Slot::new(Box::new(dc(0.) | dc(0.)));
     let (ls, lr) = bounded(4096);
     let (rs, rr) = bounded(4096);
-    if let Some(stream) = default_out_device(slot_back) {
-        world.insert_non_send_resource(OutStream(stream));
-    }
-    if let Some(stream) = default_in_device(ls, rs) {
-        world.insert_non_send_resource(InStream(stream));
-    }
+    let stream = default_out_device(slot_back);
+    world.insert_non_send_resource(OutStream(stream));
+    let stream = default_in_device(ls, rs);
+    world.insert_non_send_resource(InStream(stream));
     world.insert_resource(LapisData {
         input: String::new(),
         buffer: String::new(),
@@ -253,7 +251,7 @@ fn set_out_device(
                                 None
                             }
                         };
-                        if let Some(s) = s {
+                        if s.is_some() {
                             stream.0 = s;
                         }
                     }
@@ -295,7 +293,7 @@ fn set_in_device(
                                 None
                             }
                         };
-                        if let Some(s) = s {
+                        if s.is_some() {
                             stream.0 = s;
                         }
                     }
