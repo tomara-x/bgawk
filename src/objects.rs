@@ -416,6 +416,14 @@ fn sync_links(links_query: Query<(Entity, &Links)>, mut lapis: Lapis) {
                             var.set(lapis.tail_query.get(e).unwrap().len as f32);
                         }
                     }
+                    "layer" => {
+                        if dir == "<" {
+                            cmd.trigger_targets(Property::Layer(var.value() as u32), e);
+                        } else if dir == ">" {
+                            let l = lapis.layer_query.get(e).unwrap().memberships.0;
+                            var.set(l.ilog2() as f32);
+                        }
+                    }
                     _ => {}
                 }
             // assign a float expression
@@ -460,6 +468,7 @@ fn sync_links(links_query: Query<(Entity, &Links)>, mut lapis: Lapis) {
                             "cmy" => cmd.trigger_targets(Property::Cmy(f), e),
                             "friction" => cmd.trigger_targets(Property::Friction(f), e),
                             "tail" => cmd.trigger_targets(Property::Tail(f as usize), e),
+                            "layer" => cmd.trigger_targets(Property::Layer(f as u32), e),
                             _ => {}
                         }
                     }

@@ -770,7 +770,8 @@ sides
 cmx (center of mass x)
 cmy (center of mass y)
 friction
-tail (tail length in points)";
+tail (tail length in points)
+layer";
 
 const CODE_TOOLTIP: &str = "evaluated when this object starts/stops colliding with another\n
 these placeholders will be substituted:
