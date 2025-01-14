@@ -533,7 +533,9 @@ pub fn set_property(
         for e in selected_query.iter() {
             targets.push(e);
         }
-        commands.trigger_targets(trig.event().clone(), targets);
+        if !targets.is_empty() {
+            commands.trigger_targets(trig.event().clone(), targets);
+        }
         return;
     }
     match *trig.event() {
