@@ -66,15 +66,23 @@ fn call_entity(expr: &ExprCall, lapis: &mut Lapis) -> Option<Entity> {
             Some(e)
         }
         "joint" => {
-            let x1 = eval_float(expr.args.first()?, lapis)?;
-            let y1 = eval_float(expr.args.get(1)?, lapis)?;
-            let x2 = eval_float(expr.args.get(2)?, lapis)?;
-            let y2 = eval_float(expr.args.get(3)?, lapis)?;
-            let e = lapis.commands.spawn_empty().id();
-            let i = Vec2::new(x1, y1);
-            let f = Vec2::new(x2, y2);
-            lapis.commands.trigger_targets(JointPoints(i, f), e);
-            Some(e)
+            let e1 = eval_entity(expr.args.first()?, lapis);
+            let e2 = eval_entity(expr.args.get(1)?, lapis);
+            if let (Some(e1), Some(e2)) = (e1, e2) {
+                let e = lapis.commands.spawn_empty().id();
+                lapis.commands.trigger_targets(JointEntities(e1, e2), e);
+                Some(e)
+            } else {
+                let x1 = eval_float(expr.args.first()?, lapis)?;
+                let y1 = eval_float(expr.args.get(1)?, lapis)?;
+                let x2 = eval_float(expr.args.get(2)?, lapis)?;
+                let y2 = eval_float(expr.args.get(3)?, lapis)?;
+                let e = lapis.commands.spawn_empty().id();
+                let i = Vec2::new(x1, y1);
+                let f = Vec2::new(x2, y2);
+                lapis.commands.trigger_targets(JointPoints(i, f), e);
+                Some(e)
+            }
         }
         _ => None,
     }

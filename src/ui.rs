@@ -586,6 +586,8 @@ fn help_window_function(ui: &mut Ui) {
             ui.label("- to create a joint between 2 points:");
             ui.label("(those points must intersect 2 objects)");
             ui.code("joint(x1, y1, x2, y2);");
+            ui.label("- or between 2 entities:");
+            ui.code("joint(e1, e2);");
             ui.label("- both of these functions return an id which can be assigned");
             ui.code(
                 "let e1 = spawn(10);

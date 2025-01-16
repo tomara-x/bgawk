@@ -16,7 +16,8 @@ impl Plugin for JointsPlugin {
         .add_observer(disjoint)
         .add_observer(replace_joint)
         .add_observer(set_joint_property)
-        .add_observer(joint_points);
+        .add_observer(joint_points)
+        .add_observer(joint_entities);
     }
 }
 
@@ -377,5 +378,58 @@ fn joint_points(
         }
     } else {
         commands.entity(joint_entity).despawn();
+    }
+}
+
+#[derive(Event)]
+pub struct JointEntities(pub Entity, pub Entity);
+
+fn joint_entities(
+    trig: Trigger<JointEntities>,
+    mut commands: Commands,
+    settings: Res<JointSettings>,
+) {
+    let joint_entity = trig.entity();
+    let JointEntities(e1, e2) = *trig.event();
+    let anchors = (settings.local_anchor_1, settings.local_anchor_2);
+    let compliance = settings.compliance / 100000.;
+    match settings.joint_type {
+        JointType::Fixed => {
+            commands.entity(joint_entity).insert(
+                FixedJoint::new(e1, e2)
+                    .with_compliance(compliance)
+                    .with_local_anchor_1(anchors.0)
+                    .with_local_anchor_2(anchors.1),
+            );
+        }
+        JointType::Distance => {
+            commands.entity(joint_entity).insert(
+                DistanceJoint::new(e1, e2)
+                    .with_compliance(compliance)
+                    .with_local_anchor_1(anchors.0)
+                    .with_local_anchor_2(anchors.1)
+                    .with_limits(settings.dist_limits.0, settings.dist_limits.1)
+                    .with_rest_length(settings.dist_rest),
+            );
+        }
+        JointType::Prismatic => {
+            commands.entity(joint_entity).insert(
+                PrismaticJoint::new(e1, e2)
+                    .with_compliance(compliance)
+                    .with_local_anchor_1(anchors.0)
+                    .with_local_anchor_2(anchors.1)
+                    .with_free_axis(settings.prismatic_axis)
+                    .with_limits(settings.prismatic_limits.0, settings.prismatic_limits.1),
+            );
+        }
+        JointType::Revolute => {
+            commands.entity(joint_entity).insert(
+                RevoluteJoint::new(e1, e2)
+                    .with_compliance(compliance)
+                    .with_local_anchor_1(anchors.0)
+                    .with_local_anchor_2(anchors.1)
+                    .with_angle_limits(settings.angle_limits.0, settings.angle_limits.1),
+            );
+        }
     }
 }
