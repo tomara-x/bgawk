@@ -579,7 +579,7 @@ fn help_window_function(ui: &mut Ui) {
       other set the attraction to zero. this will disable
       that system allowing much better performance",
         );
-        ui.strong("entities through lapis:");
+        ui.strong("lapis additions:");
         ui.collapsing("entity creation/deletion", |ui| {
             ui.label("- to spawn an object with values from draw settings:");
             ui.code("spawn(r); // r is radius");
@@ -720,6 +720,14 @@ let joint = joint(0,0,200,0);",
             ui.code("let same = Entity::from_floats(floats);");
             ui.label("this is useful for storing a collection of entities");
             ui.label("(too lazy to implement arrays for entities :p)");
+        });
+        ui.collapsing("bevy time", |ui| {
+            ui.code(
+                "time.delta();
+time.elapsed();
+time.elapsed_wrapped();
+// wrap period is 1 hour",
+            );
         });
         ui.label("");
         ui.horizontal(|ui| {

@@ -179,12 +179,34 @@ fn index_float(expr: &ExprIndex, lapis: &Lapis) -> Option<f32> {
     lapis.data.vmap.get(&k)?.get(index).copied()
 }
 
+// TODO half of these rely on a float receiver, the rest on first ident. split
 fn method_float(expr: &ExprMethodCall, lapis: &Lapis) -> Option<f32> {
     match expr.method.to_string().as_str() {
         "value" => {
             let k = nth_path_ident(&expr.receiver, 0)?;
             let shared = &mut lapis.data.smap.get(&k)?;
             Some(shared.value())
+        }
+        "delta" => {
+            let k = nth_path_ident(&expr.receiver, 0)?;
+            if k == "time" {
+                return Some(lapis.time.delta_secs());
+            }
+            None
+        }
+        "elapsed_wrapped" => {
+            let k = nth_path_ident(&expr.receiver, 0)?;
+            if k == "time" {
+                return Some(lapis.time.elapsed_secs_wrapped());
+            }
+            None
+        }
+        "elapsed" => {
+            let k = nth_path_ident(&expr.receiver, 0)?;
+            if k == "time" {
+                return Some(lapis.time.elapsed_secs());
+            }
+            None
         }
         "floor" => Some(eval_float(&expr.receiver, lapis)?.floor()),
         "ceil" => Some(eval_float(&expr.receiver, lapis)?.ceil()),
