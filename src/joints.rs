@@ -194,7 +194,6 @@ pub fn set_joint_property(
 #[derive(Event)]
 pub struct ReplaceJoint(pub JointType);
 
-// TODO get joint settings here and insert new type with default limits and stuff
 fn replace_joint(
     trig: Trigger<ReplaceJoint>,
     mut commands: Commands,
@@ -202,6 +201,7 @@ fn replace_joint(
     distance: Query<&DistanceJoint>,
     revolute: Query<&RevoluteJoint>,
     prismatic: Query<&PrismaticJoint>,
+    settings: Res<JointSettings>,
 ) {
     let e = trig.entity();
     let joint_type = &trig.event().0;
@@ -246,7 +246,9 @@ fn replace_joint(
                 DistanceJoint::new(e1, e2)
                     .with_compliance(compliance)
                     .with_local_anchor_1(anchors.0)
-                    .with_local_anchor_2(anchors.1),
+                    .with_local_anchor_2(anchors.1)
+                    .with_limits(settings.dist_limits.0, settings.dist_limits.1)
+                    .with_rest_length(settings.dist_rest),
             );
         }
         JointType::Prismatic => {
@@ -254,7 +256,9 @@ fn replace_joint(
                 PrismaticJoint::new(e1, e2)
                     .with_compliance(compliance)
                     .with_local_anchor_1(anchors.0)
-                    .with_local_anchor_2(anchors.1),
+                    .with_local_anchor_2(anchors.1)
+                    .with_free_axis(settings.prismatic_axis)
+                    .with_limits(settings.prismatic_limits.0, settings.prismatic_limits.1),
             );
         }
         JointType::Revolute => {
@@ -262,7 +266,8 @@ fn replace_joint(
                 RevoluteJoint::new(e1, e2)
                     .with_compliance(compliance)
                     .with_local_anchor_1(anchors.0)
-                    .with_local_anchor_2(anchors.1),
+                    .with_local_anchor_2(anchors.1)
+                    .with_angle_limits(settings.angle_limits.0, settings.angle_limits.1),
             );
         }
     }
