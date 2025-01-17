@@ -482,68 +482,53 @@ fn copy_selection(
         }
         for j in lapis.fixed_query.iter() {
             if selected_query.contains(j.entity1) && selected_query.contains(j.entity2) {
-                let t1 = lapis.trans_query.get(j.entity1).unwrap().translation.xy();
-                let t2 = lapis.trans_query.get(j.entity2).unwrap().translation.xy();
-                let mut line = format!("let _ = joint({},{},{},{})", t1.x, t1.y, t2.x, t2.y);
-                line.push_str(".joint_type(0)");
-                let (a1x, a1y) = (j.local_anchor1.x, j.local_anchor1.y);
-                let (a2x, a2y) = (j.local_anchor2.x, j.local_anchor2.y);
-                line.push_str(&format!(
-                    ".compliance({}).anchor1({a1x},{a1y}).anchor2({a2x},{a2y});\n", j.compliance
-                ));
+                let t1 = lapis.trans_query.get(j.entity1).unwrap().translation;
+                let t2 = lapis.trans_query.get(j.entity2).unwrap().translation;
+                let line = format!(
+                    "let _ = joint({},{},{},{}).joint_type(0).compliance({}).anchor1({},{}).anchor2({},{});\n",
+                    t1.x, t1.y, t2.x, t2.y, j.compliance,
+                    j.local_anchor1.x, j.local_anchor1.y, j.local_anchor2.x, j.local_anchor2.y,
+                );
                 selection.push_str(&line);
             }
         }
         for j in lapis.distance_query.iter() {
             if selected_query.contains(j.entity1) && selected_query.contains(j.entity2) {
-                let t1 = lapis.trans_query.get(j.entity1).unwrap().translation.xy();
-                let t2 = lapis.trans_query.get(j.entity2).unwrap().translation.xy();
-                let mut line = format!("let _ = joint({},{},{},{})", t1.x, t1.y, t2.x, t2.y);
-                line.push_str(".joint_type(1)");
-                if let Some(limits) = j.length_limits {
-                    line.push_str(&format!(".limits({},{})", limits.min, limits.max));
-                }
-                let (a1x, a1y) = (j.local_anchor1.x, j.local_anchor1.y);
-                let (a2x, a2y) = (j.local_anchor2.x, j.local_anchor2.y);
-                let rest = j.rest_length;
-                line.push_str(&format!(
-                    ".compliance({}).anchor1({a1x},{a1y}).anchor2({a2x},{a2y}).rest({rest});\n", j.compliance
-                ));
+                let t1 = lapis.trans_query.get(j.entity1).unwrap().translation;
+                let t2 = lapis.trans_query.get(j.entity2).unwrap().translation;
+                let limits = j.length_limits.unwrap();
+                let line = format!(
+                    "let _ = joint({},{},{},{}).joint_type(1).limits({},{}).compliance({}).anchor1({},{}).anchor2({},{}).rest({});\n",
+                    t1.x, t1.y, t2.x, t2.y, limits.min, limits.max, j.compliance,
+                    j.local_anchor1.x, j.local_anchor1.y, j.local_anchor2.x, j.local_anchor2.y, j.rest_length,
+                );
                 selection.push_str(&line);
             }
         }
         for j in lapis.prismatic_query.iter() {
             if selected_query.contains(j.entity1) && selected_query.contains(j.entity2) {
-                let t1 = lapis.trans_query.get(j.entity1).unwrap().translation.xy();
-                let t2 = lapis.trans_query.get(j.entity2).unwrap().translation.xy();
-                let mut line = format!("let _ = joint({},{},{},{})", t1.x, t1.y, t2.x, t2.y);
-                line.push_str(".joint_type(2)");
-                if let Some(limits) = j.free_axis_limits {
-                    line.push_str(&format!(".limits({},{})", limits.min, limits.max));
-                }
-                let (a1x, a1y) = (j.local_anchor1.x, j.local_anchor1.y);
-                let (a2x, a2y) = (j.local_anchor2.x, j.local_anchor2.y);
-                let (fx, fy) = (j.free_axis.x, j.free_axis.y);
-                line.push_str(&format!(
-                    ".compliance({}).anchor1({a1x},{a1y}).anchor2({a2x},{a2y}).free_axis({fx},{fy});\n", j.compliance
-                ));
+                let t1 = lapis.trans_query.get(j.entity1).unwrap().translation;
+                let t2 = lapis.trans_query.get(j.entity2).unwrap().translation;
+                let limits = j.free_axis_limits.unwrap();
+                let line = format!(
+                    "let _ = joint({},{},{},{}).joint_type(2).limits({},{}).compliance({}).anchor1({},{}).anchor2({},{}).free_axis({},{});\n",
+                    t1.x, t1.y, t2.x, t2.y, limits.min, limits.max, j.compliance,
+                    j.local_anchor1.x, j.local_anchor1.y, j.local_anchor2.x, j.local_anchor2.y,
+                    j.free_axis.x, j.free_axis.y,
+                );
                 selection.push_str(&line);
             }
         }
         for j in lapis.revolute_query.iter() {
             if selected_query.contains(j.entity1) && selected_query.contains(j.entity2) {
-                let t1 = lapis.trans_query.get(j.entity1).unwrap().translation.xy();
-                let t2 = lapis.trans_query.get(j.entity2).unwrap().translation.xy();
-                let mut line = format!("let _ = joint({},{},{},{})", t1.x, t1.y, t2.x, t2.y);
-                line.push_str(".joint_type(3)");
-                if let Some(limits) = j.angle_limit {
-                    line.push_str(&format!(".limits({},{})", limits.min, limits.max));
-                }
-                let (a1x, a1y) = (j.local_anchor1.x, j.local_anchor1.y);
-                let (a2x, a2y) = (j.local_anchor2.x, j.local_anchor2.y);
-                line.push_str(&format!(
-                    ".compliance({}).anchor1({a1x},{a1y}).anchor2({a2x},{a2y});\n", j.compliance
-                ));
+                let t1 = lapis.trans_query.get(j.entity1).unwrap().translation;
+                let t2 = lapis.trans_query.get(j.entity2).unwrap().translation;
+                let limits = j.angle_limit.unwrap();
+                let line = format!(
+                    "let _ = joint({},{},{},{}).joint_type(3).limits({},{}).compliance({}).anchor1({},{}).anchor2({},{});\n",
+                    t1.x, t1.y, t2.x, t2.y, limits.min, limits.max, j.compliance,
+                    j.local_anchor1.x, j.local_anchor1.y, j.local_anchor2.x, j.local_anchor2.y,
+                );
                 selection.push_str(&line);
             }
         }
