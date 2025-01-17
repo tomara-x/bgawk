@@ -51,7 +51,11 @@ impl Plugin for InteractPlugin {
                 Update,
                 delete_selected.run_if(resource_equals(EguiFocused(false))),
             )
-            .add_systems(Update, follow_object);
+            .add_systems(Update, follow_object)
+            .add_systems(
+                Update,
+                copy_selection.run_if(resource_equals(EguiFocused(false))),
+            );
     }
 }
 
@@ -429,6 +433,126 @@ fn follow_object(
             let mut cam = camera_query.single_mut();
             cam.translation.x = t.translation.x;
             cam.translation.y = t.translation.y;
+        }
+    }
+}
+
+fn copy_selection(
+    mut contexts: EguiContexts,
+    keyboard_input: Res<ButtonInput<KeyCode>>,
+    selected_query: Query<Entity, With<Selected>>,
+    lapis: crate::lapis::Lapis,
+    links_query: Query<&crate::objects::Links>,
+    code_query: Query<&crate::objects::Code>,
+) {
+    if keyboard_input.just_pressed(KeyCode::KeyC)
+        && keyboard_input.any_pressed([KeyCode::ControlLeft, KeyCode::ControlRight])
+    {
+        let mut selection = String::new();
+        for e in selected_query.iter() {
+            let t = lapis.trans_query.get(e).unwrap();
+            let (x, y) = (t.translation.x, t.translation.y);
+            let (rx, ry) = (t.scale.x, t.scale.y);
+            let rot = t.rotation.to_euler(EulerRot::XYZ).2;
+            let mass = lapis.mass_query.get(e).unwrap().0;
+            let linv = lapis.lin_velocity_query.get(e).unwrap();
+            let (vx, vy) = (linv.x, linv.y);
+            let va = lapis.ang_velocity_query.get(e).unwrap().0;
+            let restitution = lapis.restitution_query.get(e).unwrap().coefficient;
+            let lindamp = lapis.lin_damp_query.get(e).unwrap().0;
+            let angdamp = lapis.ang_damp_query.get(e).unwrap().0;
+            let inertia = lapis.inertia_query.get(e).unwrap().0;
+            let mat_id = lapis.material_ids.get(e).unwrap();
+            let mat = lapis.materials.get(mat_id).unwrap();
+            let hsla: Hsla = mat.color.into();
+            let (h, s, l, a) = (hsla.hue, hsla.saturation, hsla.lightness, hsla.alpha);
+            let sides = lapis.sides_query.get(e).unwrap().0;
+            let cm = lapis.cm_query.get(e).unwrap();
+            let (cmx, cmy) = (cm.x, cm.y);
+            let friction = lapis.friction_query.get(e).unwrap().dynamic_coefficient;
+            let tail = lapis.tail_query.get(e).unwrap().len;
+            let layer = lapis.layer_query.get(e).unwrap().memberships.0.ilog2();
+            let sensor = lapis.sensor_query.contains(e);
+            let dynamic = *lapis.body_query.get(e).unwrap() == RigidBody::Dynamic;
+            let links = &links_query.get(e).unwrap().0;
+            let code = code_query.get(e).unwrap();
+            let (ci, cf) = (&code.0, &code.1);
+            let line = format!("let _ = spawn({rx}).x({x}).y({y}).ry({ry}).rot({rot}).mass({mass}).inertia({inertia}).vx({vx}).vy({vy}).va({va}).restitution({restitution}).lindamp({lindamp}).angdamp({angdamp}).h({h}).s({s}).l({l}).a({a}).sides({sides}).cmx({cmx}).cmy({cmy}).friction({friction}).tail({tail}).layer({layer}).dynamic({dynamic}).sensor({sensor}).links(\"{links}\").code_i(\"{ci}\").code_f(\"{cf}\");\n");
+            selection.push_str(&line);
+        }
+        for j in lapis.fixed_query.iter() {
+            if selected_query.contains(j.entity1) && selected_query.contains(j.entity2) {
+                let t1 = lapis.trans_query.get(j.entity1).unwrap().translation.xy();
+                let t2 = lapis.trans_query.get(j.entity2).unwrap().translation.xy();
+                let mut line = format!("let _ = joint({},{},{},{})", t1.x, t1.y, t2.x, t2.y);
+                line.push_str(".joint_type(0)");
+                let compliance = j.compliance * 100000.;
+                let (a1x, a1y) = (j.local_anchor1.x, j.local_anchor1.y);
+                let (a2x, a2y) = (j.local_anchor2.x, j.local_anchor2.y);
+                line.push_str(&format!(
+                    ".compliance({compliance}).anchor1({a1x},{a1y}).anchor2({a2x},{a2y});\n"
+                ));
+                selection.push_str(&line);
+            }
+        }
+        for j in lapis.distance_query.iter() {
+            if selected_query.contains(j.entity1) && selected_query.contains(j.entity2) {
+                let t1 = lapis.trans_query.get(j.entity1).unwrap().translation.xy();
+                let t2 = lapis.trans_query.get(j.entity2).unwrap().translation.xy();
+                let mut line = format!("let _ = joint({},{},{},{})", t1.x, t1.y, t2.x, t2.y);
+                line.push_str(".joint_type(1)");
+                if let Some(limits) = j.length_limits {
+                    line.push_str(&format!(".limits({},{})", limits.min, limits.max));
+                }
+                let compliance = j.compliance * 100000.;
+                let (a1x, a1y) = (j.local_anchor1.x, j.local_anchor1.y);
+                let (a2x, a2y) = (j.local_anchor2.x, j.local_anchor2.y);
+                let rest = j.rest_length;
+                line.push_str(&format!(
+                    ".compliance({compliance}).anchor1({a1x},{a1y}).anchor2({a2x},{a2y}).rest({rest});\n"
+                ));
+                selection.push_str(&line);
+            }
+        }
+        for j in lapis.prismatic_query.iter() {
+            if selected_query.contains(j.entity1) && selected_query.contains(j.entity2) {
+                let t1 = lapis.trans_query.get(j.entity1).unwrap().translation.xy();
+                let t2 = lapis.trans_query.get(j.entity2).unwrap().translation.xy();
+                let mut line = format!("let _ = joint({},{},{},{})", t1.x, t1.y, t2.x, t2.y);
+                line.push_str(".joint_type(2)");
+                if let Some(limits) = j.free_axis_limits {
+                    line.push_str(&format!(".limits({},{})", limits.min, limits.max));
+                }
+                let compliance = j.compliance * 100000.;
+                let (a1x, a1y) = (j.local_anchor1.x, j.local_anchor1.y);
+                let (a2x, a2y) = (j.local_anchor2.x, j.local_anchor2.y);
+                let (fx, fy) = (j.free_axis.x, j.free_axis.y);
+                line.push_str(&format!(
+                    ".compliance({compliance}).anchor1({a1x},{a1y}).anchor2({a2x},{a2y}).free_axis({fx},{fy});\n"
+                ));
+                selection.push_str(&line);
+            }
+        }
+        for j in lapis.revolute_query.iter() {
+            if selected_query.contains(j.entity1) && selected_query.contains(j.entity2) {
+                let t1 = lapis.trans_query.get(j.entity1).unwrap().translation.xy();
+                let t2 = lapis.trans_query.get(j.entity2).unwrap().translation.xy();
+                let mut line = format!("let _ = joint({},{},{},{})", t1.x, t1.y, t2.x, t2.y);
+                line.push_str(".joint_type(3)");
+                if let Some(limits) = j.angle_limit {
+                    line.push_str(&format!(".limits({},{})", limits.min, limits.max));
+                }
+                let compliance = j.compliance * 100000.;
+                let (a1x, a1y) = (j.local_anchor1.x, j.local_anchor1.y);
+                let (a2x, a2y) = (j.local_anchor2.x, j.local_anchor2.y);
+                line.push_str(&format!(
+                    ".compliance({compliance}).anchor1({a1x},{a1y}).anchor2({a2x},{a2y});\n"
+                ));
+                selection.push_str(&line);
+            }
+        }
+        if !selection.is_empty() {
+            contexts.ctx_mut().copy_text(selection);
         }
     }
 }
