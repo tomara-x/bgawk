@@ -140,7 +140,7 @@ impl Default for JointSettings {
     fn default() -> Self {
         JointSettings {
             joint_type: JointType::Distance,
-            compliance: 0.001,
+            compliance: 0.00000001,
             custom_anchors: false,
             local_anchor_1: Vec2::ZERO,
             local_anchor_2: Vec2::ZERO,
@@ -486,7 +486,7 @@ fn copy_selection(
                 let t2 = lapis.trans_query.get(j.entity2).unwrap().translation.xy();
                 let mut line = format!("let _ = joint({},{},{},{})", t1.x, t1.y, t2.x, t2.y);
                 line.push_str(".joint_type(0)");
-                let compliance = j.compliance * 100000.;
+                let compliance = j.compliance;
                 let (a1x, a1y) = (j.local_anchor1.x, j.local_anchor1.y);
                 let (a2x, a2y) = (j.local_anchor2.x, j.local_anchor2.y);
                 line.push_str(&format!(
@@ -504,7 +504,7 @@ fn copy_selection(
                 if let Some(limits) = j.length_limits {
                     line.push_str(&format!(".limits({},{})", limits.min, limits.max));
                 }
-                let compliance = j.compliance * 100000.;
+                let compliance = j.compliance;
                 let (a1x, a1y) = (j.local_anchor1.x, j.local_anchor1.y);
                 let (a2x, a2y) = (j.local_anchor2.x, j.local_anchor2.y);
                 let rest = j.rest_length;
@@ -523,7 +523,7 @@ fn copy_selection(
                 if let Some(limits) = j.free_axis_limits {
                     line.push_str(&format!(".limits({},{})", limits.min, limits.max));
                 }
-                let compliance = j.compliance * 100000.;
+                let compliance = j.compliance;
                 let (a1x, a1y) = (j.local_anchor1.x, j.local_anchor1.y);
                 let (a2x, a2y) = (j.local_anchor2.x, j.local_anchor2.y);
                 let (fx, fy) = (j.free_axis.x, j.free_axis.y);
@@ -542,7 +542,7 @@ fn copy_selection(
                 if let Some(limits) = j.angle_limit {
                     line.push_str(&format!(".limits({},{})", limits.min, limits.max));
                 }
-                let compliance = j.compliance * 100000.;
+                let compliance = j.compliance;
                 let (a1x, a1y) = (j.local_anchor1.x, j.local_anchor1.y);
                 let (a2x, a2y) = (j.local_anchor2.x, j.local_anchor2.y);
                 line.push_str(&format!(

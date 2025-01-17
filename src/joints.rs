@@ -72,7 +72,7 @@ fn spawn_joint(
                     .transform_point2(cursor.f);
                 (l1, l2)
             };
-            let compliance = settings.compliance / 100000.;
+            let compliance = settings.compliance;
             match settings.joint_type {
                 JointType::Fixed => {
                     commands.spawn(
@@ -139,13 +139,13 @@ pub fn set_joint_property(
     match *trig.event() {
         JointProperty::Compliance(val) => {
             if let Ok(mut j) = fixed.get_mut(e) {
-                j.compliance = val / 100000.;
+                j.compliance = val;
             } else if let Ok(mut j) = distance.get_mut(e) {
-                j.compliance = val / 100000.;
+                j.compliance = val;
             } else if let Ok(mut j) = revolute.get_mut(e) {
-                j.compliance = val / 100000.;
+                j.compliance = val;
             } else if let Ok(mut j) = prismatic.get_mut(e) {
-                j.compliance = val / 100000.;
+                j.compliance = val;
             }
         }
         JointProperty::Anchor1(x, y) => {
@@ -195,6 +195,7 @@ pub fn set_joint_property(
 #[derive(Event)]
 pub struct ReplaceJoint(pub JointType);
 
+// TODO get joint settings here and insert new type with default limits and stuff
 fn replace_joint(
     trig: Trigger<ReplaceJoint>,
     mut commands: Commands,
@@ -336,7 +337,7 @@ fn joint_points(
                 .transform_point2(f);
             (l1, l2)
         };
-        let compliance = settings.compliance / 100000.;
+        let compliance = settings.compliance;
         match settings.joint_type {
             JointType::Fixed => {
                 commands.entity(joint_entity).insert(
@@ -392,7 +393,7 @@ fn joint_entities(
     let joint_entity = trig.entity();
     let JointEntities(e1, e2) = *trig.event();
     let anchors = (settings.local_anchor_1, settings.local_anchor_2);
-    let compliance = settings.compliance / 100000.;
+    let compliance = settings.compliance;
     match settings.joint_type {
         JointType::Fixed => {
             commands.entity(joint_entity).insert(

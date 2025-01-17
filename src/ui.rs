@@ -327,7 +327,7 @@ fn egui_ui(
                 ui.add(
                     DragValue::new(&mut joint.compliance)
                         .range(0.0..=f32::INFINITY)
-                        .speed(0.001),
+                        .speed(0.00000001),
                 );
             });
             ui.toggle_value(&mut joint.custom_anchors, "custom anchors?");

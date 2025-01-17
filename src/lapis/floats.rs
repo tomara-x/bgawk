@@ -79,13 +79,13 @@ fn field_float(expr: &ExprField, lapis: &Lapis) -> Option<f32> {
             }
             "compliance" => {
                 if let Ok(j) = lapis.fixed_query.get(e) {
-                    Some(j.compliance * 100000.)
+                    Some(j.compliance)
                 } else if let Ok(j) = lapis.distance_query.get(e) {
-                    Some(j.compliance * 100000.)
+                    Some(j.compliance)
                 } else if let Ok(j) = lapis.prismatic_query.get(e) {
-                    Some(j.compliance * 100000.)
+                    Some(j.compliance)
                 } else if let Ok(j) = lapis.revolute_query.get(e) {
-                    Some(j.compliance * 100000.)
+                    Some(j.compliance)
                 } else {
                     None
                 }
