@@ -72,12 +72,11 @@ fn spawn_joint(
                     .transform_point2(cursor.f);
                 (l1, l2)
             };
-            let compliance = settings.compliance;
             match settings.joint_type {
                 JointType::Fixed => {
                     commands.spawn(
                         FixedJoint::new(src, snk)
-                            .with_compliance(compliance)
+                            .with_compliance(settings.compliance)
                             .with_local_anchor_1(anchors.0)
                             .with_local_anchor_2(anchors.1),
                     );
@@ -85,7 +84,7 @@ fn spawn_joint(
                 JointType::Distance => {
                     commands.spawn(
                         DistanceJoint::new(src, snk)
-                            .with_compliance(compliance)
+                            .with_compliance(settings.compliance)
                             .with_local_anchor_1(anchors.0)
                             .with_local_anchor_2(anchors.1)
                             .with_limits(settings.dist_limits.0, settings.dist_limits.1)
@@ -95,7 +94,7 @@ fn spawn_joint(
                 JointType::Prismatic => {
                     commands.spawn(
                         PrismaticJoint::new(src, snk)
-                            .with_compliance(compliance)
+                            .with_compliance(settings.compliance)
                             .with_local_anchor_1(anchors.0)
                             .with_local_anchor_2(anchors.1)
                             .with_free_axis(settings.prismatic_axis)
@@ -105,7 +104,7 @@ fn spawn_joint(
                 JointType::Revolute => {
                     commands.spawn(
                         RevoluteJoint::new(src, snk)
-                            .with_compliance(compliance)
+                            .with_compliance(settings.compliance)
                             .with_local_anchor_1(anchors.0)
                             .with_local_anchor_2(anchors.1)
                             .with_angle_limits(settings.angle_limits.0, settings.angle_limits.1),
@@ -337,12 +336,11 @@ fn joint_points(
                 .transform_point2(f);
             (l1, l2)
         };
-        let compliance = settings.compliance;
         match settings.joint_type {
             JointType::Fixed => {
                 commands.entity(joint_entity).insert(
                     FixedJoint::new(src, snk)
-                        .with_compliance(compliance)
+                        .with_compliance(settings.compliance)
                         .with_local_anchor_1(anchors.0)
                         .with_local_anchor_2(anchors.1),
                 );
@@ -350,7 +348,7 @@ fn joint_points(
             JointType::Distance => {
                 commands.entity(joint_entity).insert(
                     DistanceJoint::new(src, snk)
-                        .with_compliance(compliance)
+                        .with_compliance(settings.compliance)
                         .with_local_anchor_1(anchors.0)
                         .with_local_anchor_2(anchors.1)
                         .with_limits(settings.dist_limits.0, settings.dist_limits.1)
@@ -360,7 +358,7 @@ fn joint_points(
             JointType::Prismatic => {
                 commands.entity(joint_entity).insert(
                     PrismaticJoint::new(src, snk)
-                        .with_compliance(compliance)
+                        .with_compliance(settings.compliance)
                         .with_local_anchor_1(anchors.0)
                         .with_local_anchor_2(anchors.1)
                         .with_free_axis(settings.prismatic_axis)
@@ -370,7 +368,7 @@ fn joint_points(
             JointType::Revolute => {
                 commands.entity(joint_entity).insert(
                     RevoluteJoint::new(src, snk)
-                        .with_compliance(compliance)
+                        .with_compliance(settings.compliance)
                         .with_local_anchor_1(anchors.0)
                         .with_local_anchor_2(anchors.1)
                         .with_angle_limits(settings.angle_limits.0, settings.angle_limits.1),
@@ -393,12 +391,11 @@ fn joint_entities(
     let joint_entity = trig.entity();
     let JointEntities(e1, e2) = *trig.event();
     let anchors = (settings.local_anchor_1, settings.local_anchor_2);
-    let compliance = settings.compliance;
     match settings.joint_type {
         JointType::Fixed => {
             commands.entity(joint_entity).insert(
                 FixedJoint::new(e1, e2)
-                    .with_compliance(compliance)
+                    .with_compliance(settings.compliance)
                     .with_local_anchor_1(anchors.0)
                     .with_local_anchor_2(anchors.1),
             );
@@ -406,7 +403,7 @@ fn joint_entities(
         JointType::Distance => {
             commands.entity(joint_entity).insert(
                 DistanceJoint::new(e1, e2)
-                    .with_compliance(compliance)
+                    .with_compliance(settings.compliance)
                     .with_local_anchor_1(anchors.0)
                     .with_local_anchor_2(anchors.1)
                     .with_limits(settings.dist_limits.0, settings.dist_limits.1)
@@ -416,7 +413,7 @@ fn joint_entities(
         JointType::Prismatic => {
             commands.entity(joint_entity).insert(
                 PrismaticJoint::new(e1, e2)
-                    .with_compliance(compliance)
+                    .with_compliance(settings.compliance)
                     .with_local_anchor_1(anchors.0)
                     .with_local_anchor_2(anchors.1)
                     .with_free_axis(settings.prismatic_axis)
@@ -426,7 +423,7 @@ fn joint_entities(
         JointType::Revolute => {
             commands.entity(joint_entity).insert(
                 RevoluteJoint::new(e1, e2)
-                    .with_compliance(compliance)
+                    .with_compliance(settings.compliance)
                     .with_local_anchor_1(anchors.0)
                     .with_local_anchor_2(anchors.1)
                     .with_angle_limits(settings.angle_limits.0, settings.angle_limits.1),

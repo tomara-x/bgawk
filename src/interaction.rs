@@ -486,11 +486,10 @@ fn copy_selection(
                 let t2 = lapis.trans_query.get(j.entity2).unwrap().translation.xy();
                 let mut line = format!("let _ = joint({},{},{},{})", t1.x, t1.y, t2.x, t2.y);
                 line.push_str(".joint_type(0)");
-                let compliance = j.compliance;
                 let (a1x, a1y) = (j.local_anchor1.x, j.local_anchor1.y);
                 let (a2x, a2y) = (j.local_anchor2.x, j.local_anchor2.y);
                 line.push_str(&format!(
-                    ".compliance({compliance}).anchor1({a1x},{a1y}).anchor2({a2x},{a2y});\n"
+                    ".compliance({}).anchor1({a1x},{a1y}).anchor2({a2x},{a2y});\n", j.compliance
                 ));
                 selection.push_str(&line);
             }
@@ -504,12 +503,11 @@ fn copy_selection(
                 if let Some(limits) = j.length_limits {
                     line.push_str(&format!(".limits({},{})", limits.min, limits.max));
                 }
-                let compliance = j.compliance;
                 let (a1x, a1y) = (j.local_anchor1.x, j.local_anchor1.y);
                 let (a2x, a2y) = (j.local_anchor2.x, j.local_anchor2.y);
                 let rest = j.rest_length;
                 line.push_str(&format!(
-                    ".compliance({compliance}).anchor1({a1x},{a1y}).anchor2({a2x},{a2y}).rest({rest});\n"
+                    ".compliance({}).anchor1({a1x},{a1y}).anchor2({a2x},{a2y}).rest({rest});\n", j.compliance
                 ));
                 selection.push_str(&line);
             }
@@ -523,12 +521,11 @@ fn copy_selection(
                 if let Some(limits) = j.free_axis_limits {
                     line.push_str(&format!(".limits({},{})", limits.min, limits.max));
                 }
-                let compliance = j.compliance;
                 let (a1x, a1y) = (j.local_anchor1.x, j.local_anchor1.y);
                 let (a2x, a2y) = (j.local_anchor2.x, j.local_anchor2.y);
                 let (fx, fy) = (j.free_axis.x, j.free_axis.y);
                 line.push_str(&format!(
-                    ".compliance({compliance}).anchor1({a1x},{a1y}).anchor2({a2x},{a2y}).free_axis({fx},{fy});\n"
+                    ".compliance({}).anchor1({a1x},{a1y}).anchor2({a2x},{a2y}).free_axis({fx},{fy});\n", j.compliance
                 ));
                 selection.push_str(&line);
             }
@@ -542,11 +539,10 @@ fn copy_selection(
                 if let Some(limits) = j.angle_limit {
                     line.push_str(&format!(".limits({},{})", limits.min, limits.max));
                 }
-                let compliance = j.compliance;
                 let (a1x, a1y) = (j.local_anchor1.x, j.local_anchor1.y);
                 let (a2x, a2y) = (j.local_anchor2.x, j.local_anchor2.y);
                 line.push_str(&format!(
-                    ".compliance({compliance}).anchor1({a1x},{a1y}).anchor2({a2x},{a2y});\n"
+                    ".compliance({}).anchor1({a1x},{a1y}).anchor2({a2x},{a2y});\n", j.compliance
                 ));
                 selection.push_str(&line);
             }
