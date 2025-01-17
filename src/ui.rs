@@ -317,10 +317,10 @@ fn egui_ui(
         } else if *mode == Mode::Joint {
             ui.horizontal(|ui| {
                 ui.label("type");
+                ui.selectable_value(&mut joint.joint_type, JointType::Fixed, "Fixed");
                 ui.selectable_value(&mut joint.joint_type, JointType::Distance, "Distance");
                 ui.selectable_value(&mut joint.joint_type, JointType::Prismatic, "Prismatic");
                 ui.selectable_value(&mut joint.joint_type, JointType::Revolute, "Revolute");
-                ui.selectable_value(&mut joint.joint_type, JointType::Fixed, "Fixed");
             });
             ui.horizontal(|ui| {
                 ui.label("compliance");
@@ -425,7 +425,9 @@ fn egui_ui(
                         .layouter(&mut layouter),
                 );
             });
-            lapis.quiet_eval(&update_code.0);
+            if !time.is_paused() {
+                lapis.quiet_eval(&update_code.0);
+            }
             ScrollArea::vertical().show(ui, |ui| {
                 ui.horizontal(|ui| {
                     ui.with_layout(Layout::right_to_left(Align::TOP), |ui| {
@@ -568,6 +570,7 @@ fn help_window_function(ui: &mut Ui) {
 (or to cancel creating an object)
 - hold the right mouse button while one object is selected
   to track it with the camera
+- press ctrl+c to copy selected objects/joints as commands
 - in edit mode:
     - press ctrl+a to select all objects
     - when selecting objects, hold shift to add to selection
