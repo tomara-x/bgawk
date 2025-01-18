@@ -565,6 +565,13 @@ fn about_window_function(ui: &mut Ui) {
 
 fn help_window_function(ui: &mut Ui) {
     ScrollArea::vertical().show(ui, |ui| {
+        ui.horizontal(|ui| {
+            ui.label("- see");
+            ui.hyperlink_to("FunDSP", "https://github.com/SamiPerttu/fundsp/");
+            ui.label("and");
+            ui.hyperlink_to("lapis", "https://github.com/tomara-x/lapis/");
+            ui.label("for info about how they work");
+        });
         ui.label(
             "- hold space and drag/scroll to pan/zoom the camera
 (or to cancel creating an object)
@@ -733,18 +740,6 @@ time.elapsed();
 time.elapsed_wrapped();
 // wrap period is 1 hour",
             );
-        });
-        ui.label("");
-        ui.horizontal(|ui| {
-            ui.label("see the");
-            ui.hyperlink_to("FunDSP readme", "https://github.com/SamiPerttu/fundsp/");
-            ui.label("and");
-            ui.hyperlink_to("documentation", "https://docs.rs/fundsp/latest/fundsp/");
-        });
-        ui.horizontal(|ui| {
-            ui.label("and the");
-            ui.hyperlink_to("lapis readme", "https://github.com/tomara-x/lapis/");
-            ui.label("for more info about how they work");
         });
     });
 }
