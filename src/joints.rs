@@ -25,6 +25,7 @@ fn spawn_joint(
     mut commands: Commands,
     mouse_button_input: Res<ButtonInput<MouseButton>>,
     trans_query: Query<&Transform>,
+    collider_query: Query<&Collider>,
     visible: Query<&VisibleEntities>,
     cursor: Res<CursorInfo>,
     keyboard_input: Res<ButtonInput<KeyCode>>,
@@ -38,7 +39,8 @@ fn spawn_joint(
     if mouse_button_input.just_pressed(MouseButton::Left) {
         for e in visible.single().get::<With<Mesh2d>>() {
             let t = trans_query.get(*e).unwrap();
-            if cursor.i.distance_squared(t.translation.xy()) < t.scale.x * t.scale.x {
+            let collider = collider_query.get(*e).unwrap();
+            if collider.contains_point(t.translation.xy(), t.rotation, cursor.i) {
                 *src = Some((*e, *t));
                 break;
             }
@@ -47,7 +49,8 @@ fn spawn_joint(
         let mut snk = None;
         for e in visible.single().get::<With<Mesh2d>>() {
             let t = trans_query.get(*e).unwrap();
-            if cursor.f.distance_squared(t.translation.xy()) < t.scale.x * t.scale.x {
+            let collider = collider_query.get(*e).unwrap();
+            if collider.contains_point(t.translation.xy(), t.rotation, cursor.f) {
                 snk = Some(*e);
                 break;
             }
@@ -313,17 +316,17 @@ pub struct JointPoints(pub Vec2, pub Vec2);
 fn joint_points(
     trig: Trigger<JointPoints>,
     mut commands: Commands,
-    objects_query: Query<(Entity, &Transform), With<RigidBody>>,
+    objects_query: Query<(Entity, &Transform, &Collider), With<RigidBody>>,
     settings: Res<JointSettings>,
 ) {
     let joint_entity = trig.entity();
     let JointPoints(i, f) = *trig.event();
     let mut src = None;
     let mut snk = None;
-    for (e, t) in objects_query.iter() {
-        if i.distance_squared(t.translation.xy()) < t.scale.x * t.scale.x {
+    for (e, t, collider) in objects_query.iter() {
+        if collider.contains_point(t.translation.xy(), t.rotation, i) {
             src = Some((e, *t));
-        } else if f.distance_squared(t.translation.xy()) < t.scale.x * t.scale.x {
+        } else if collider.contains_point(t.translation.xy(), t.rotation, f) {
             snk = Some((e, *t));
         }
     }

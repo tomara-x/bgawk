@@ -320,6 +320,7 @@ fn update_selection(
     mut commands: Commands,
     mouse_button_input: Res<ButtonInput<MouseButton>>,
     trans_query: Query<&Transform>,
+    collider_query: Query<&Collider>,
     visible: Query<&VisibleEntities>,
     selected: Query<Entity, With<Selected>>,
     cursor: Res<CursorInfo>,
@@ -335,11 +336,11 @@ fn update_selection(
         let ctrl = keyboard_input.any_pressed([KeyCode::ControlLeft, KeyCode::ControlRight]);
         *clicked_entity = None;
         for e in visible.single().get::<With<Mesh2d>>() {
-            if let Ok(t) = trans_query.get(*e) {
-                if cursor.i.distance_squared(t.translation.xy()) < t.scale.x * t.scale.x {
-                    *clicked_entity = Some(*e);
-                    break;
-                }
+            let t = trans_query.get(*e).unwrap();
+            let collider = collider_query.get(*e).unwrap();
+            if collider.contains_point(t.translation.xy(), t.rotation, cursor.i) {
+                *clicked_entity = Some(*e);
+                break;
             }
         }
         if let Some(e) = *clicked_entity {
