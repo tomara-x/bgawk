@@ -23,7 +23,7 @@ fn field_float(expr: &ExprField, lapis: &Lapis) -> Option<f32> {
             "x" => Some(trans.get(e).ok()?.translation.x),
             "y" => Some(trans.get(e).ok()?.translation.y),
             "rx" => Some(trans.get(e).ok()?.scale.x),
-            "ry" => Some(trans.get(e).ok()?.scale.x),
+            "ry" => Some(trans.get(e).ok()?.scale.y),
             "rot" => Some(trans.get(e).ok()?.rotation.to_euler(EulerRot::XYZ).2),
             "mass" => Some(lapis.mass_query.get(e).ok()?.0),
             "vx" => Some(lapis.lin_velocity_query.get(e).ok()?.x),
