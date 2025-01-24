@@ -2,7 +2,7 @@ use crate::lapis::*;
 use egui::{Key, KeyboardShortcut, Modifiers};
 use syn::punctuated::Punctuated;
 
-pub fn device_commands(expr: ExprCall, lapis: &mut Lapis, buffer: &mut String) -> Option<()> {
+pub fn device_commands(expr: &ExprCall, lapis: &mut Lapis, buffer: &mut String) -> Option<()> {
     let func = nth_path_ident(&expr.func, 0)?;
     match func.as_str() {
         "list_in_devices" => {

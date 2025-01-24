@@ -65,7 +65,8 @@ fn eval_expr(expr: Expr, lapis: &mut Lapis, buffer: &mut String) {
     } else if let Expr::Binary(expr) = expr {
         float_bin_assign(&expr, lapis);
     } else if let Expr::Call(expr) = expr {
-        device_commands(expr, lapis, buffer);
+        gravity_commands(&expr, lapis);
+        device_commands(&expr, lapis, buffer);
     } else if let Expr::Break(_) = expr {
         buffer.push_str("#B");
     } else if let Expr::Continue(_) = expr {
@@ -360,4 +361,18 @@ fn eval_for_loop(expr: &ExprForLoop, lapis: &mut Lapis, buffer: &mut String) {
             lapis.data.fmap.remove(&ident);
         }
     }
+}
+
+// TODO move this somewhere?
+fn gravity_commands(expr: &ExprCall, lapis: &mut Lapis) -> Option<()> {
+    let func = nth_path_ident(&expr.func, 0)?;
+    if func == "gravity" {
+        let x = eval_float(expr.args.first()?, lapis)?;
+        let y = eval_float(expr.args.get(1)?, lapis)?;
+        lapis.commands.insert_resource(Gravity(Vec2::new(x, y)));
+    } else if func == "attraction" {
+        let a = eval_float(expr.args.first()?, lapis)?;
+        lapis.commands.insert_resource(AttractionFactor(a));
+    }
+    None
 }

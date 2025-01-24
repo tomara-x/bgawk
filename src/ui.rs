@@ -733,12 +733,18 @@ let joint = joint(0,0,200,0);",
             ui.label("this is useful for storing a collection of entities");
             ui.label("(too lazy to implement arrays for entities :p)");
         });
-        ui.collapsing("bevy time", |ui| {
+        ui.collapsing("other functions", |ui| {
+            ui.label("access bevy time:");
             ui.code(
                 "time.delta();
 time.elapsed();
 time.elapsed_wrapped();
 // wrap period is 1 hour",
+            );
+            ui.label("change gravity and attraction factor:");
+            ui.code(
+                "gravity(0, -980);
+attraction(0.5);",
             );
         });
     });
