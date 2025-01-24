@@ -8,7 +8,7 @@ use bevy::{
     },
     prelude::{
         ClearColor, ColorToPacked, GizmoConfigStore, MonitorSelection, Query, Res, ResMut,
-        Resource, Srgba, Time, Virtual, With,
+        Resource, Srgba, With,
     },
     window::WindowMode,
 };
@@ -51,7 +51,6 @@ fn egui_ui(
     mut mode: ResMut<Mode>,
     mut attraction_factor: ResMut<AttractionFactor>,
     mut joint: ResMut<JointSettings>,
-    mut time: ResMut<Time<Virtual>>,
     mut insert: ResMut<InsertComponents>,
     cursor: Res<CursorInfo>,
     mut config_store: ResMut<GizmoConfigStore>,
@@ -154,12 +153,12 @@ fn egui_ui(
             code_line(ui, &mut draw.code.0, &mut layouter, "on collision start");
             code_line(ui, &mut draw.code.1, &mut layouter, "on collision end");
         } else if *mode == Mode::Edit {
-            if time.is_paused() {
+            if lapis.time.is_paused() {
                 if ui.button("resume").clicked() {
-                    time.unpause();
+                    lapis.time.unpause();
                 }
             } else if ui.button("pause").clicked() {
-                time.pause();
+                lapis.time.pause();
             }
             ui.horizontal(|ui| {
                 ui.label("gravity");
@@ -425,7 +424,7 @@ fn egui_ui(
                         .layouter(&mut layouter),
                 );
             });
-            if !time.is_paused() {
+            if !lapis.time.is_paused() {
                 lapis.quiet_eval(&update_code.0);
             }
             ScrollArea::vertical().show(ui, |ui| {

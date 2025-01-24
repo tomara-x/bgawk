@@ -97,7 +97,7 @@ pub struct Lapis<'w, 's> {
     pub distance_query: Query<'w, 's, &'static DistanceJoint>,
     pub revolute_query: Query<'w, 's, &'static RevoluteJoint>,
     pub prismatic_query: Query<'w, 's, &'static PrismaticJoint>,
-    pub time: Res<'w, Time>,
+    pub time: ResMut<'w, Time<Virtual>>,
 }
 
 impl Lapis<'_, '_> {

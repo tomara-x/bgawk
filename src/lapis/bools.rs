@@ -8,8 +8,18 @@ pub fn eval_bool(expr: &Expr, lapis: &Lapis) -> Option<bool> {
         Expr::Path(expr) => path_bool(&expr.path, lapis),
         Expr::Unary(expr) => unary_bool(expr, lapis),
         Expr::Field(expr) => field_bool(expr, lapis),
+        Expr::MethodCall(expr) => method_bool(expr, lapis),
         _ => None,
     }
+}
+
+fn method_bool(expr: &ExprMethodCall, lapis: &Lapis) -> Option<bool> {
+    if let Some(k) = nth_path_ident(&expr.receiver, 0) {
+        if k == "time" {
+            return Some(lapis.time.is_paused());
+        }
+    }
+    None
 }
 
 fn field_bool(expr: &ExprField, lapis: &Lapis) -> Option<bool> {

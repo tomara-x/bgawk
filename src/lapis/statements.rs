@@ -155,6 +155,20 @@ fn eval_expr(expr: Expr, lapis: &mut Lapis, buffer: &mut String) {
                     }
                 }
             }
+            "pause" => {
+                if let Some(k) = nth_path_ident(&expr.receiver, 0) {
+                    if k == "time" {
+                        lapis.time.pause();
+                    }
+                }
+            }
+            "resume" | "unpause" => {
+                if let Some(k) = nth_path_ident(&expr.receiver, 0) {
+                    if k == "time" {
+                        lapis.time.unpause();
+                    }
+                }
+            }
             _ => {
                 wave_methods(&expr, lapis);
                 net_methods(&expr, lapis);

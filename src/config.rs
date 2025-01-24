@@ -71,7 +71,6 @@ impl Plugin for ConfigPlugin {
 
 fn configure(
     config: Res<Config>,
-    mut time: ResMut<Time<Virtual>>,
     mut gravity: ResMut<Gravity>,
     mut attraction_factor: ResMut<AttractionFactor>,
     mut scale_factor: ResMut<ScaleFactor>,
@@ -80,7 +79,7 @@ fn configure(
     mut lapis: Lapis,
 ) {
     if config.pause {
-        time.pause();
+        lapis.time.pause();
     }
 
     gravity.0.x = config.gravity_x;
