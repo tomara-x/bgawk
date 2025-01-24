@@ -740,6 +740,14 @@ time.elapsed();
 time.elapsed_wrapped();
 // wrap period is 1 hour",
             );
+            ui.label("pause/resume time:");
+            ui.code(
+                "if time.is_paused() {
+    time.resume();
+} else {
+    time.pause();
+}",
+            );
             ui.label("change gravity and attraction factor:");
             ui.code(
                 "gravity(0, -980);

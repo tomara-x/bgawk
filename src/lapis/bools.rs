@@ -15,7 +15,7 @@ pub fn eval_bool(expr: &Expr, lapis: &Lapis) -> Option<bool> {
 
 fn method_bool(expr: &ExprMethodCall, lapis: &Lapis) -> Option<bool> {
     if let Some(k) = nth_path_ident(&expr.receiver, 0) {
-        if k == "time" {
+        if k == "time" && expr.method == "is_paused" {
             return Some(lapis.time.is_paused());
         }
     }
