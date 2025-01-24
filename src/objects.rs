@@ -424,6 +424,21 @@ fn sync_links(links_query: Query<(Entity, &Links)>, mut lapis: Lapis) {
                             var.set(l.ilog2() as f32);
                         }
                     }
+                    "dynamic" => {
+                        if dir == "<" {
+                            cmd.trigger_targets(Property::Dynamic(var.value() > 0.), e);
+                        } else if dir == ">" {
+                            let body = lapis.body_query.get(e).unwrap();
+                            var.set((*body == RigidBody::Dynamic).into());
+                        }
+                    }
+                    "sensor" => {
+                        if dir == "<" {
+                            cmd.trigger_targets(Property::Sensor(var.value() > 0.), e);
+                        } else if dir == ">" {
+                            var.set(lapis.sensor_query.contains(e).into());
+                        }
+                    }
                     _ => {}
                 }
             // assign a float expression
@@ -469,6 +484,8 @@ fn sync_links(links_query: Query<(Entity, &Links)>, mut lapis: Lapis) {
                             "friction" => cmd.trigger_targets(Property::Friction(f), e),
                             "tail" => cmd.trigger_targets(Property::Tail(f as usize), e),
                             "layer" => cmd.trigger_targets(Property::Layer(f as u32), e),
+                            "dynamic" => cmd.trigger_targets(Property::Dynamic(f > 0.), e),
+                            "sensor" => cmd.trigger_targets(Property::Sensor(f > 0.), e),
                             _ => {}
                         }
                     }
