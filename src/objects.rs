@@ -211,7 +211,6 @@ fn eval_collisions(
     }
 }
 
-#[allow(clippy::type_complexity)]
 fn sync_links(links_query: Query<(Entity, &Links)>, mut lapis: Lapis) {
     for (e, Links(links)) in links_query.iter() {
         for link in links.lines() {
