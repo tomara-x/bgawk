@@ -132,13 +132,6 @@ fn eval_expr(expr: Expr, lapis: &mut Lapis, buffer: &mut String) {
                                 lapis.data.slot.set(Fade::Smooth, 0.01, Box::new(g));
                             }
                         }
-                    } else if let Some(seq) = &mut lapis.data.seqmap.get_mut(&k) {
-                        if !seq.has_backend() {
-                            let backend = seq.backend();
-                            if backend.outputs() == 2 {
-                                lapis.data.slot.set(Fade::Smooth, 0.01, Box::new(backend));
-                            }
-                        }
                     }
                 }
             }
