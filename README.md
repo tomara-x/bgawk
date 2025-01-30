@@ -32,7 +32,8 @@ cargo run --release
 > cargo run -- --help
 > ```
 > - or by placing settings at `$HOME/.config/bgawk/config.toml` like so:
-> ```pause = false
+> ```
+> pause = false
 > fullscreen = false
 > lapis_quiet = false
 > lapis_keys = false
