@@ -1,7 +1,8 @@
 [chicken](https://www.youtube.com/watch?v=pNiKW_f5ytM&t=19s)
 
-this is a toy for playing with physics and sound
+this is a toy for playing with physics and sound. you can add rigid bodies with different properties, simulate gravity, add joints between them, link their properties to variables, and evaluate [lapis\*](https://github.com/tomara-x/lapis) code blocks on collision, and probably more :D (press f1 in the app for more detailed help)
 
+[\*] lapis is a [FunDSP](https://github.com/SamiPerttu/fundsp) interpreter
 ## building
 
 - install rust: https://www.rust-lang.org/tools/install
@@ -25,10 +26,23 @@ cargo run --release
 > [more info](https://bevyengine.org/learn/quick-start/getting-started/setup/#enable-fast-compiles-optional)
 
 > [!TIP]
-> you can configure bgawk via the command line or by placing settings at `$HOME/.config/bgawk/config.toml`.
-> for more information see [src/config.rs](./src/config.rs) or run:
+> you can choose startup settings:
+> - using command line arguments:
 > ```
 > cargo run -- --help
+> ```
+> - or by placing settings at `$HOME/.config/bgawk/config.toml` like so:
+> ```pause = false
+> fullscreen = false
+> lapis_quiet = false
+> lapis_keys = false
+> gravity_x = 0
+> gravity_y = 0
+> attraction = 0.01
+> scale_factor = 1
+> win_width = 1280
+> win_height = 720
+> clear_color = "000000"
 > ```
 
 ## thanks
