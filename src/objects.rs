@@ -655,6 +655,8 @@ pub fn set_property(
         Property::Sides(val) => {
             let val = val.clamp(3, 512);
             if let Ok(mesh_id) = mesh_ids.get(e) {
+                // hack to make sure the new mesh is in VisibleEntities (selectable)
+                trans_query.get_mut(e).unwrap().set_changed();
                 let mesh = meshes.get_mut(mesh_id).unwrap();
                 *mesh = RegularPolygon::new(1., val).into();
                 commands
