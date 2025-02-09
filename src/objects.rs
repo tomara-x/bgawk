@@ -773,4 +773,7 @@ pub fn insert_defaults(
         },
         SleepingDisabled,
     ));
+    if settings.sensor {
+        commands.entity(e).insert(Sensor);
+    }
 }
