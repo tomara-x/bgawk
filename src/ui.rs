@@ -83,6 +83,9 @@ fn egui_ui(
             }
         }
     }
+    if !lapis.time.is_paused() {
+        lapis.quiet_eval(&update_code.0);
+    }
     Window::new("mode").show(ctx, |ui| {
         ui.horizontal(|ui| {
             ui.selectable_value(&mut *mode, Mode::Edit, "Edit")
@@ -424,9 +427,6 @@ fn egui_ui(
                         .layouter(&mut layouter),
                 );
             });
-            if !lapis.time.is_paused() {
-                lapis.quiet_eval(&update_code.0);
-            }
             ScrollArea::vertical().show(ui, |ui| {
                 ui.horizontal(|ui| {
                     ui.with_layout(Layout::right_to_left(Align::TOP), |ui| {
