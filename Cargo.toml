@@ -7,7 +7,7 @@ repository = "https://github.com/tomara-x/bgawk"
 license = "MIT OR Apache-2.0"
 
 [dependencies.bevy]
-version = "0.15.1"
+version = "0.15.2"
 default-features = false
 features = [
     "multi_threaded",
@@ -34,14 +34,14 @@ features = [
 
 [dependencies]
 bevy_pancam = "0.17.0"
-bevy_egui = "0.32.0"
-egui = "0.30.0"
-egui_extras = { version = "0.30.0", default-features = false, features = ["syntect"] }
+bevy_egui = {git = "https://github.com/vladbat00/bevy_egui", rev = "refs/pull/357/head"}
+egui = "0.31.0"
+egui_extras = { version = "0.31.0", default-features = false, features = ["syntect"] }
 fundsp = {version = "0.20.0", git = "https://github.com/SamiPerttu/fundsp"}
 cpal = {version = "0.15.3", features = ["jack"]}
-syn = {version = "2.0.96", features = ["full", "extra-traits"]}
+syn = {version = "2.0.98", features = ["full", "extra-traits"]}
 crossbeam-channel = "0.5.14"
-clap = { version = "4.5.27", features = ["derive"] }
+clap = { version = "4.5.28", features = ["derive"] }
 figment = { version = "0.10.19", features = ["toml"]}
 xdg = "2.5.2"
 serde = { version = "1.0.217", features = ["derive"] }
