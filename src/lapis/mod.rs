@@ -1,4 +1,4 @@
-use crate::objects::*;
+use crate::{interaction::Selected, objects::*};
 use avian2d::prelude::*;
 use bevy::{ecs::system::SystemParam, prelude::*};
 use cpal::{
@@ -98,6 +98,7 @@ pub struct Lapis<'w, 's> {
     pub revolute_query: Query<'w, 's, &'static RevoluteJoint>,
     pub prismatic_query: Query<'w, 's, &'static PrismaticJoint>,
     pub time: ResMut<'w, Time<Virtual>>,
+    pub selected_query: Query<'w, 's, Entity, With<Selected>>,
 }
 
 impl Lapis<'_, '_> {

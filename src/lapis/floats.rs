@@ -16,7 +16,12 @@ pub fn eval_float(expr: &Expr, lapis: &Lapis) -> Option<f32> {
 }
 
 fn field_float(expr: &ExprField, lapis: &Lapis) -> Option<f32> {
-    let e = path_lit_entity(&expr.base, lapis)?;
+    let mut e = path_lit_entity(&expr.base, lapis)?;
+    if e == Entity::PLACEHOLDER {
+        if let Ok(selected) = lapis.selected_query.get_single() {
+            e = selected;
+        }
+    }
     if let Member::Named(ident) = &expr.member {
         let trans = &lapis.trans_query;
         return match ident.to_string().as_str() {
