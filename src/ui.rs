@@ -609,7 +609,8 @@ let joint = joint(0,0,200,0);",
         ui.collapsing("PLACEHOLDER", |ui| {
             ui.label("you can create a temporary placeholder entity");
             ui.code("let entity = Entity::PLACEHOLDER;");
-            ui.label("methods applied to this affect all selected objects");
+            ui.label("- methods applied to this affect all selected objects");
+            ui.label("- field access works if a single object is selected");
         });
         ui.collapsing("object methods", |ui| {
             ui.label("these methods can be called on objects");
