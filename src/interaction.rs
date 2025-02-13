@@ -339,8 +339,8 @@ fn update_selection(
         for e in visible.single().get::<With<Mesh2d>>() {
             let t = trans_query.get(*e).unwrap();
             let collider = collider_query.get(*e).unwrap();
-            if collider.contains_point(t.translation.xy(), t.rotation, cursor.i)
-                && t.translation.z > depth
+            if t.translation.z > depth
+                && collider.contains_point(t.translation.xy(), t.rotation, cursor.i)
             {
                 *clicked_entity = Some(*e);
                 depth = t.translation.z
