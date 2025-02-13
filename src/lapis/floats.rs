@@ -27,6 +27,7 @@ fn field_float(expr: &ExprField, lapis: &Lapis) -> Option<f32> {
         return match ident.to_string().as_str() {
             "x" => Some(trans.get(e).ok()?.translation.x),
             "y" => Some(trans.get(e).ok()?.translation.y),
+            "z" => Some(trans.get(e).ok()?.translation.z),
             "rx" => Some(trans.get(e).ok()?.scale.x),
             "ry" => Some(trans.get(e).ok()?.scale.y),
             "rot" => Some(trans.get(e).ok()?.rotation.to_euler(EulerRot::XYZ).2),

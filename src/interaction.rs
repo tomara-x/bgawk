@@ -335,12 +335,15 @@ fn update_selection(
         let shift = keyboard_input.any_pressed([KeyCode::ShiftLeft, KeyCode::ShiftRight]);
         let ctrl = keyboard_input.any_pressed([KeyCode::ControlLeft, KeyCode::ControlRight]);
         *clicked_entity = None;
+        let mut depth = f32::NEG_INFINITY;
         for e in visible.single().get::<With<Mesh2d>>() {
             let t = trans_query.get(*e).unwrap();
             let collider = collider_query.get(*e).unwrap();
-            if collider.contains_point(t.translation.xy(), t.rotation, cursor.i) {
+            if collider.contains_point(t.translation.xy(), t.rotation, cursor.i)
+                && t.translation.z > depth
+            {
                 *clicked_entity = Some(*e);
-                break;
+                depth = t.translation.z
             }
         }
         if let Some(e) = *clicked_entity {
@@ -452,7 +455,7 @@ fn copy_selection(
         let mut selection = String::new();
         for e in selected_query.iter() {
             let t = lapis.trans_query.get(e).unwrap();
-            let (x, y) = (t.translation.x, t.translation.y);
+            let (x, y, z) = (t.translation.x, t.translation.y, t.translation.z);
             let (rx, ry) = (t.scale.x, t.scale.y);
             let rot = t.rotation.to_euler(EulerRot::XYZ).2;
             let mass = lapis.mass_query.get(e).unwrap().0;
@@ -478,7 +481,7 @@ fn copy_selection(
             let links = &links_query.get(e).unwrap().0;
             let code = code_query.get(e).unwrap();
             let (ci, cf) = (&code.0, &code.1);
-            let line = format!("let _ = spawn({rx}).x({x}).y({y}).ry({ry}).rot({rot}).mass({mass}).inertia({inertia}).vx({vx}).vy({vy}).va({va}).restitution({restitution}).lindamp({lindamp}).angdamp({angdamp}).h({h}).s({s}).l({l}).a({a}).sides({sides}).cmx({cmx}).cmy({cmy}).friction({friction}).tail({tail}).layer({layer}).dynamic({dynamic}).sensor({sensor}).links(\"{links}\").code_i(\"{ci}\").code_f(\"{cf}\");\n");
+            let line = format!("let _ = spawn({rx}).x({x}).y({y}).z({z}).ry({ry}).rot({rot}).mass({mass}).inertia({inertia}).vx({vx}).vy({vy}).va({va}).restitution({restitution}).lindamp({lindamp}).angdamp({angdamp}).h({h}).s({s}).l({l}).a({a}).sides({sides}).cmx({cmx}).cmy({cmy}).friction({friction}).tail({tail}).layer({layer}).dynamic({dynamic}).sensor({sensor}).links(\"{links}\").code_i(\"{ci}\").code_f(\"{cf}\");\n");
             selection.push_str(&line);
         }
         for j in lapis.fixed_query.iter() {

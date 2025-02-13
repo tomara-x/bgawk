@@ -239,6 +239,13 @@ fn sync_links(links_query: Query<(Entity, &Links)>, mut lapis: Lapis) {
                             var.set(lapis.trans_query.get(e).unwrap().translation.y);
                         }
                     }
+                    "z" => {
+                        if dir == "<" {
+                            cmd.trigger_targets(Property::Z(var.value()), e);
+                        } else if dir == ">" {
+                            var.set(lapis.trans_query.get(e).unwrap().translation.z);
+                        }
+                    }
                     "rx" => {
                         if dir == "<" {
                             cmd.trigger_targets(Property::Rx(var.value()), e);
@@ -448,6 +455,7 @@ fn sync_links(links_query: Query<(Entity, &Links)>, mut lapis: Lapis) {
                         match property {
                             "x" => cmd.trigger_targets(Property::X(f), e),
                             "y" => cmd.trigger_targets(Property::Y(f), e),
+                            "z" => cmd.trigger_targets(Property::Z(f), e),
                             "rx" => cmd.trigger_targets(Property::Rx(f), e),
                             "ry" => cmd.trigger_targets(Property::Ry(f), e),
                             "rot" => cmd.trigger_targets(Property::Rot(f), e),
@@ -500,6 +508,7 @@ fn sync_links(links_query: Query<(Entity, &Links)>, mut lapis: Lapis) {
 pub enum Property {
     X(f32),
     Y(f32),
+    Z(f32),
     Rx(f32),
     Ry(f32),
     Rot(f32),
@@ -563,6 +572,11 @@ pub fn set_property(
         Property::Y(val) => {
             if let Ok(mut t) = trans_query.get_mut(e) {
                 t.translation.y = val;
+            }
+        }
+        Property::Z(val) => {
+            if let Ok(mut t) = trans_query.get_mut(e) {
+                t.translation.z = val;
             }
         }
         Property::Rx(val) => {

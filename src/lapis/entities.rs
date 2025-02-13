@@ -105,6 +105,7 @@ fn method_entity(expr: &ExprMethodCall, lapis: &mut Lapis) -> Option<Entity> {
     match expr.method.to_string().as_str() {
         "x" => cmd.trigger_targets(Property::X(val?), e),
         "y" => cmd.trigger_targets(Property::Y(val?), e),
+        "z" => cmd.trigger_targets(Property::Z(val?), e),
         "rx" => cmd.trigger_targets(Property::Rx(val?), e),
         "ry" => cmd.trigger_targets(Property::Ry(val?), e),
         "rot" => cmd.trigger_targets(Property::Rot(val?), e),
