@@ -97,58 +97,48 @@ fn egui_ui(
         });
         ui.separator();
         if *mode == Mode::Draw {
-            ui.horizontal(|ui| {
+            Grid::new("draw_grid").show(ui, |ui| {
                 ui.label("rigid body");
                 ui.selectable_value(&mut draw.rigid_body, RigidBody::Static, "Static");
                 ui.selectable_value(&mut draw.rigid_body, RigidBody::Dynamic, "Dynamic");
-            });
-            ui.horizontal(|ui| {
+                ui.end_row();
                 ui.label("collision layer");
                 ui.add(DragValue::new(&mut draw.collision_layer).range(0..=31));
-            });
-            ui.horizontal(|ui| {
+                ui.end_row();
                 ui.label("sides");
                 ui.add(DragValue::new(&mut draw.sides).range(3..=512));
-            });
-            ui.horizontal(|ui| {
+                ui.end_row();
                 ui.label("color");
                 ui.color_edit_button_srgba_unmultiplied(&mut draw.color);
-            });
-            ui.horizontal(|ui| {
+                ui.end_row();
                 ui.label("tail");
                 ui.add(DragValue::new(&mut draw.tail).range(0..=36000))
                     .on_hover_text("tail length in points");
-            });
-            ui.horizontal(|ui| {
+                ui.end_row();
                 ui.toggle_value(&mut draw.custom_mass, "custom mass?")
                     .on_hover_text("if not selected, mass = radius ^ 3");
                 ui.add_enabled(draw.custom_mass, DragValue::new(&mut draw.mass));
-            });
-            ui.horizontal(|ui| {
+                ui.end_row();
                 ui.toggle_value(&mut draw.custom_inertia, "custom inertia?")
                     .on_hover_text("if not selected, inertia = radius ^ 3");
                 ui.add_enabled(draw.custom_inertia, DragValue::new(&mut draw.inertia));
-            });
-            ui.horizontal(|ui| {
+                ui.end_row();
                 ui.label("center of mass");
                 ui.add(DragValue::new(&mut draw.center_of_mass.x).speed(0.1));
                 ui.add(DragValue::new(&mut draw.center_of_mass.y).speed(0.1));
-            });
-            ui.horizontal(|ui| {
+                ui.end_row();
                 ui.label("friction");
                 ui.add(DragValue::new(&mut draw.friction).speed(0.01));
-            });
-            ui.horizontal(|ui| {
+                ui.end_row();
                 ui.label("restitution");
                 ui.add(DragValue::new(&mut draw.restitution).speed(0.01));
-            });
-            ui.toggle_value(&mut draw.sensor, "sensor?")
-                .on_hover_text("allows other bodies to pass through");
-            ui.horizontal(|ui| {
+                ui.end_row();
+                ui.toggle_value(&mut draw.sensor, "sensor?")
+                    .on_hover_text("allows other bodies to pass through");
+                ui.end_row();
                 ui.label("linear damping");
                 ui.add(DragValue::new(&mut draw.lin_damp).speed(0.01));
-            });
-            ui.horizontal(|ui| {
+                ui.end_row();
                 ui.label("angular damping");
                 ui.add(DragValue::new(&mut draw.ang_damp).speed(0.01));
             });
@@ -163,18 +153,17 @@ fn egui_ui(
             } else if ui.button("pause").clicked() {
                 lapis.time.pause();
             }
-            ui.horizontal(|ui| {
+            Grid::new("edit_grid").show(ui, |ui| {
                 ui.label("gravity");
                 ui.add(DragValue::new(&mut gravity.0.x));
                 ui.add(DragValue::new(&mut gravity.0.y));
-            });
-            ui.horizontal(|ui| {
+                ui.end_row();
                 ui.label("attraction");
                 ui.add(DragValue::new(&mut attraction_factor.0).speed(0.01))
                     .on_hover_text("how much objects gravitate towards each other");
             });
             ui.collapsing("ui settings", |ui| {
-                ui.horizontal(|ui| {
+                Grid::new("ui_settings_grid").show(ui, |ui| {
                     ui.label("scale factor");
                     let factor = ui.add(
                         DragValue::new(&mut scale_factor.0)
@@ -184,67 +173,20 @@ fn egui_ui(
                     if factor.changed() {
                         win.single_mut().resolution.set_scale_factor(scale_factor.0);
                     }
-                });
-                ui.horizontal(|ui| {
+                    ui.end_row();
                     let fullscreen = WindowMode::Fullscreen(MonitorSelection::Current);
                     let windowed = WindowMode::Windowed;
                     ui.label("win mode");
-                    ui.selectable_value(&mut win.single_mut().mode, fullscreen, "fullscreen");
-                    ui.selectable_value(&mut win.single_mut().mode, windowed, "windowed");
-                });
-                ui.horizontal(|ui| {
+                    ui.horizontal(|ui| {
+                        ui.selectable_value(&mut win.single_mut().mode, fullscreen, "fullscreen");
+                        ui.selectable_value(&mut win.single_mut().mode, windowed, "windowed");
+                    });
+                    ui.end_row();
                     ui.label("clear color");
                     let mut tmp = clear_color.0.to_srgba().to_u8_array();
                     ui.color_edit_button_srgba_unmultiplied(&mut tmp);
                     clear_color.0 = Srgba::from_u8_array(tmp).into();
-                });
-                ui.collapsing("bloom", |ui| {
-                    let bloom = &mut bloom.single_mut();
-                    ui.horizontal(|ui| {
-                        ui.label("intensity");
-                        ui.add(DragValue::new(&mut bloom.intensity).speed(0.1));
-                    });
-                    ui.horizontal(|ui| {
-                        ui.label("low freq boost");
-                        ui.add(DragValue::new(&mut bloom.low_frequency_boost).speed(0.1));
-                    });
-                    ui.horizontal(|ui| {
-                        ui.label("lf boost curvature");
-                        ui.add(DragValue::new(&mut bloom.low_frequency_boost_curvature).speed(0.1));
-                    });
-                    ui.horizontal(|ui| {
-                        ui.label("hight pass freq");
-                        ui.add(DragValue::new(&mut bloom.high_pass_frequency).speed(0.1));
-                    });
-                    ui.horizontal(|ui| {
-                        ui.label("prefilter threshold");
-                        ui.add(DragValue::new(&mut bloom.prefilter.threshold).speed(0.1));
-                    });
-                    ui.horizontal(|ui| {
-                        ui.label("threshold softness");
-                        ui.add(DragValue::new(&mut bloom.prefilter.threshold_softness).speed(0.1));
-                    });
-                    ui.horizontal(|ui| {
-                        ui.label("composite");
-                        let conserving = BloomCompositeMode::EnergyConserving;
-                        let additive = BloomCompositeMode::Additive;
-                        ui.selectable_value(
-                            &mut bloom.composite_mode,
-                            conserving,
-                            "energy conserving",
-                        );
-                        ui.selectable_value(&mut bloom.composite_mode, additive, "additive");
-                    });
-                    ui.horizontal(|ui| {
-                        ui.label("max mip dimension");
-                        ui.add(DragValue::new(&mut bloom.max_mip_dimension).range(1..=1024));
-                    });
-                    ui.horizontal(|ui| {
-                        ui.label("uv offset");
-                        ui.add(DragValue::new(&mut bloom.uv_offset).speed(0.1));
-                    });
-                });
-                ui.horizontal(|ui| {
+                    ui.end_row();
                     ui.label("tonemapping");
                     egui::ComboBox::from_label("")
                         .selected_text(format!("{:?}", tonemapping.single()))
@@ -290,6 +232,44 @@ fn egui_ui(
                                 "BlenderFilmic",
                             );
                         });
+                });
+                ui.collapsing("bloom", |ui| {
+                    let bloom = &mut bloom.single_mut();
+                    Grid::new("bloom_grid").show(ui, |ui| {
+                        ui.label("intensity");
+                        ui.add(DragValue::new(&mut bloom.intensity).speed(0.1));
+                        ui.end_row();
+                        ui.label("low freq boost");
+                        ui.add(DragValue::new(&mut bloom.low_frequency_boost).speed(0.1));
+                        ui.end_row();
+                        ui.label("lf boost curvature");
+                        ui.add(DragValue::new(&mut bloom.low_frequency_boost_curvature).speed(0.1));
+                        ui.end_row();
+                        ui.label("hight pass freq");
+                        ui.add(DragValue::new(&mut bloom.high_pass_frequency).speed(0.1));
+                        ui.end_row();
+                        ui.label("prefilter threshold");
+                        ui.add(DragValue::new(&mut bloom.prefilter.threshold).speed(0.1));
+                        ui.end_row();
+                        ui.label("threshold softness");
+                        ui.add(DragValue::new(&mut bloom.prefilter.threshold_softness).speed(0.1));
+                        ui.end_row();
+                        ui.label("composite");
+                        let conserving = BloomCompositeMode::EnergyConserving;
+                        let additive = BloomCompositeMode::Additive;
+                        ui.selectable_value(&mut bloom.composite_mode, additive, "additive");
+                        ui.selectable_value(
+                            &mut bloom.composite_mode,
+                            conserving,
+                            "energy conserving",
+                        );
+                        ui.end_row();
+                        ui.label("max mip dimension");
+                        ui.add(DragValue::new(&mut bloom.max_mip_dimension).range(1..=1024));
+                        ui.end_row();
+                        ui.label("uv offset");
+                        ui.add(DragValue::new(&mut bloom.uv_offset).speed(0.1));
+                    });
                 });
             });
             ui.separator();
