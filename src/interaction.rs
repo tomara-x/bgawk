@@ -341,6 +341,8 @@ fn update_selection(
             let collider = collider_query.get(*e).unwrap();
             if t.translation.z > depth
                 && collider.contains_point(t.translation.xy(), t.rotation, cursor.i)
+                && !t.translation.x.is_nan()
+                && !t.translation.y.is_nan()
             {
                 *clicked_entity = Some(*e);
                 depth = t.translation.z
