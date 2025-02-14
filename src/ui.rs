@@ -603,6 +603,7 @@ let joint = joint(0,0,200,0);",
             ui.monospace(
                 "- entity.x(f)
 - entity.y(f)
+- entity.z(f)
 - entity.rx(f) // x radius
 - entity.ry(f)
 - entity.rot(f) // rotation
@@ -644,6 +645,7 @@ let joint = joint(0,0,200,0);",
             ui.monospace(
                 "- entity.x
 - entity.y
+- entity.z
 - entity.rx
 - entity.ry
 - entity.rot
@@ -751,6 +753,7 @@ e.g. \"mass < 5\", \"y < sin(s.value())\", or \"rot = PI*3\"
 properties list:
 x
 y
+z
 rx (x radius)
 ry
 rot (rotation)
