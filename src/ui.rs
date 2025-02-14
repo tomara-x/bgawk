@@ -99,8 +99,10 @@ fn egui_ui(
         if *mode == Mode::Draw {
             Grid::new("draw_grid").show(ui, |ui| {
                 ui.label("rigid body");
-                ui.selectable_value(&mut draw.rigid_body, RigidBody::Static, "Static");
-                ui.selectable_value(&mut draw.rigid_body, RigidBody::Dynamic, "Dynamic");
+                ui.horizontal(|ui| {
+                    ui.selectable_value(&mut draw.rigid_body, RigidBody::Static, "Static");
+                    ui.selectable_value(&mut draw.rigid_body, RigidBody::Dynamic, "Dynamic");
+                });
                 ui.end_row();
                 ui.label("collision layer");
                 ui.add(DragValue::new(&mut draw.collision_layer).range(0..=31));
@@ -124,8 +126,10 @@ fn egui_ui(
                 ui.add_enabled(draw.custom_inertia, DragValue::new(&mut draw.inertia));
                 ui.end_row();
                 ui.label("center of mass");
-                ui.add(DragValue::new(&mut draw.center_of_mass.x).speed(0.1));
-                ui.add(DragValue::new(&mut draw.center_of_mass.y).speed(0.1));
+                ui.horizontal(|ui| {
+                    ui.add(DragValue::new(&mut draw.center_of_mass.x).speed(0.1));
+                    ui.add(DragValue::new(&mut draw.center_of_mass.y).speed(0.1));
+                });
                 ui.end_row();
                 ui.label("friction");
                 ui.add(DragValue::new(&mut draw.friction).speed(0.01));
@@ -157,8 +161,10 @@ fn egui_ui(
             }
             Grid::new("edit_grid").show(ui, |ui| {
                 ui.label("gravity");
-                ui.add(DragValue::new(&mut gravity.0.x));
-                ui.add(DragValue::new(&mut gravity.0.y));
+                ui.horizontal(|ui| {
+                    ui.add(DragValue::new(&mut gravity.0.x));
+                    ui.add(DragValue::new(&mut gravity.0.y));
+                });
                 ui.end_row();
                 ui.label("attraction");
                 ui.add(DragValue::new(&mut attraction_factor.0).speed(0.01))
@@ -260,9 +266,11 @@ fn egui_ui(
                         ui.label("composite");
                         let conserving = BloomCompositeMode::EnergyConserving;
                         let additive = BloomCompositeMode::Additive;
-                        ui.selectable_value(&mut bloom.composite_mode, additive, "additive");
-                        ui.selectable_value(&mut bloom.composite_mode, conserving, "EC")
-                            .on_hover_text("energy conserving");
+                        ui.horizontal(|ui| {
+                            ui.selectable_value(&mut bloom.composite_mode, additive, "additive");
+                            ui.selectable_value(&mut bloom.composite_mode, conserving, "EC")
+                                .on_hover_text("energy conserving");
+                        });
                         ui.end_row();
                         ui.label("max mip dimension");
                         ui.add(DragValue::new(&mut bloom.max_mip_dimension).range(1..=1024));
