@@ -783,31 +783,22 @@ note: float expressions also work in assignment
 e.g. \"mass < 5\", \"y < sin(s.value())\", or \"rot = PI*3\"
 (no spaces)\n
 properties list:
-x
-y
-z
-rx (x radius)
-ry
+x / y / z
+h / s / l / a (hue saturation lightness alpha)
+rx / ry (x and y radius)
+sides
+tail (tail length in points)
 rot (rotation)
 mass
-vx (x velocity)
-vy
+vx / vy (x and y velocity)
 va (angular velocity)
-vm (velocity magnitude) (polar)
-vp (velocity phase) (polar)
+vm / vp (velocity magnitude and phase) (polar)
 restitution
 lindamp (linear damping)
 angdamp (angular damping)
 inertia
-h (hue)
-s (saturation)
-l (lightness)
-a (alpha)
-sides
-cmx (center of mass x)
-cmy (center of mass y)
+cmx / cmy (center of mass)
 friction
-tail (tail length in points)
 layer
 dynamic (>0 means true)
 sensor (same)";
