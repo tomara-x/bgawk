@@ -142,9 +142,11 @@ fn egui_ui(
                 ui.label("angular damping");
                 ui.add(DragValue::new(&mut draw.ang_damp).speed(0.01));
             });
-            links_line(ui, &mut draw.links);
-            code_line(ui, &mut draw.code.0, &mut layouter, "on collision start");
-            code_line(ui, &mut draw.code.1, &mut layouter, "on collision end");
+            ScrollArea::vertical().show(ui, |ui| {
+                links_line(ui, &mut draw.links);
+                code_line_i(ui, &mut draw.code.0, &mut layouter);
+                code_line_f(ui, &mut draw.code.1, &mut layouter);
+            });
         } else if *mode == Mode::Edit {
             if lapis.time.is_paused() {
                 if ui.button("resume").clicked() {
@@ -220,7 +222,8 @@ fn egui_ui(
                                 &mut *tonemapping.single_mut(),
                                 Tonemapping::SomewhatBoringDisplayTransform,
                                 "SBDT",
-                            ).on_hover_text("SomewhatBoringDisplayTransform");
+                            )
+                            .on_hover_text("SomewhatBoringDisplayTransform");
                             ui.selectable_value(
                                 &mut *tonemapping.single_mut(),
                                 Tonemapping::TonyMcMapface,
@@ -258,11 +261,8 @@ fn egui_ui(
                         let conserving = BloomCompositeMode::EnergyConserving;
                         let additive = BloomCompositeMode::Additive;
                         ui.selectable_value(&mut bloom.composite_mode, additive, "additive");
-                        ui.selectable_value(
-                            &mut bloom.composite_mode,
-                            conserving,
-                            "EC",
-                        ).on_hover_text("energy conserving");
+                        ui.selectable_value(&mut bloom.composite_mode, conserving, "EC")
+                            .on_hover_text("energy conserving");
                         ui.end_row();
                         ui.label("max mip dimension");
                         ui.add(DragValue::new(&mut bloom.max_mip_dimension).range(1..=1024));
@@ -279,21 +279,25 @@ fn egui_ui(
                 0 => {}
                 1 => {
                     let (mut code, mut links) = selected.single_mut();
-                    links_line(ui, &mut links.0);
-                    code_line(ui, &mut code.0, &mut layouter, "on collision start");
-                    code_line(ui, &mut code.1, &mut layouter, "on collision end");
+                    ScrollArea::vertical().show(ui, |ui| {
+                        links_line(ui, &mut links.0);
+                        code_line_i(ui, &mut code.0, &mut layouter);
+                        code_line_f(ui, &mut code.1, &mut layouter);
+                    });
                 }
                 _ => {
-                    links_line(ui, &mut insert.links);
-                    code_line(ui, &mut insert.code.0, &mut layouter, "on collision start");
-                    code_line(ui, &mut insert.code.1, &mut layouter, "on collision end");
-                    if ui.button("apply to selected").clicked() {
-                        for (mut code, mut links) in selected.iter_mut() {
-                            code.0 = insert.code.0.clone();
-                            code.1 = insert.code.1.clone();
-                            links.0 = insert.links.clone();
+                    ScrollArea::vertical().show(ui, |ui| {
+                        links_line(ui, &mut insert.links);
+                        code_line_i(ui, &mut insert.code.0, &mut layouter);
+                        code_line_f(ui, &mut insert.code.1, &mut layouter);
+                        if ui.button("apply to selected").clicked() {
+                            for (mut code, mut links) in selected.iter_mut() {
+                                code.0 = insert.code.0.clone();
+                                code.1 = insert.code.1.clone();
+                                links.0 = insert.links.clone();
+                            }
                         }
-                    }
+                    });
                 }
             }
         } else if *mode == Mode::Joint {
@@ -472,23 +476,51 @@ fn links_line(ui: &mut Ui, buffer: &mut String) {
     });
 }
 
-fn code_line(
+fn code_line_i(
     ui: &mut Ui,
     buffer: &mut String,
     layouter: &mut dyn FnMut(&Ui, &str, f32) -> Arc<Galley>,
-    hint: &str,
 ) {
     ui.horizontal(|ui| {
-        ui.label("code");
+        ui.label("code_i");
         ui.add(
             TextEdit::multiline(buffer)
-                .hint_text(hint)
+                .hint_text("on collision start")
                 .code_editor()
                 .desired_rows(1)
                 .desired_width(f32::INFINITY)
                 .layouter(layouter),
         )
-        .on_hover_text(CODE_TOOLTIP);
+        .on_hover_text(
+            "evaluated when this object starts colliding with another\n
+these placeholders will be substituted:
+$id for this entity's id
+$other for the other entity's id",
+        );
+    });
+}
+
+fn code_line_f(
+    ui: &mut Ui,
+    buffer: &mut String,
+    layouter: &mut dyn FnMut(&Ui, &str, f32) -> Arc<Galley>,
+) {
+    ui.horizontal(|ui| {
+        ui.label("code_f");
+        ui.add(
+            TextEdit::multiline(buffer)
+                .hint_text("on collision end")
+                .code_editor()
+                .desired_rows(1)
+                .desired_width(f32::INFINITY)
+                .layouter(layouter),
+        )
+        .on_hover_text(
+            "evaluated when this object stops colliding with another\n
+these placeholders will be substituted:
+$id for this entity's id
+$other for the other entity's id",
+        );
     });
 }
 
@@ -779,8 +811,3 @@ tail (tail length in points)
 layer
 dynamic (>0 means true)
 sensor (same)";
-
-const CODE_TOOLTIP: &str = "evaluated when this object starts/stops colliding with another\n
-these placeholders will be substituted:
-$id for this entity's id
-$other for the other entity's id";
