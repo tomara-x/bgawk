@@ -286,17 +286,17 @@ fn egui_ui(
                     });
                 }
                 _ => {
+                    if ui.button("apply to selected").clicked() {
+                        for (mut code, mut links) in selected.iter_mut() {
+                            code.0 = insert.code.0.clone();
+                            code.1 = insert.code.1.clone();
+                            links.0 = insert.links.clone();
+                        }
+                    }
                     ScrollArea::vertical().show(ui, |ui| {
                         links_line(ui, &mut insert.links);
                         code_line_i(ui, &mut insert.code.0, &mut layouter);
                         code_line_f(ui, &mut insert.code.1, &mut layouter);
-                        if ui.button("apply to selected").clicked() {
-                            for (mut code, mut links) in selected.iter_mut() {
-                                code.0 = insert.code.0.clone();
-                                code.1 = insert.code.1.clone();
-                                links.0 = insert.links.clone();
-                            }
-                        }
                     });
                 }
             }
