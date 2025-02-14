@@ -219,8 +219,8 @@ fn egui_ui(
                             ui.selectable_value(
                                 &mut *tonemapping.single_mut(),
                                 Tonemapping::SomewhatBoringDisplayTransform,
-                                "SomewhatBoringDisplayTransform",
-                            );
+                                "SBDT",
+                            ).on_hover_text("SomewhatBoringDisplayTransform");
                             ui.selectable_value(
                                 &mut *tonemapping.single_mut(),
                                 Tonemapping::TonyMcMapface,
@@ -261,8 +261,8 @@ fn egui_ui(
                         ui.selectable_value(
                             &mut bloom.composite_mode,
                             conserving,
-                            "energy conserving",
-                        );
+                            "EC",
+                        ).on_hover_text("energy conserving");
                         ui.end_row();
                         ui.label("max mip dimension");
                         ui.add(DragValue::new(&mut bloom.max_mip_dimension).range(1..=1024));
