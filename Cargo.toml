@@ -41,7 +41,7 @@ fundsp = {version = "0.20.0", git = "https://github.com/SamiPerttu/fundsp"}
 cpal = {version = "0.15.3", features = ["jack"]}
 syn = {version = "2.0.98", features = ["full", "extra-traits"]}
 crossbeam-channel = "0.5.14"
-clap = { version = "4.5.28", features = ["derive"] }
+clap = { version = "4.5.29", features = ["derive"] }
 figment = { version = "0.10.19", features = ["toml"]}
 xdg = "2.5.2"
 serde = { version = "1.0.217", features = ["derive"] }
