@@ -44,6 +44,8 @@ cargo run --release
 > win_width = 1280
 > win_height = 720
 > clear_color = "000000"
+> input_font_size = 12
+> output_font_size = 8
 > ```
 
 ## thanks
