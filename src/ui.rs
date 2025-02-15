@@ -62,7 +62,7 @@ fn egui_ui(
     (mut bloom, mut tonemapping): (Query<&mut Bloom>, Query<&mut Tonemapping>),
 ) {
     let ctx = contexts.ctx_mut();
-    let theme = CodeTheme::from_memory(ctx, &ctx.style());
+    let theme = CodeTheme::dark(12.);
     let mut layouter = |ui: &Ui, string: &str, wrap_width: f32| {
         let mut layout_job = highlight(ui.ctx(), ui.style(), &theme, string, "rs");
         layout_job.wrap.max_width = wrap_width;
@@ -86,7 +86,7 @@ fn egui_ui(
     if !lapis.time.is_paused() {
         lapis.quiet_eval(&update_code.0);
     }
-    Window::new("mode").show(ctx, |ui| {
+    Window::new("mode").default_width(270.).show(ctx, |ui| {
         ui.horizontal(|ui| {
             ui.selectable_value(&mut *mode, Mode::Edit, "Edit")
                 .on_hover_text("ctrl+1");
@@ -396,10 +396,17 @@ fn egui_ui(
                 ui.toggle_value(&mut lapis.data.keys_active, "keys?")
                     .on_hover_text("enable keybindings");
             });
+            let theme = CodeTheme::dark(8.);
+            let mut layouter = |ui: &Ui, string: &str, wrap_width: f32| {
+                let mut layout_job = highlight(ui.ctx(), ui.style(), &theme, string, "rs");
+                layout_job.wrap.max_width = wrap_width;
+                ui.fonts(|f| f.layout_job(layout_job))
+            };
             ScrollArea::vertical().stick_to_bottom(true).show(ui, |ui| {
                 ui.add(
                     TextEdit::multiline(&mut lapis.data.buffer)
                         .code_editor()
+                        .font(FontId::monospace(8.))
                         .desired_rows(1)
                         .desired_width(f32::INFINITY)
                         .layouter(&mut layouter),
