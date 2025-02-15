@@ -1,4 +1,8 @@
-use crate::{lapis::Lapis, objects::AttractionFactor, ui::ScaleFactor};
+use crate::{
+    lapis::Lapis,
+    objects::AttractionFactor,
+    ui::{FontSizes, ScaleFactor},
+};
 use avian2d::prelude::Gravity;
 use bevy::{prelude::*, window::WindowMode};
 use clap::Parser;
@@ -51,6 +55,14 @@ pub struct Config {
     /// hex code
     #[arg(long, default_value_t = String::from("000000"))]
     pub clear_color: String,
+
+    /// input window's font size
+    #[arg(long, default_value_t = 12.0)]
+    pub input_font_size: f32,
+
+    /// output window's font size
+    #[arg(long, default_value_t = 8.0)]
+    pub output_font_size: f32,
 }
 
 impl Plugin for ConfigPlugin {
@@ -85,6 +97,7 @@ fn configure(
     mut win: Query<&mut Window>,
     mut clear_color: ResMut<ClearColor>,
     mut lapis: Lapis,
+    mut font_sizes: ResMut<FontSizes>,
 ) {
     if config.pause {
         lapis.time.pause();
@@ -110,4 +123,7 @@ fn configure(
 
     lapis.data.keys_active = config.lapis_keys;
     lapis.data.quiet = config.lapis_quiet;
+
+    font_sizes.0 = config.input_font_size.clamp(1., 128.);
+    font_sizes.1 = config.output_font_size.clamp(1., 128.);
 }

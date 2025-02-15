@@ -24,6 +24,7 @@ impl Plugin for UiPlugin {
         app.add_plugins(EguiPlugin)
             .init_resource::<InsertComponents>()
             .insert_resource(ScaleFactor(1.))
+            .insert_resource(FontSizes(12., 8.))
             .init_resource::<UpdateCode>()
             .add_systems(Update, egui_ui);
     }
@@ -31,6 +32,9 @@ impl Plugin for UiPlugin {
 
 #[derive(Resource, Default)]
 struct UpdateCode(String);
+
+#[derive(Resource)]
+pub struct FontSizes(pub f32, pub f32);
 
 #[derive(Resource, Default)]
 struct InsertComponents {
@@ -60,6 +64,7 @@ fn egui_ui(
         ResMut<ClearColor>,
     ),
     (mut bloom, mut tonemapping): (Query<&mut Bloom>, Query<&mut Tonemapping>),
+    mut font_sizes: ResMut<FontSizes>,
 ) {
     let ctx = contexts.ctx_mut();
     let theme = CodeTheme::dark(12.);
@@ -181,6 +186,12 @@ fn egui_ui(
                     if factor.changed() {
                         win.single_mut().resolution.set_scale_factor(scale_factor.0);
                     }
+                    ui.end_row();
+                    ui.label("input font size");
+                    ui.add(DragValue::new(&mut font_sizes.0).range(1..=128));
+                    ui.end_row();
+                    ui.label("output font size");
+                    ui.add(DragValue::new(&mut font_sizes.1).range(1..=128));
                     ui.end_row();
                     let fullscreen = WindowMode::Fullscreen(MonitorSelection::Current);
                     let windowed = WindowMode::Windowed;
@@ -396,7 +407,7 @@ fn egui_ui(
                 ui.toggle_value(&mut lapis.data.keys_active, "keys?")
                     .on_hover_text("enable keybindings");
             });
-            let theme = CodeTheme::dark(8.);
+            let theme = CodeTheme::dark(font_sizes.1);
             let mut layouter = |ui: &Ui, string: &str, wrap_width: f32| {
                 let mut layout_job = highlight(ui.ctx(), ui.style(), &theme, string, "rs");
                 layout_job.wrap.max_width = wrap_width;
@@ -406,7 +417,7 @@ fn egui_ui(
                 ui.add(
                     TextEdit::multiline(&mut lapis.data.buffer)
                         .code_editor()
-                        .font(FontId::monospace(8.))
+                        .font(FontId::monospace(font_sizes.1))
                         .desired_rows(1)
                         .desired_width(f32::INFINITY)
                         .layouter(&mut layouter),
@@ -417,14 +428,23 @@ fn egui_ui(
         .pivot(Align2::RIGHT_BOTTOM)
         .default_pos([w - 15., h - 15.])
         .show(ctx, |ui| {
+            let theme = CodeTheme::dark(font_sizes.0);
+            let mut layouter = |ui: &Ui, string: &str, wrap_width: f32| {
+                let mut layout_job = highlight(ui.ctx(), ui.style(), &theme, string, "rs");
+                layout_job.wrap.max_width = wrap_width;
+                ui.fonts(|f| f.layout_job(layout_job))
+            };
             ui.collapsing("update code", |ui| {
-                ui.add(
-                    TextEdit::multiline(&mut update_code.0)
-                        .hint_text("code here is quietly evaluated every frame")
-                        .code_editor()
-                        .desired_width(f32::INFINITY)
-                        .layouter(&mut layouter),
-                );
+                ScrollArea::vertical().max_height(200.).show(ui, |ui| {
+                    ui.add(
+                        TextEdit::multiline(&mut update_code.0)
+                            .hint_text("code here is quietly evaluated every frame")
+                            .code_editor()
+                            .font(FontId::monospace(font_sizes.0))
+                            .desired_width(f32::INFINITY)
+                            .layouter(&mut layouter),
+                    );
+                });
             });
             ScrollArea::vertical().show(ui, |ui| {
                 ui.horizontal(|ui| {
@@ -435,6 +455,7 @@ fn egui_ui(
                                 TextEdit::multiline(&mut lapis.data.input)
                                     .hint_text("type code then press ctrl+enter")
                                     .code_editor()
+                                    .font(FontId::monospace(font_sizes.0))
                                     .desired_rows(5)
                                     .desired_width(f32::INFINITY)
                                     .layouter(&mut layouter),
