@@ -1,12 +1,12 @@
 use crate::{interaction::Selected, objects::*};
 use avian2d::prelude::*;
 use bevy::{ecs::system::SystemParam, prelude::*};
+use bevy_egui::egui::KeyboardShortcut;
 use cpal::{
     traits::{DeviceTrait, HostTrait, StreamTrait},
     FromSample, SizedSample, Stream,
 };
 use crossbeam_channel::{bounded, Receiver, Sender};
-use egui::KeyboardShortcut;
 use fundsp::hacker32::*;
 use std::{collections::HashMap, sync::Arc};
 use syn::*;

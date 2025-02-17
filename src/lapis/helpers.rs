@@ -1,5 +1,5 @@
 use crate::lapis::*;
-use egui::{Key, KeyboardShortcut, Modifiers};
+use bevy_egui::egui::{Key, KeyboardShortcut, Modifiers};
 use syn::punctuated::Punctuated;
 
 pub fn device_commands(expr: &ExprCall, lapis: &mut Lapis, buffer: &mut String) -> Option<()> {

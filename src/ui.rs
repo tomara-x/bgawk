@@ -12,8 +12,7 @@ use bevy::{
     },
     window::WindowMode,
 };
-use bevy_egui::{EguiContexts, EguiPlugin};
-use egui::*;
+use bevy_egui::{egui::*, EguiContexts, EguiPlugin};
 use egui_extras::syntax_highlighting::*;
 use std::sync::Arc;
 
@@ -207,7 +206,7 @@ fn egui_ui(
                     clear_color.0 = Srgba::from_u8_array(tmp).into();
                     ui.end_row();
                     ui.label("tonemapping");
-                    egui::ComboBox::from_label("")
+                    ComboBox::from_label("")
                         .selected_text(format!("{:?}", tonemapping.single()))
                         .show_ui(ui, |ui| {
                             ui.selectable_value(

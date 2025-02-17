@@ -9,7 +9,7 @@ use bevy::{
     prelude::*,
     winit::{UpdateMode, WinitSettings},
 };
-use bevy_egui::EguiContexts;
+use bevy_egui::{egui, EguiContexts};
 use bevy_pancam::*;
 use std::time::Duration;
 

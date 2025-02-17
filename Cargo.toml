@@ -34,8 +34,7 @@ features = [
 
 [dependencies]
 bevy_pancam = "0.17.0"
-bevy_egui = {git = "https://github.com/vladbat00/bevy_egui", rev = "refs/pull/357/head"}
-egui = "0.31.0"
+bevy_egui = "0.33.0"
 egui_extras = { version = "0.31.0", default-features = false, features = ["syntect"] }
 fundsp = {version = "0.20.0", git = "https://github.com/SamiPerttu/fundsp"}
 cpal = {version = "0.15.3", features = ["jack"]}
@@ -60,4 +59,4 @@ debug-assertions = false
 panic = 'abort'
 strip = true
 codegen-units = 1
-lto = "fat"
+lto = "thin"
