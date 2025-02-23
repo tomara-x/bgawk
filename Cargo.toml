@@ -36,14 +36,14 @@ features = [
 bevy_pancam = "0.17.0"
 bevy_egui = "0.33.0"
 egui_extras = { version = "0.31.0", default-features = false, features = ["syntect"] }
-fundsp = {version = "0.20.0", git = "https://github.com/SamiPerttu/fundsp"}
+fundsp = { git = "https://github.com/tomara-x/fundsp", branch = "crossbeam", features = ["crossbeam"] }
 cpal = {version = "0.15.3", features = ["jack"]}
 syn = {version = "2.0.98", features = ["full", "extra-traits"]}
 crossbeam-channel = "0.5.14"
-clap = { version = "4.5.29", features = ["derive"] }
+clap = { version = "4.5.30", features = ["derive"] }
 figment = { version = "0.10.19", features = ["toml"]}
 xdg = "2.5.2"
-serde = { version = "1.0.217", features = ["derive"] }
+serde = { version = "1.0.218", features = ["derive"] }
 
 # smol amount of optimization for our stuff
 [profile.dev]
