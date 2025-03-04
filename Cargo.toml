@@ -42,7 +42,6 @@ syn = {version = "2.0.98", features = ["full", "extra-traits"]}
 crossbeam-channel = "0.5.14"
 clap = { version = "4.5.30", features = ["derive"] }
 figment = { version = "0.10.19", features = ["toml"]}
-xdg = "2.5.2"
 serde = { version = "1.0.218", features = ["derive"] }
 
 # smol amount of optimization for our stuff

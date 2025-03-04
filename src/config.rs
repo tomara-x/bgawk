@@ -11,7 +11,6 @@ use figment::{
     Figment,
 };
 use serde::{Deserialize, Serialize};
-use xdg::BaseDirectories;
 
 pub struct ConfigPlugin;
 
@@ -67,22 +66,11 @@ pub struct Config {
 
 impl Plugin for ConfigPlugin {
     fn build(&self, app: &mut App) {
-        let mut config: Config = Figment::new()
+        let config: Config = Figment::new()
             .merge(Serialized::defaults(Config::parse()))
+            .merge(Toml::file("config.toml"))
             .extract()
             .unwrap();
-
-        if let Ok(xdg_dirs) = BaseDirectories::with_prefix("bgawk") {
-            if let Ok(config_path) = xdg_dirs.place_config_file("config.toml") {
-                if let Ok(figment) = Figment::new()
-                    .merge(Serialized::defaults(Config::parse()))
-                    .merge(Toml::file(config_path))
-                    .extract()
-                {
-                    config = figment;
-                }
-            }
-        }
 
         app.insert_resource(config)
             .add_systems(PostStartup, configure);
