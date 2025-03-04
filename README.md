@@ -31,7 +31,7 @@ cargo run --release
 > ```
 > cargo run -- --help
 > ```
-> - or by placing settings at `$HOME/.config/bgawk/config.toml` like so:
+> - or by placing settings at a file called `config.toml` in the working directory like so:
 > ```
 > pause = false
 > fullscreen = false
