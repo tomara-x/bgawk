@@ -304,56 +304,17 @@ where
     T: SizedSample + FromSample<f32>,
 {
     let mut slot = BlockRateAdapter::new(Box::new(slot));
-
-    let mut next_value = move || {
-        let (l, r) = slot.get_stereo();
-        (
-            if l.is_normal() { l.clamp(-1., 1.) } else { 0. },
-            if r.is_normal() { r.clamp(-1., 1.) } else { 0. },
-        )
-    };
     let err_fn = |err| eprintln!("an error occurred on stream: {err}");
     let stream = device.build_output_stream(
         config,
-        move |data: &mut [T], _: &cpal::OutputCallbackInfo| write_data(data, &mut next_value),
-        err_fn,
-        None,
-    );
-    if let Ok(stream) = stream {
-        if let Ok(()) = stream.play() {
-            return Some(stream);
-        }
-    }
-    None
-}
-
-fn write_data<T>(output: &mut [T], next_sample: &mut dyn FnMut() -> (f32, f32))
-where
-    T: SizedSample + FromSample<f32>,
-{
-    for frame in output.chunks_mut(2) {
-        let sample = next_sample();
-        frame[0] = T::from_sample(sample.0);
-        frame[1] = T::from_sample(sample.1);
-    }
-}
-
-fn run_in<T>(
-    device: &cpal::Device,
-    config: &cpal::StreamConfig,
-    ls: Sender<f32>,
-    rs: Sender<f32>,
-) -> Option<Stream>
-where
-    T: SizedSample,
-    f32: FromSample<T>,
-{
-    let channels = config.channels as usize;
-    let err_fn = |err| eprintln!("an error occurred on stream: {err}");
-    let stream = device.build_input_stream(
-        config,
-        move |data: &[T], _: &cpal::InputCallbackInfo| {
-            read_data(data, channels, ls.clone(), rs.clone())
+        move |data: &mut [T], _| {
+            for frame in data.chunks_mut(2) {
+                let (l, r) = slot.get_stereo();
+                let l = if l.is_normal() { l.clamp(-1., 1.) } else { 0. };
+                let r = if r.is_normal() { r.clamp(-1., 1.) } else { 0. };
+                frame[0] = T::from_sample(l);
+                frame[1] = T::from_sample(r);
+            }
         },
         err_fn,
         None,
@@ -366,18 +327,32 @@ where
     None
 }
 
-fn read_data<T>(input: &[T], channels: usize, ls: Sender<f32>, rs: Sender<f32>)
+fn run_in<T>(
+    device: &cpal::Device,
+    config: &cpal::StreamConfig,
+    ls: Sender<f32>,
+    rs: Sender<f32>,
+) -> Option<Stream>
 where
     T: SizedSample,
     f32: FromSample<T>,
 {
-    for frame in input.chunks(channels) {
-        for (channel, sample) in frame.iter().enumerate() {
-            if channel & 1 == 0 {
-                let _ = ls.try_send(sample.to_sample::<f32>());
-            } else {
-                let _ = rs.try_send(sample.to_sample::<f32>());
+    let err_fn = |err| eprintln!("an error occurred on stream: {err}");
+    let stream = device.build_input_stream(
+        config,
+        move |data: &[T], _| {
+            for frame in data.chunks(2) {
+                let _ = ls.try_send(frame[0].to_sample::<f32>());
+                let _ = rs.try_send(frame[1].to_sample::<f32>());
             }
+        },
+        err_fn,
+        None,
+    );
+    if let Ok(stream) = stream {
+        if let Ok(()) = stream.play() {
+            return Some(stream);
         }
     }
+    None
 }
