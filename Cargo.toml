@@ -18,6 +18,7 @@ features = [
     "bevy_sprite",
     "tonemapping_luts",
     "x11",
+    "configurable_error_handler",
 ]
 
 [dependencies.avian2d]

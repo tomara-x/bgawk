@@ -6,6 +6,7 @@ use bevy::{
         bloom::{Bloom, BloomCompositeMode},
         tonemapping::Tonemapping,
     },
+    ecs::error::{error, GLOBAL_ERROR_HANDLER},
     prelude::*,
     winit::{UpdateMode, WinitSettings},
 };
@@ -24,6 +25,7 @@ use config::ConfigPlugin;
 use {interaction::*, joints::*, lapis::*, objects::*, ui::*};
 
 fn main() {
+    let _ = GLOBAL_ERROR_HANDLER.set(error);
     App::new()
         .add_plugins(DefaultPlugins.set(WindowPlugin {
             primary_window: Some(Window {
