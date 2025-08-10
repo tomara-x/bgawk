@@ -9,7 +9,7 @@ use cpal::{
 use crossbeam_channel::{bounded, Receiver, Sender};
 use fundsp::hacker32::*;
 use std::{collections::HashMap, sync::Arc};
-use syn::*;
+use syn::{parse_str, Stmt};
 
 mod arrays;
 mod atomics;
@@ -22,12 +22,8 @@ mod nets;
 mod sequencers;
 mod sources;
 mod statements;
-mod units;
 mod waves;
-use {
-    arrays::*, atomics::*, bools::*, entities::*, floats::*, helpers::*, ints::*, nets::*,
-    sequencers::*, sources::*, statements::*, units::*, waves::*,
-};
+use statements::*;
 
 pub struct LapisPlugin;
 
@@ -119,13 +115,13 @@ impl Lapis<'_, '_> {
         if !input.is_empty() {
             self.data.buffer.push('\n');
             self.data.buffer.push_str(input);
-            match parse_str::<Stmt>(&format!("{{{}}}", input)) {
+            match parse_str::<Stmt>(&format!("{{{input}}}")) {
                 Ok(stmt) => {
                     let out = eval_stmt(stmt, self);
                     self.data.buffer.push_str(&out);
                 }
                 Err(err) => {
-                    self.data.buffer.push_str(&format!("\n// error: {}", err));
+                    self.data.buffer.push_str(&format!("\n// error: {err}"));
                 }
             }
         }
@@ -141,13 +137,13 @@ impl Lapis<'_, '_> {
                     self.data.buffer.push_str(&out);
                 }
                 Err(err) => {
-                    self.data.buffer.push_str(&format!("\n// error: {}", err));
+                    self.data.buffer.push_str(&format!("\n// error: {err}"));
                 }
             }
         }
     }
     pub fn quiet_eval(&mut self, input: &str) {
-        if let Ok(stmt) = parse_str::<Stmt>(&format!("{{{}}}", input)) {
+        if let Ok(stmt) = parse_str::<Stmt>(&format!("{{{input}}}")) {
             eval_stmt(stmt, self);
         }
     }
@@ -199,7 +195,7 @@ fn default_out_device(slot: SlotBackend) -> Option<Stream> {
                 cpal::SampleFormat::I16 => run::<i16>(&device, &config, slot),
                 cpal::SampleFormat::U16 => run::<u16>(&device, &config, slot),
                 format => {
-                    eprintln!("unsupported sample format: {}", format);
+                    eprintln!("unsupported sample format: {format}");
                     None
                 }
             };
@@ -211,13 +207,15 @@ fn default_out_device(slot: SlotBackend) -> Option<Stream> {
 fn default_in_device(ls: Sender<f32>, rs: Sender<f32>) -> Option<Stream> {
     let host = cpal::default_host();
     if let Some(device) = host.default_input_device() {
-        if let Ok(config) = device.default_input_config() {
-            return match config.sample_format() {
-                cpal::SampleFormat::F32 => run_in::<f32>(&device, &config.into(), ls, rs),
-                cpal::SampleFormat::I16 => run_in::<i16>(&device, &config.into(), ls, rs),
-                cpal::SampleFormat::U16 => run_in::<u16>(&device, &config.into(), ls, rs),
+        if let Ok(default_config) = device.default_input_config() {
+            let mut config = default_config.config();
+            config.channels = 2;
+            return match default_config.sample_format() {
+                cpal::SampleFormat::F32 => run_in::<f32>(&device, &config, ls, rs),
+                cpal::SampleFormat::I16 => run_in::<i16>(&device, &config, ls, rs),
+                cpal::SampleFormat::U16 => run_in::<u16>(&device, &config, ls, rs),
                 format => {
-                    eprintln!("unsupported sample format: {}", format);
+                    eprintln!("unsupported sample format: {format}");
                     None
                 }
             };
@@ -249,7 +247,7 @@ fn set_out_device(
                             cpal::SampleFormat::I16 => run::<i16>(&device, &config, slot_back),
                             cpal::SampleFormat::U16 => run::<u16>(&device, &config, slot_back),
                             format => {
-                                eprintln!("unsupported sample format: {}", format);
+                                eprintln!("unsupported sample format: {format}");
                                 None
                             }
                         };
@@ -276,22 +274,18 @@ fn set_in_device(
         if let Ok(host) = cpal::host_from_id(*host_id) {
             if let Ok(mut devices) = host.input_devices() {
                 if let Some(device) = devices.nth(d) {
-                    if let Ok(config) = device.default_input_config() {
+                    if let Ok(default_config) = device.default_input_config() {
                         let (ls, lr) = bounded(4096);
                         let (rs, rr) = bounded(4096);
                         lapis.receivers = (lr, rr);
-                        let s = match config.sample_format() {
-                            cpal::SampleFormat::F32 => {
-                                run_in::<f32>(&device, &config.into(), ls, rs)
-                            }
-                            cpal::SampleFormat::I16 => {
-                                run_in::<i16>(&device, &config.into(), ls, rs)
-                            }
-                            cpal::SampleFormat::U16 => {
-                                run_in::<u16>(&device, &config.into(), ls, rs)
-                            }
+                        let mut config = default_config.config();
+                        config.channels = 2;
+                        let s = match default_config.sample_format() {
+                            cpal::SampleFormat::F32 => run_in::<f32>(&device, &config, ls, rs),
+                            cpal::SampleFormat::I16 => run_in::<i16>(&device, &config, ls, rs),
+                            cpal::SampleFormat::U16 => run_in::<u16>(&device, &config, ls, rs),
                             format => {
-                                eprintln!("unsupported sample format: {}", format);
+                                eprintln!("unsupported sample format: {format}");
                                 None
                             }
                         };
@@ -318,7 +312,7 @@ where
             if r.is_normal() { r.clamp(-1., 1.) } else { 0. },
         )
     };
-    let err_fn = |err| eprintln!("an error occurred on stream: {}", err);
+    let err_fn = |err| eprintln!("an error occurred on stream: {err}");
     let stream = device.build_output_stream(
         config,
         move |data: &mut [T], _: &cpal::OutputCallbackInfo| write_data(data, &mut next_value),
@@ -355,7 +349,7 @@ where
     f32: FromSample<T>,
 {
     let channels = config.channels as usize;
-    let err_fn = |err| eprintln!("an error occurred on stream: {}", err);
+    let err_fn = |err| eprintln!("an error occurred on stream: {err}");
     let stream = device.build_input_stream(
         config,
         move |data: &[T], _: &cpal::InputCallbackInfo| {

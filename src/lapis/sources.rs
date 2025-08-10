@@ -1,4 +1,6 @@
-use crate::lapis::*;
+use super::{helpers::*, ints::*, nets::*, Lapis};
+use fundsp::hacker32::*;
+use syn::*;
 
 fn method_source(expr: &ExprMethodCall, lapis: &Lapis) -> Option<Source> {
     match expr.method.to_string().as_str() {

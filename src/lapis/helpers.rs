@@ -1,6 +1,8 @@
-use crate::lapis::*;
+use super::{floats::*, ints::*, InDevice, Lapis, OutDevice};
 use bevy_egui::egui::{Key, KeyboardShortcut, Modifiers};
-use syn::punctuated::Punctuated;
+use cpal::traits::{DeviceTrait, HostTrait};
+use fundsp::hacker32::*;
+use syn::{punctuated::Punctuated, *};
 
 pub fn device_commands(expr: &ExprCall, lapis: &mut Lapis, buffer: &mut String) -> Option<()> {
     let func = nth_path_ident(&expr.func, 0)?;
@@ -9,7 +11,7 @@ pub fn device_commands(expr: &ExprCall, lapis: &mut Lapis, buffer: &mut String) 
             let hosts = cpal::platform::ALL_HOSTS;
             buffer.push_str("\n// input devices:\n");
             for (i, host) in hosts.iter().enumerate() {
-                buffer.push_str(&format!("// {}: {:?}:\n", i, host));
+                buffer.push_str(&format!("// {i}: {host:?}:\n"));
                 if let Ok(devices) = cpal::platform::host_from_id(*host).unwrap().input_devices() {
                     for (j, device) in devices.enumerate() {
                         buffer.push_str(&format!("//     {}: {:?}\n", j, device.name()));
@@ -21,7 +23,7 @@ pub fn device_commands(expr: &ExprCall, lapis: &mut Lapis, buffer: &mut String) 
             let hosts = cpal::platform::ALL_HOSTS;
             buffer.push_str("\n// output devices:\n");
             for (i, host) in hosts.iter().enumerate() {
-                buffer.push_str(&format!("// {}: {:?}:\n", i, host));
+                buffer.push_str(&format!("// {i}: {host:?}:\n"));
                 if let Ok(devices) = cpal::platform::host_from_id(*host)
                     .unwrap()
                     .output_devices()

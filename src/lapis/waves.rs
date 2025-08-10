@@ -1,5 +1,7 @@
-use crate::lapis::*;
+use super::{arrays::*, floats::*, helpers::*, ints::*, nets::*, Lapis};
+use fundsp::hacker32::*;
 use std::sync::Arc;
+use syn::*;
 
 pub fn eval_wave(expr: &Expr, lapis: &mut Lapis) -> Option<Wave> {
     match expr {

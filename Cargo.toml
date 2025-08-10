@@ -7,7 +7,7 @@ repository = "https://github.com/tomara-x/bgawk"
 license = "MIT OR Apache-2.0"
 
 [dependencies.bevy]
-version = "0.15.2"
+version = "0.16.1"
 default-features = false
 features = [
     "multi_threaded",
@@ -21,7 +21,7 @@ features = [
 ]
 
 [dependencies.avian2d]
-version = "0.2.1"
+version = "0.3.1"
 default-features = false
 features = [
     "2d",
@@ -32,17 +32,21 @@ features = [
     "simd",
 ]
 
+[dependencies.bevy_egui]
+version = "0.36.0"
+default-features = false
+features = ["manage_clipboard", "open_url", "default_fonts", "render"]
+
 [dependencies]
-bevy_pancam = "0.17.0"
-bevy_egui = "0.33.0"
-egui_extras = { version = "0.31.0", default-features = false, features = ["syntect"] }
-fundsp = { git = "https://github.com/tomara-x/fundsp", branch = "crossbeam", features = ["crossbeam"] }
-cpal = {version = "0.15.3", features = ["jack"]}
-syn = {version = "2.0.98", features = ["full", "extra-traits"]}
-crossbeam-channel = "0.5.14"
-clap = { version = "4.5.30", features = ["derive"] }
-figment = { version = "0.10.19", features = ["toml"]}
-serde = { version = "1.0.218", features = ["derive"] }
+bevy_pancam = "0.18.0"
+egui_extras = { version = "0.32.0", default-features = false, features = ["syntect"] }
+fundsp = { git = "https://github.com/tomara-x/fundsp", features = ["crossbeam"] }
+cpal = { version = "0.16.0", features = ["jack"] }
+syn = { version = "2.0.104", features = ["full", "extra-traits"] }
+crossbeam-channel = "0.5.15"
+clap = { version = "4.5.43", features = ["derive"] }
+figment = { version = "0.10.19", features = ["toml"] }
+serde = { version = "1.0.219", features = ["derive"] }
 
 # smol amount of optimization for our stuff
 [profile.dev]

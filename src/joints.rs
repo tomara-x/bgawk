@@ -1,6 +1,7 @@
 use crate::interaction::*;
 use avian2d::prelude::*;
 use bevy::{math::Affine2, prelude::*, render::view::VisibleEntities};
+use std::any::TypeId;
 
 pub struct JointsPlugin;
 
@@ -37,7 +38,7 @@ fn spawn_joint(
         return;
     }
     if mouse_button_input.just_pressed(MouseButton::Left) {
-        for e in visible.single().get::<With<Mesh2d>>() {
+        for e in visible.single().unwrap().get(TypeId::of::<Mesh2d>()) {
             let t = trans_query.get(*e).unwrap();
             let collider = collider_query.get(*e).unwrap();
             if collider.contains_point(t.translation.xy(), t.rotation, cursor.i) {
@@ -47,7 +48,7 @@ fn spawn_joint(
         }
     } else if mouse_button_input.just_released(MouseButton::Left) {
         let mut snk = None;
-        for e in visible.single().get::<With<Mesh2d>>() {
+        for e in visible.single().unwrap().get(TypeId::of::<Mesh2d>()) {
             let t = trans_query.get(*e).unwrap();
             let collider = collider_query.get(*e).unwrap();
             if collider.contains_point(t.translation.xy(), t.rotation, cursor.f) {
@@ -137,7 +138,7 @@ pub fn set_joint_property(
     mut revolute: Query<&mut RevoluteJoint>,
     mut prismatic: Query<&mut PrismaticJoint>,
 ) {
-    let e = trig.entity();
+    let e = trig.target();
     match *trig.event() {
         JointProperty::Compliance(val) => {
             if let Ok(mut j) = fixed.get_mut(e) {
@@ -206,7 +207,7 @@ fn replace_joint(
     prismatic: Query<&PrismaticJoint>,
     settings: Res<JointSettings>,
 ) {
-    let e = trig.entity();
+    let e = trig.target();
     let joint_type = &trig.event().0;
     let e1;
     let e2;
@@ -287,7 +288,7 @@ fn disjoint(
     revolute: Query<(Entity, &RevoluteJoint)>,
     prismatic: Query<(Entity, &PrismaticJoint)>,
 ) {
-    let object = trig.entity();
+    let object = trig.target();
     for (e, j) in fixed.iter() {
         if j.entity1 == object || j.entity2 == object {
             commands.entity(e).despawn();
@@ -319,7 +320,7 @@ fn joint_points(
     objects_query: Query<(Entity, &Transform, &Collider), With<RigidBody>>,
     settings: Res<JointSettings>,
 ) {
-    let joint_entity = trig.entity();
+    let joint_entity = trig.target();
     let JointPoints(i, f) = *trig.event();
     let mut src = None;
     let mut snk = None;
@@ -396,7 +397,7 @@ fn joint_entities(
     mut commands: Commands,
     settings: Res<JointSettings>,
 ) {
-    let joint_entity = trig.entity();
+    let joint_entity = trig.target();
     let JointEntities(e1, e2) = *trig.event();
     let anchors = (settings.local_anchor_1, settings.local_anchor_2);
     match settings.joint_type {

@@ -109,6 +109,7 @@ fn spawn(
             Collider::regular_polygon(1., settings.sides),
             CollisionLayers::from_bits(layer, layer),
             (
+                CollisionEventsEnabled,
                 LinearDamping(settings.lin_damp),
                 AngularDamping(settings.ang_damp),
                 Restitution::new(settings.restitution),
@@ -149,7 +150,7 @@ fn attract(
     let mut combinations = layers.iter_combinations();
     while let Some([(e1, l1), (e2, l2)]) = combinations.fetch_next() {
         if l1 == l2 {
-            let [mut e1, mut e2] = query.many_mut([e1, e2]);
+            let [mut e1, mut e2] = query.get_many_mut([e1, e2]).unwrap();
             let m1 = e1.0 .0;
             let m2 = e2.0 .0;
             let p1 = e1.1 .0;
@@ -551,7 +552,7 @@ pub fn set_property(
     mut code_query: Query<&mut Code>,
     selected_query: Query<Entity, With<Selected>>,
 ) {
-    let e = trig.entity();
+    let e = trig.target();
     // methods applied to PLACEHOLDER affect the selected entities
     if e == Entity::PLACEHOLDER {
         let mut targets = Vec::new();
@@ -752,7 +753,7 @@ pub fn insert_defaults(
     mut materials: ResMut<Assets<ColorMaterial>>,
     settings: Res<DrawSettings>,
 ) {
-    let e = trig.entity();
+    let e = trig.target();
     let r = trig.event().0;
     let material = ColorMaterial {
         color: Srgba::from_u8_array(settings.color).into(),
@@ -774,6 +775,7 @@ pub fn insert_defaults(
         Collider::regular_polygon(1., settings.sides),
         CollisionLayers::from_bits(layer, layer),
         (
+            CollisionEventsEnabled,
             LinearDamping(settings.lin_damp),
             AngularDamping(settings.ang_damp),
             Restitution::new(settings.restitution),

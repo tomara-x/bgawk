@@ -4,7 +4,10 @@ use crate::{
     ui::{FontSizes, ScaleFactor},
 };
 use avian2d::prelude::Gravity;
-use bevy::{prelude::*, window::WindowMode};
+use bevy::{
+    prelude::*,
+    window::{VideoModeSelection, WindowMode},
+};
 use clap::Parser;
 use figment::{
     providers::{Format, Serialized, Toml},
@@ -97,12 +100,13 @@ fn configure(
     attraction_factor.0 = config.attraction;
 
     scale_factor.0 = config.scale_factor;
-    let res = &mut win.single_mut().resolution;
+    let res = &mut win.single_mut().unwrap().resolution;
     res.set_scale_factor(config.scale_factor);
     res.set(config.win_width, config.win_height);
 
     if config.fullscreen {
-        win.single_mut().mode = WindowMode::Fullscreen(MonitorSelection::Current);
+        win.single_mut().unwrap().mode =
+            WindowMode::Fullscreen(MonitorSelection::Current, VideoModeSelection::Current);
     }
 
     if let Ok(color) = Srgba::hex(config.clear_color.clone()) {

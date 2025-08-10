@@ -9,7 +9,6 @@ use bevy::{
     prelude::*,
     winit::{UpdateMode, WinitSettings},
 };
-use bevy_egui::{egui, EguiContexts};
 use bevy_pancam::*;
 use std::time::Duration;
 
@@ -55,17 +54,7 @@ fn main() {
         .run();
 }
 
-fn setup(
-    mut commands: Commands,
-    mut config_store: ResMut<GizmoConfigStore>,
-    mut contexts: EguiContexts,
-) {
-    // egui visuals
-    contexts.ctx_mut().set_visuals(egui::Visuals {
-        window_shadow: egui::Shadow::NONE,
-        popup_shadow: egui::Shadow::NONE,
-        ..default()
-    });
+fn setup(mut commands: Commands, mut config_store: ResMut<GizmoConfigStore>) {
     // disable avian debug gizmos
     config_store.config_mut::<PhysicsGizmos>().0.enabled = false;
     // camera

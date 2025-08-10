@@ -6,6 +6,7 @@ use bevy::{
 };
 use bevy_egui::EguiContexts;
 use bevy_pancam::*;
+use std::any::TypeId;
 use std::f32::consts::TAU;
 
 pub struct InteractPlugin;
@@ -190,16 +191,16 @@ pub fn update_cursor_info(
     mut last_pos: Local<Vec2>,
 ) {
     if mouse_button_input.just_pressed(MouseButton::Left) {
-        let (cam, cam_transform) = camera_query.single();
-        if let Some(cursor_pos) = windows.single().cursor_position() {
+        let (cam, cam_transform) = camera_query.single().unwrap();
+        if let Some(cursor_pos) = windows.single().unwrap().cursor_position() {
             if let Ok(point) = cam.viewport_to_world_2d(cam_transform, cursor_pos) {
                 cursor.i = point;
             }
         }
     }
     if mouse_button_input.pressed(MouseButton::Left) {
-        let (cam, cam_transform) = camera_query.single();
-        if let Some(cursor_pos) = windows.single().cursor_position() {
+        let (cam, cam_transform) = camera_query.single().unwrap();
+        if let Some(cursor_pos) = windows.single().unwrap().cursor_position() {
             if let Ok(point) = cam.viewport_to_world_2d(cam_transform, cursor_pos) {
                 cursor.f = point;
                 cursor.d = point - *last_pos;
@@ -336,7 +337,7 @@ fn update_selection(
         let ctrl = keyboard_input.any_pressed([KeyCode::ControlLeft, KeyCode::ControlRight]);
         *clicked_entity = None;
         let mut depth = f32::NEG_INFINITY;
-        for e in visible.single().get::<With<Mesh2d>>() {
+        for e in visible.single().unwrap().get(TypeId::of::<Mesh2d>()) {
             let t = trans_query.get(*e).unwrap();
             let collider = collider_query.get(*e).unwrap();
             if t.translation.z > depth
@@ -383,7 +384,7 @@ fn update_selection(
         } else {
             (cursor.f.y, cursor.i.y)
         };
-        for e in visible.single().get::<With<Mesh2d>>() {
+        for e in visible.single().unwrap().get(TypeId::of::<Mesh2d>()) {
             if let Ok(t) = trans_query.get(*e) {
                 if (min_x < t.translation.x && t.translation.x < max_x)
                     && (min_y < t.translation.y && t.translation.y < max_y)
@@ -426,7 +427,7 @@ fn toggle_pan(
     keyboard_input: Res<ButtonInput<KeyCode>>,
     egui_focused: Res<EguiFocused>,
 ) {
-    query.single_mut().enabled = keyboard_input.pressed(KeyCode::Space) && !egui_focused.0;
+    query.single_mut().unwrap().enabled = keyboard_input.pressed(KeyCode::Space) && !egui_focused.0;
 }
 
 fn follow_object(
@@ -435,8 +436,8 @@ fn follow_object(
     mouse_button_input: Res<ButtonInput<MouseButton>>,
 ) {
     if mouse_button_input.pressed(MouseButton::Right) {
-        if let Ok(t) = selected_query.get_single() {
-            let mut cam = camera_query.single_mut();
+        if let Ok(t) = selected_query.single() {
+            let mut cam = camera_query.single_mut().unwrap();
             cam.translation.x = t.translation.x;
             cam.translation.y = t.translation.y;
         }
@@ -539,7 +540,9 @@ fn copy_selection(
             }
         }
         if !selection.is_empty() {
-            contexts.ctx_mut().copy_text(selection);
+            if let Ok(ctx) = contexts.ctx_mut() {
+                ctx.copy_text(selection);
+            }
         }
     }
 }
@@ -549,7 +552,8 @@ fn copy_selection(
 pub struct EguiFocused(pub bool);
 
 fn check_egui_focus(mut contexts: EguiContexts, mut egui_focused: ResMut<EguiFocused>) {
-    let ctx = contexts.ctx_mut();
-    let focused = ctx.wants_pointer_input() || ctx.wants_keyboard_input();
-    egui_focused.set_if_neq(EguiFocused(focused));
+    if let Ok(ctx) = contexts.ctx_mut() {
+        let focused = ctx.wants_pointer_input() || ctx.wants_keyboard_input();
+        egui_focused.set_if_neq(EguiFocused(focused));
+    }
 }

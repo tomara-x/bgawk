@@ -1,18 +1,18 @@
 use crate::{interaction::*, lapis::*, objects::*};
 use avian2d::prelude::*;
 use bevy::{
-    app::{App, Plugin, Update},
+    app::{App, Plugin},
     core_pipeline::{
         bloom::{Bloom, BloomCompositeMode},
         tonemapping::Tonemapping,
     },
     prelude::{
         ClearColor, ColorToPacked, GizmoConfigStore, MonitorSelection, Query, Res, ResMut,
-        Resource, Srgba, With,
+        Resource, Srgba, VideoModeSelection, With,
     },
     window::WindowMode,
 };
-use bevy_egui::{egui::*, EguiContexts, EguiPlugin};
+use bevy_egui::{egui::*, EguiContexts, EguiPlugin, EguiPrimaryContextPass};
 use egui_extras::syntax_highlighting::*;
 use std::sync::Arc;
 
@@ -20,12 +20,12 @@ pub struct UiPlugin;
 
 impl Plugin for UiPlugin {
     fn build(&self, app: &mut App) {
-        app.add_plugins(EguiPlugin)
+        app.add_plugins(EguiPlugin::default())
             .init_resource::<InsertComponents>()
             .insert_resource(ScaleFactor(1.))
             .insert_resource(FontSizes(12., 8.))
             .init_resource::<UpdateCode>()
-            .add_systems(Update, egui_ui);
+            .add_systems(EguiPrimaryContextPass, egui_ui);
     }
 }
 
@@ -65,10 +65,10 @@ fn egui_ui(
     (mut bloom, mut tonemapping): (Query<&mut Bloom>, Query<&mut Tonemapping>),
     mut font_sizes: ResMut<FontSizes>,
 ) {
-    let ctx = contexts.ctx_mut();
+    let Ok(ctx) = contexts.ctx_mut() else { return };
     let theme = CodeTheme::dark(12.);
-    let mut layouter = |ui: &Ui, string: &str, wrap_width: f32| {
-        let mut layout_job = highlight(ui.ctx(), ui.style(), &theme, string, "rs");
+    let mut layouter = |ui: &Ui, string: &dyn TextBuffer, wrap_width: f32| {
+        let mut layout_job = highlight(ui.ctx(), ui.style(), &theme, string.as_str(), "rs");
         layout_job.wrap.max_width = wrap_width;
         ui.fonts(|f| f.layout_job(layout_job))
     };
@@ -183,7 +183,10 @@ fn egui_ui(
                             .speed(0.1),
                     );
                     if factor.changed() {
-                        win.single_mut().resolution.set_scale_factor(scale_factor.0);
+                        win.single_mut()
+                            .unwrap()
+                            .resolution
+                            .set_scale_factor(scale_factor.0);
                     }
                     ui.end_row();
                     ui.label("input font size");
@@ -192,12 +195,23 @@ fn egui_ui(
                     ui.label("output font size");
                     ui.add(DragValue::new(&mut font_sizes.1).range(1..=128));
                     ui.end_row();
-                    let fullscreen = WindowMode::Fullscreen(MonitorSelection::Current);
+                    let fullscreen = WindowMode::Fullscreen(
+                        MonitorSelection::Current,
+                        VideoModeSelection::Current,
+                    );
                     let windowed = WindowMode::Windowed;
                     ui.label("win mode");
                     ui.horizontal(|ui| {
-                        ui.selectable_value(&mut win.single_mut().mode, fullscreen, "fullscreen");
-                        ui.selectable_value(&mut win.single_mut().mode, windowed, "windowed");
+                        ui.selectable_value(
+                            &mut win.single_mut().unwrap().mode,
+                            fullscreen,
+                            "fullscreen",
+                        );
+                        ui.selectable_value(
+                            &mut win.single_mut().unwrap().mode,
+                            windowed,
+                            "windowed",
+                        );
                     });
                     ui.end_row();
                     ui.label("clear color");
@@ -210,50 +224,50 @@ fn egui_ui(
                         .selected_text(format!("{:?}", tonemapping.single()))
                         .show_ui(ui, |ui| {
                             ui.selectable_value(
-                                &mut *tonemapping.single_mut(),
+                                &mut *tonemapping.single_mut().unwrap(),
                                 Tonemapping::None,
                                 "None",
                             );
                             ui.selectable_value(
-                                &mut *tonemapping.single_mut(),
+                                &mut *tonemapping.single_mut().unwrap(),
                                 Tonemapping::Reinhard,
                                 "Reinhard",
                             );
                             ui.selectable_value(
-                                &mut *tonemapping.single_mut(),
+                                &mut *tonemapping.single_mut().unwrap(),
                                 Tonemapping::ReinhardLuminance,
                                 "ReinhardLuminance",
                             );
                             ui.selectable_value(
-                                &mut *tonemapping.single_mut(),
+                                &mut *tonemapping.single_mut().unwrap(),
                                 Tonemapping::AcesFitted,
                                 "AcesFitted",
                             );
                             ui.selectable_value(
-                                &mut *tonemapping.single_mut(),
+                                &mut *tonemapping.single_mut().unwrap(),
                                 Tonemapping::AgX,
                                 "AgX",
                             );
                             ui.selectable_value(
-                                &mut *tonemapping.single_mut(),
+                                &mut *tonemapping.single_mut().unwrap(),
                                 Tonemapping::SomewhatBoringDisplayTransform,
                                 "SBDT",
                             )
                             .on_hover_text("SomewhatBoringDisplayTransform");
                             ui.selectable_value(
-                                &mut *tonemapping.single_mut(),
+                                &mut *tonemapping.single_mut().unwrap(),
                                 Tonemapping::TonyMcMapface,
                                 "TonyMcMapface",
                             );
                             ui.selectable_value(
-                                &mut *tonemapping.single_mut(),
+                                &mut *tonemapping.single_mut().unwrap(),
                                 Tonemapping::BlenderFilmic,
                                 "BlenderFilmic",
                             );
                         });
                 });
                 ui.collapsing("bloom", |ui| {
-                    let bloom = &mut bloom.single_mut();
+                    let bloom = &mut bloom.single_mut().unwrap();
                     Grid::new("bloom_grid").show(ui, |ui| {
                         ui.label("intensity");
                         ui.add(DragValue::new(&mut bloom.intensity).speed(0.1));
@@ -284,19 +298,16 @@ fn egui_ui(
                         ui.end_row();
                         ui.label("max mip dimension");
                         ui.add(DragValue::new(&mut bloom.max_mip_dimension).range(1..=1024));
-                        ui.end_row();
-                        ui.label("uv offset");
-                        ui.add(DragValue::new(&mut bloom.uv_offset).speed(0.1));
                     });
                 });
             });
             ui.separator();
             let n = selected.iter().len();
-            ui.label(format!("selected: {}", n));
+            ui.label(format!("selected: {n}"));
             match n {
                 0 => {}
                 1 => {
-                    let (mut code, mut links) = selected.single_mut();
+                    let (mut code, mut links) = selected.single_mut().unwrap();
                     ScrollArea::vertical().show(ui, |ui| {
                         links_line(ui, &mut links.0);
                         code_line_i(ui, &mut code.0, &mut layouter);
@@ -394,7 +405,7 @@ fn egui_ui(
             }
         }
     });
-    let res = &win.single().resolution;
+    let res = &win.single().unwrap().resolution;
     let (w, h) = (res.width(), res.height());
     Window::new("lapis output")
         .pivot(Align2::RIGHT_TOP)
@@ -407,8 +418,8 @@ fn egui_ui(
                     .on_hover_text("enable keybindings");
             });
             let theme = CodeTheme::dark(font_sizes.1);
-            let mut layouter = |ui: &Ui, string: &str, wrap_width: f32| {
-                let mut layout_job = highlight(ui.ctx(), ui.style(), &theme, string, "rs");
+            let mut layouter = |ui: &Ui, string: &dyn TextBuffer, wrap_width: f32| {
+                let mut layout_job = highlight(ui.ctx(), ui.style(), &theme, string.as_str(), "rs");
                 layout_job.wrap.max_width = wrap_width;
                 ui.fonts(|f| f.layout_job(layout_job))
             };
@@ -428,8 +439,8 @@ fn egui_ui(
         .default_pos([w - 15., h - 15.])
         .show(ctx, |ui| {
             let theme = CodeTheme::dark(font_sizes.0);
-            let mut layouter = |ui: &Ui, string: &str, wrap_width: f32| {
-                let mut layout_job = highlight(ui.ctx(), ui.style(), &theme, string, "rs");
+            let mut layouter = |ui: &Ui, string: &dyn TextBuffer, wrap_width: f32| {
+                let mut layout_job = highlight(ui.ctx(), ui.style(), &theme, string.as_str(), "rs");
                 layout_job.wrap.max_width = wrap_width;
                 ui.fonts(|f| f.layout_job(layout_job))
             };
@@ -514,7 +525,7 @@ fn links_line(ui: &mut Ui, buffer: &mut String) {
 fn code_line_i(
     ui: &mut Ui,
     buffer: &mut String,
-    layouter: &mut dyn FnMut(&Ui, &str, f32) -> Arc<Galley>,
+    layouter: &mut dyn FnMut(&Ui, &dyn TextBuffer, f32) -> Arc<Galley>,
 ) {
     ui.horizontal(|ui| {
         ui.label("code_i");
@@ -538,7 +549,7 @@ $other for the other entity's id",
 fn code_line_f(
     ui: &mut Ui,
     buffer: &mut String,
-    layouter: &mut dyn FnMut(&Ui, &str, f32) -> Arc<Galley>,
+    layouter: &mut dyn FnMut(&Ui, &dyn TextBuffer, f32) -> Arc<Galley>,
 ) {
     ui.horizontal(|ui| {
         ui.label("code_f");

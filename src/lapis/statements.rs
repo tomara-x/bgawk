@@ -1,5 +1,14 @@
-use crate::lapis::*;
+use super::{
+    arrays::*, atomics::*, bools::*, entities::*, floats::*, helpers::*, ints::*, nets::*,
+    sequencers::*, sources::*, waves::*, Lapis,
+};
+use crate::objects::*;
+use avian2d::prelude::*;
+use bevy::prelude::*;
 use crossbeam_channel::bounded;
+use fundsp::hacker32::*;
+use std::sync::Arc;
+use syn::*;
 
 pub fn eval_stmt(s: Stmt, lapis: &mut Lapis) -> String {
     let mut buffer = String::new();
@@ -21,17 +30,17 @@ pub fn eval_stmt(s: Stmt, lapis: &mut Lapis) -> String {
 
 fn eval_expr(expr: Expr, lapis: &mut Lapis, buffer: &mut String) {
     if let Some(n) = eval_float(&expr, lapis) {
-        buffer.push_str(&format!("\n// {:?}", n));
+        buffer.push_str(&format!("\n// {n:?}"));
     } else if let Some(arr) = eval_vec(&expr, lapis) {
-        buffer.push_str(&format!("\n// {:?}", arr));
+        buffer.push_str(&format!("\n// {arr:?}"));
     } else if let Some(mut g) = eval_net_cloned(&expr, lapis) {
         let info = g.display().replace('\n', "\n// ");
-        buffer.push_str(&format!("\n// {}", info));
+        buffer.push_str(&format!("\n// {info}"));
         buffer.push_str(&format!("Size           : {}", g.size()));
     } else if let Some(id) = eval_nodeid(&expr, lapis) {
-        buffer.push_str(&format!("\n// {:?}", id));
+        buffer.push_str(&format!("\n// {id:?}"));
     } else if let Some(b) = eval_bool(&expr, lapis) {
-        buffer.push_str(&format!("\n// {:?}", b));
+        buffer.push_str(&format!("\n// {b:?}"));
     } else if let Some(s) = eval_shared(&expr, lapis) {
         buffer.push_str(&format!("\n// Shared({})", s.value()));
     } else if let Some(w) = path_wave(&expr, lapis) {
@@ -60,11 +69,11 @@ fn eval_expr(expr: Expr, lapis: &mut Lapis, buffer: &mut String) {
         );
         buffer.push_str(&info);
     } else if let Some(source) = eval_source(&expr, lapis) {
-        buffer.push_str(&format!("\n// {:?}", source));
+        buffer.push_str(&format!("\n// {source:?}"));
     } else if let Some(event) = eval_eventid(&expr, lapis) {
-        buffer.push_str(&format!("\n// {:?}", event));
+        buffer.push_str(&format!("\n// {event:?}"));
     } else if let Some(entity) = eval_entity(&expr, lapis) {
-        buffer.push_str(&format!("\n// {:?}", entity));
+        buffer.push_str(&format!("\n// {entity:?}"));
     } else if let Expr::Binary(expr) = expr {
         float_bin_assign(&expr, lapis);
     } else if let Expr::Call(expr) = expr {
@@ -123,7 +132,7 @@ fn eval_expr(expr: Expr, lapis: &mut Lapis, buffer: &mut String) {
                         }
                     }
                 } else {
-                    buffer.push_str(&format!("\n// {:?}", output));
+                    buffer.push_str(&format!("\n// {output:?}"));
                 }
             }
             "drop" => {

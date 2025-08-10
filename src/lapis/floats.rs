@@ -1,4 +1,7 @@
-use crate::lapis::*;
+use super::{entities::*, helpers::*, ints::*, nets::*, Lapis};
+use bevy::prelude::*;
+use fundsp::hacker32::*;
+use syn::*;
 
 pub fn eval_float(expr: &Expr, lapis: &Lapis) -> Option<f32> {
     match expr {
@@ -18,7 +21,7 @@ pub fn eval_float(expr: &Expr, lapis: &Lapis) -> Option<f32> {
 fn field_float(expr: &ExprField, lapis: &Lapis) -> Option<f32> {
     let mut e = path_lit_entity(&expr.base, lapis)?;
     if e == Entity::PLACEHOLDER {
-        if let Ok(selected) = lapis.selected_query.get_single() {
+        if let Ok(selected) = lapis.selected_query.single() {
             e = selected;
         }
     }

@@ -1,6 +1,8 @@
+use super::{arrays::*, bools::*, floats::*, helpers::*, Lapis};
 use crate::interaction::*;
-use crate::joints::*;
-use crate::lapis::*;
+use crate::{joints::*, objects::*};
+use bevy::prelude::*;
+use syn::*;
 
 pub fn eval_entity(expr: &Expr, lapis: &mut Lapis) -> Option<Entity> {
     match expr {
@@ -94,7 +96,7 @@ fn method_entity(expr: &ExprMethodCall, lapis: &mut Lapis) -> Option<Entity> {
     // let var = entity.despawn();
     // which doesn't assign anything to var but does despawn entity
     if expr.method == "despawn" {
-        lapis.commands.get_entity(e)?.try_despawn();
+        lapis.commands.get_entity(e).ok()?.try_despawn();
         return None;
     } else if expr.method == "disjoint" {
         lapis.commands.trigger_targets(Disjoint, e);
