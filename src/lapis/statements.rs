@@ -62,10 +62,13 @@ fn eval_expr(expr: Expr, lapis: &mut Lapis, buffer: &mut String) {
         ));
     } else if let Some(seq) = path_seq(&expr, lapis).or(call_seq(&expr, lapis).as_ref()) {
         let info = format!(
-            "\n// Sequencer(outs: {}, has_backend: {}, replay: {})",
+            "\n// Sequencer(outs: {}, ins: {}, has_backend: {}, replay: {}, loop: ({}, {}))",
             seq.outputs(),
+            seq.inputs(),
             seq.has_backend(),
-            seq.replay_events()
+            seq.replay_events(),
+            seq.loop_start(),
+            seq.loop_end(),
         );
         buffer.push_str(&info);
     } else if let Some(source) = eval_source(&expr, lapis) {

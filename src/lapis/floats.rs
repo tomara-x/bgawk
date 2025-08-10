@@ -298,6 +298,10 @@ fn method_float(expr: &ExprMethodCall, lapis: &Lapis) -> Option<f32> {
                     None
                 }
             }
+            "sample_rate" => {
+                let wave = lapis.data.wmap.get(&k)?;
+                Some(wave.sample_rate() as f32)
+            }
             "channels" => {
                 let wave = lapis.data.wmap.get(&k)?;
                 Some(wave.channels() as f32)
