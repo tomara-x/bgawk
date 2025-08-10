@@ -36,7 +36,7 @@ fn main() {
         }))
         .insert_resource(WinitSettings {
             focused_mode: UpdateMode::reactive_low_power(Duration::from_secs_f64(1. / 60.)),
-            unfocused_mode: UpdateMode::reactive_low_power(Duration::from_secs_f64(1. / 30.)),
+            unfocused_mode: UpdateMode::reactive_low_power(Duration::from_secs_f64(1. / 60.)),
         })
         .add_plugins(PanCamPlugin)
         .add_plugins(audio::AudioPlugin)
