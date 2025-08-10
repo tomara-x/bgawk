@@ -6,13 +6,10 @@ use bevy::{
         bloom::{Bloom, BloomCompositeMode},
         tonemapping::Tonemapping,
     },
-    prelude::{
-        ClearColor, ColorToPacked, GizmoConfigStore, MonitorSelection, Query, Res, ResMut,
-        Resource, Srgba, VideoModeSelection, With,
-    },
+    prelude::*,
     window::WindowMode,
 };
-use bevy_egui::{egui::*, EguiContexts, EguiPlugin, EguiPrimaryContextPass};
+use bevy_egui::{egui, egui::*, EguiContexts, EguiPlugin, EguiPrimaryContextPass};
 use egui_extras::syntax_highlighting::*;
 use std::sync::Arc;
 
@@ -25,6 +22,7 @@ impl Plugin for UiPlugin {
             .insert_resource(ScaleFactor(1.))
             .insert_resource(FontSizes(12., 8.))
             .init_resource::<UpdateCode>()
+            .add_systems(Update, toggle_help)
             .add_systems(EguiPrimaryContextPass, egui_ui);
     }
 }
@@ -43,6 +41,14 @@ struct InsertComponents {
 
 #[derive(Resource)]
 pub struct ScaleFactor(pub f32);
+
+fn toggle_help(keyboard_input: Res<ButtonInput<KeyCode>>, mut lapis: ResMut<LapisData>) {
+    if keyboard_input.just_pressed(KeyCode::F1) {
+        lapis.help = !lapis.help;
+    } else if keyboard_input.just_pressed(KeyCode::Escape) {
+        lapis.help = false;
+    }
+}
 
 fn egui_ui(
     mut contexts: EguiContexts,
@@ -90,324 +96,334 @@ fn egui_ui(
     if !lapis.time.is_paused() {
         lapis.quiet_eval(&update_code.0);
     }
-    Window::new("mode").default_width(270.).show(ctx, |ui| {
-        ui.horizontal(|ui| {
-            ui.selectable_value(&mut *mode, Mode::Edit, "Edit")
-                .on_hover_text("ctrl+1");
-            ui.selectable_value(&mut *mode, Mode::Draw, "Draw")
-                .on_hover_text("ctrl+2");
-            ui.selectable_value(&mut *mode, Mode::Joint, "Joint")
-                .on_hover_text("ctrl+3");
-        });
-        ui.separator();
-        if *mode == Mode::Draw {
-            Grid::new("draw_grid").show(ui, |ui| {
-                ui.label("rigid body");
-                ui.horizontal(|ui| {
-                    ui.selectable_value(&mut draw.rigid_body, RigidBody::Static, "Static");
-                    ui.selectable_value(&mut draw.rigid_body, RigidBody::Dynamic, "Dynamic");
-                });
-                ui.end_row();
-                ui.label("collision layer");
-                ui.add(DragValue::new(&mut draw.collision_layer).range(0..=31));
-                ui.end_row();
-                ui.label("sides");
-                ui.add(DragValue::new(&mut draw.sides).range(3..=512));
-                ui.end_row();
-                ui.label("color");
-                ui.color_edit_button_srgba_unmultiplied(&mut draw.color);
-                ui.end_row();
-                ui.label("tail");
-                ui.add(DragValue::new(&mut draw.tail).range(0..=36000))
-                    .on_hover_text("tail length in points");
-                ui.end_row();
-                ui.toggle_value(&mut draw.custom_mass, "custom mass?")
-                    .on_hover_text("if not selected, mass = radius ^ 3");
-                ui.add_enabled(draw.custom_mass, DragValue::new(&mut draw.mass));
-                ui.end_row();
-                ui.toggle_value(&mut draw.custom_inertia, "custom inertia?")
-                    .on_hover_text("if not selected, inertia = radius ^ 3");
-                ui.add_enabled(draw.custom_inertia, DragValue::new(&mut draw.inertia));
-                ui.end_row();
-                ui.label("center of mass");
-                ui.horizontal(|ui| {
-                    ui.add(DragValue::new(&mut draw.center_of_mass.x).speed(0.1));
-                    ui.add(DragValue::new(&mut draw.center_of_mass.y).speed(0.1));
-                });
-                ui.end_row();
-                ui.label("friction");
-                ui.add(DragValue::new(&mut draw.friction).speed(0.01));
-                ui.end_row();
-                ui.label("restitution");
-                ui.add(DragValue::new(&mut draw.restitution).speed(0.01));
-                ui.end_row();
-                ui.toggle_value(&mut draw.sensor, "sensor?")
-                    .on_hover_text("allows other bodies to pass through");
-                ui.end_row();
-                ui.label("linear damping");
-                ui.add(DragValue::new(&mut draw.lin_damp).speed(0.01));
-                ui.end_row();
-                ui.label("angular damping");
-                ui.add(DragValue::new(&mut draw.ang_damp).speed(0.01));
-            });
-            ScrollArea::vertical().show(ui, |ui| {
-                links_line(ui, &mut draw.links);
-                code_line_i(ui, &mut draw.code.0, &mut layouter);
-                code_line_f(ui, &mut draw.code.1, &mut layouter);
-            });
-        } else if *mode == Mode::Edit {
-            if lapis.time.is_paused() {
-                if ui.button("resume").clicked() {
-                    lapis.time.unpause();
-                }
-            } else if ui.button("pause").clicked() {
-                lapis.time.pause();
-            }
-            Grid::new("edit_grid").show(ui, |ui| {
-                ui.label("gravity");
-                ui.horizontal(|ui| {
-                    ui.add(DragValue::new(&mut gravity.0.x));
-                    ui.add(DragValue::new(&mut gravity.0.y));
-                });
-                ui.end_row();
-                ui.label("attraction");
-                ui.add(DragValue::new(&mut attraction_factor.0).speed(0.01))
-                    .on_hover_text("how much objects gravitate towards each other");
-            });
-            ui.collapsing("ui settings", |ui| {
-                Grid::new("ui_settings_grid").show(ui, |ui| {
-                    ui.label("scale factor");
-                    let factor = ui.add(
-                        DragValue::new(&mut scale_factor.0)
-                            .range(0.5..=4.)
-                            .speed(0.1),
-                    );
-                    if factor.changed() {
-                        win.single_mut()
-                            .unwrap()
-                            .resolution
-                            .set_scale_factor(scale_factor.0);
-                    }
-                    ui.end_row();
-                    ui.label("input font size");
-                    ui.add(DragValue::new(&mut font_sizes.0).range(1..=128));
-                    ui.end_row();
-                    ui.label("output font size");
-                    ui.add(DragValue::new(&mut font_sizes.1).range(1..=128));
-                    ui.end_row();
-                    let fullscreen = WindowMode::Fullscreen(
-                        MonitorSelection::Current,
-                        VideoModeSelection::Current,
-                    );
-                    let windowed = WindowMode::Windowed;
-                    ui.label("win mode");
-                    ui.horizontal(|ui| {
-                        ui.selectable_value(
-                            &mut win.single_mut().unwrap().mode,
-                            fullscreen,
-                            "fullscreen",
-                        );
-                        ui.selectable_value(
-                            &mut win.single_mut().unwrap().mode,
-                            windowed,
-                            "windowed",
-                        );
-                    });
-                    ui.end_row();
-                    ui.label("clear color");
-                    let mut tmp = clear_color.0.to_srgba().to_u8_array();
-                    ui.color_edit_button_srgba_unmultiplied(&mut tmp);
-                    clear_color.0 = Srgba::from_u8_array(tmp).into();
-                    ui.end_row();
-                    ui.label("tonemapping");
-                    ComboBox::from_label("")
-                        .selected_text(format!("{:?}", tonemapping.single()))
-                        .show_ui(ui, |ui| {
-                            ui.selectable_value(
-                                &mut *tonemapping.single_mut().unwrap(),
-                                Tonemapping::None,
-                                "None",
-                            );
-                            ui.selectable_value(
-                                &mut *tonemapping.single_mut().unwrap(),
-                                Tonemapping::Reinhard,
-                                "Reinhard",
-                            );
-                            ui.selectable_value(
-                                &mut *tonemapping.single_mut().unwrap(),
-                                Tonemapping::ReinhardLuminance,
-                                "ReinhardLuminance",
-                            );
-                            ui.selectable_value(
-                                &mut *tonemapping.single_mut().unwrap(),
-                                Tonemapping::AcesFitted,
-                                "AcesFitted",
-                            );
-                            ui.selectable_value(
-                                &mut *tonemapping.single_mut().unwrap(),
-                                Tonemapping::AgX,
-                                "AgX",
-                            );
-                            ui.selectable_value(
-                                &mut *tonemapping.single_mut().unwrap(),
-                                Tonemapping::SomewhatBoringDisplayTransform,
-                                "SBDT",
-                            )
-                            .on_hover_text("SomewhatBoringDisplayTransform");
-                            ui.selectable_value(
-                                &mut *tonemapping.single_mut().unwrap(),
-                                Tonemapping::TonyMcMapface,
-                                "TonyMcMapface",
-                            );
-                            ui.selectable_value(
-                                &mut *tonemapping.single_mut().unwrap(),
-                                Tonemapping::BlenderFilmic,
-                                "BlenderFilmic",
-                            );
-                        });
-                });
-                ui.collapsing("bloom", |ui| {
-                    let bloom = &mut bloom.single_mut().unwrap();
-                    Grid::new("bloom_grid").show(ui, |ui| {
-                        ui.label("intensity");
-                        ui.add(DragValue::new(&mut bloom.intensity).speed(0.1));
-                        ui.end_row();
-                        ui.label("low freq boost");
-                        ui.add(DragValue::new(&mut bloom.low_frequency_boost).speed(0.1));
-                        ui.end_row();
-                        ui.label("lf boost curvature");
-                        ui.add(DragValue::new(&mut bloom.low_frequency_boost_curvature).speed(0.1));
-                        ui.end_row();
-                        ui.label("hight pass freq");
-                        ui.add(DragValue::new(&mut bloom.high_pass_frequency).speed(0.1));
-                        ui.end_row();
-                        ui.label("prefilter threshold");
-                        ui.add(DragValue::new(&mut bloom.prefilter.threshold).speed(0.1));
-                        ui.end_row();
-                        ui.label("threshold softness");
-                        ui.add(DragValue::new(&mut bloom.prefilter.threshold_softness).speed(0.1));
-                        ui.end_row();
-                        ui.label("composite");
-                        let conserving = BloomCompositeMode::EnergyConserving;
-                        let additive = BloomCompositeMode::Additive;
-                        ui.horizontal(|ui| {
-                            ui.selectable_value(&mut bloom.composite_mode, additive, "additive");
-                            ui.selectable_value(&mut bloom.composite_mode, conserving, "EC")
-                                .on_hover_text("energy conserving");
-                        });
-                        ui.end_row();
-                        ui.label("max mip dimension");
-                        ui.add(DragValue::new(&mut bloom.max_mip_dimension).range(1..=1024));
-                    });
-                });
+    egui::Window::new("mode")
+        .default_width(270.)
+        .show(ctx, |ui| {
+            ui.horizontal(|ui| {
+                ui.selectable_value(&mut *mode, Mode::Edit, "Edit")
+                    .on_hover_text("ctrl+1");
+                ui.selectable_value(&mut *mode, Mode::Draw, "Draw")
+                    .on_hover_text("ctrl+2");
+                ui.selectable_value(&mut *mode, Mode::Joint, "Joint")
+                    .on_hover_text("ctrl+3");
             });
             ui.separator();
-            let n = selected.iter().len();
-            ui.label(format!("selected: {n}"));
-            match n {
-                0 => {}
-                1 => {
-                    let (mut code, mut links) = selected.single_mut().unwrap();
-                    ScrollArea::vertical().show(ui, |ui| {
-                        links_line(ui, &mut links.0);
-                        code_line_i(ui, &mut code.0, &mut layouter);
-                        code_line_f(ui, &mut code.1, &mut layouter);
+            if *mode == Mode::Draw {
+                Grid::new("draw_grid").show(ui, |ui| {
+                    ui.label("rigid body");
+                    ui.horizontal(|ui| {
+                        ui.selectable_value(&mut draw.rigid_body, RigidBody::Static, "Static");
+                        ui.selectable_value(&mut draw.rigid_body, RigidBody::Dynamic, "Dynamic");
                     });
-                }
-                _ => {
-                    if ui.button("apply to selected").clicked() {
-                        for (mut code, mut links) in selected.iter_mut() {
-                            code.0 = insert.code.0.clone();
-                            code.1 = insert.code.1.clone();
-                            links.0 = insert.links.clone();
-                        }
+                    ui.end_row();
+                    ui.label("collision layer");
+                    ui.add(DragValue::new(&mut draw.collision_layer).range(0..=31));
+                    ui.end_row();
+                    ui.label("sides");
+                    ui.add(DragValue::new(&mut draw.sides).range(3..=512));
+                    ui.end_row();
+                    ui.label("color");
+                    ui.color_edit_button_srgba_unmultiplied(&mut draw.color);
+                    ui.end_row();
+                    ui.label("tail");
+                    ui.add(DragValue::new(&mut draw.tail).range(0..=36000))
+                        .on_hover_text("tail length in points");
+                    ui.end_row();
+                    ui.toggle_value(&mut draw.custom_mass, "custom mass?")
+                        .on_hover_text("if not selected, mass = radius ^ 3");
+                    ui.add_enabled(draw.custom_mass, DragValue::new(&mut draw.mass));
+                    ui.end_row();
+                    ui.toggle_value(&mut draw.custom_inertia, "custom inertia?")
+                        .on_hover_text("if not selected, inertia = radius ^ 3");
+                    ui.add_enabled(draw.custom_inertia, DragValue::new(&mut draw.inertia));
+                    ui.end_row();
+                    ui.label("center of mass");
+                    ui.horizontal(|ui| {
+                        ui.add(DragValue::new(&mut draw.center_of_mass.x).speed(0.1));
+                        ui.add(DragValue::new(&mut draw.center_of_mass.y).speed(0.1));
+                    });
+                    ui.end_row();
+                    ui.label("friction");
+                    ui.add(DragValue::new(&mut draw.friction).speed(0.01));
+                    ui.end_row();
+                    ui.label("restitution");
+                    ui.add(DragValue::new(&mut draw.restitution).speed(0.01));
+                    ui.end_row();
+                    ui.toggle_value(&mut draw.sensor, "sensor?")
+                        .on_hover_text("allows other bodies to pass through");
+                    ui.end_row();
+                    ui.label("linear damping");
+                    ui.add(DragValue::new(&mut draw.lin_damp).speed(0.01));
+                    ui.end_row();
+                    ui.label("angular damping");
+                    ui.add(DragValue::new(&mut draw.ang_damp).speed(0.01));
+                });
+                ScrollArea::vertical().show(ui, |ui| {
+                    links_line(ui, &mut draw.links);
+                    code_line_i(ui, &mut draw.code.0, &mut layouter);
+                    code_line_f(ui, &mut draw.code.1, &mut layouter);
+                });
+            } else if *mode == Mode::Edit {
+                if lapis.time.is_paused() {
+                    if ui.button("resume").clicked() {
+                        lapis.time.unpause();
                     }
-                    ScrollArea::vertical().show(ui, |ui| {
-                        links_line(ui, &mut insert.links);
-                        code_line_i(ui, &mut insert.code.0, &mut layouter);
-                        code_line_f(ui, &mut insert.code.1, &mut layouter);
-                    });
+                } else if ui.button("pause").clicked() {
+                    lapis.time.pause();
                 }
-            }
-        } else if *mode == Mode::Joint {
-            ui.horizontal(|ui| {
-                ui.label("type");
-                ui.selectable_value(&mut joint.joint_type, JointType::Fixed, "Fixed");
-                ui.selectable_value(&mut joint.joint_type, JointType::Distance, "Distance");
-                ui.selectable_value(&mut joint.joint_type, JointType::Prismatic, "Prismatic");
-                ui.selectable_value(&mut joint.joint_type, JointType::Revolute, "Revolute");
-            });
-            ui.horizontal(|ui| {
-                ui.label("compliance");
-                ui.add(
-                    DragValue::new(&mut joint.compliance)
-                        .range(0.0..=f32::INFINITY)
-                        .speed(0.00000001),
-                );
-            });
-            ui.toggle_value(&mut joint.custom_anchors, "custom anchors?");
-            if joint.custom_anchors {
+                Grid::new("edit_grid").show(ui, |ui| {
+                    ui.label("gravity");
+                    ui.horizontal(|ui| {
+                        ui.add(DragValue::new(&mut gravity.0.x));
+                        ui.add(DragValue::new(&mut gravity.0.y));
+                    });
+                    ui.end_row();
+                    ui.label("attraction");
+                    ui.add(DragValue::new(&mut attraction_factor.0).speed(0.01))
+                        .on_hover_text("how much objects gravitate towards each other");
+                });
+                ui.collapsing("ui settings", |ui| {
+                    Grid::new("ui_settings_grid").show(ui, |ui| {
+                        ui.label("scale factor");
+                        let factor = ui.add(
+                            DragValue::new(&mut scale_factor.0)
+                                .range(0.5..=4.)
+                                .speed(0.1),
+                        );
+                        if factor.changed() {
+                            win.single_mut()
+                                .unwrap()
+                                .resolution
+                                .set_scale_factor(scale_factor.0);
+                        }
+                        ui.end_row();
+                        ui.label("input font size");
+                        ui.add(DragValue::new(&mut font_sizes.0).range(1..=128));
+                        ui.end_row();
+                        ui.label("output font size");
+                        ui.add(DragValue::new(&mut font_sizes.1).range(1..=128));
+                        ui.end_row();
+                        let fullscreen = WindowMode::Fullscreen(
+                            MonitorSelection::Current,
+                            VideoModeSelection::Current,
+                        );
+                        let windowed = WindowMode::Windowed;
+                        ui.label("win mode");
+                        ui.horizontal(|ui| {
+                            ui.selectable_value(
+                                &mut win.single_mut().unwrap().mode,
+                                fullscreen,
+                                "fullscreen",
+                            );
+                            ui.selectable_value(
+                                &mut win.single_mut().unwrap().mode,
+                                windowed,
+                                "windowed",
+                            );
+                        });
+                        ui.end_row();
+                        ui.label("clear color");
+                        let mut tmp = clear_color.0.to_srgba().to_u8_array();
+                        ui.color_edit_button_srgba_unmultiplied(&mut tmp);
+                        clear_color.0 = Srgba::from_u8_array(tmp).into();
+                        ui.end_row();
+                        ui.label("tonemapping");
+                        ComboBox::from_label("")
+                            .selected_text(format!("{:?}", tonemapping.single()))
+                            .show_ui(ui, |ui| {
+                                ui.selectable_value(
+                                    &mut *tonemapping.single_mut().unwrap(),
+                                    Tonemapping::None,
+                                    "None",
+                                );
+                                ui.selectable_value(
+                                    &mut *tonemapping.single_mut().unwrap(),
+                                    Tonemapping::Reinhard,
+                                    "Reinhard",
+                                );
+                                ui.selectable_value(
+                                    &mut *tonemapping.single_mut().unwrap(),
+                                    Tonemapping::ReinhardLuminance,
+                                    "ReinhardLuminance",
+                                );
+                                ui.selectable_value(
+                                    &mut *tonemapping.single_mut().unwrap(),
+                                    Tonemapping::AcesFitted,
+                                    "AcesFitted",
+                                );
+                                ui.selectable_value(
+                                    &mut *tonemapping.single_mut().unwrap(),
+                                    Tonemapping::AgX,
+                                    "AgX",
+                                );
+                                ui.selectable_value(
+                                    &mut *tonemapping.single_mut().unwrap(),
+                                    Tonemapping::SomewhatBoringDisplayTransform,
+                                    "SBDT",
+                                )
+                                .on_hover_text("SomewhatBoringDisplayTransform");
+                                ui.selectable_value(
+                                    &mut *tonemapping.single_mut().unwrap(),
+                                    Tonemapping::TonyMcMapface,
+                                    "TonyMcMapface",
+                                );
+                                ui.selectable_value(
+                                    &mut *tonemapping.single_mut().unwrap(),
+                                    Tonemapping::BlenderFilmic,
+                                    "BlenderFilmic",
+                                );
+                            });
+                    });
+                    ui.collapsing("bloom", |ui| {
+                        let bloom = &mut bloom.single_mut().unwrap();
+                        Grid::new("bloom_grid").show(ui, |ui| {
+                            ui.label("intensity");
+                            ui.add(DragValue::new(&mut bloom.intensity).speed(0.1));
+                            ui.end_row();
+                            ui.label("low freq boost");
+                            ui.add(DragValue::new(&mut bloom.low_frequency_boost).speed(0.1));
+                            ui.end_row();
+                            ui.label("lf boost curvature");
+                            ui.add(
+                                DragValue::new(&mut bloom.low_frequency_boost_curvature).speed(0.1),
+                            );
+                            ui.end_row();
+                            ui.label("hight pass freq");
+                            ui.add(DragValue::new(&mut bloom.high_pass_frequency).speed(0.1));
+                            ui.end_row();
+                            ui.label("prefilter threshold");
+                            ui.add(DragValue::new(&mut bloom.prefilter.threshold).speed(0.1));
+                            ui.end_row();
+                            ui.label("threshold softness");
+                            ui.add(
+                                DragValue::new(&mut bloom.prefilter.threshold_softness).speed(0.1),
+                            );
+                            ui.end_row();
+                            ui.label("composite");
+                            let conserving = BloomCompositeMode::EnergyConserving;
+                            let additive = BloomCompositeMode::Additive;
+                            ui.horizontal(|ui| {
+                                ui.selectable_value(
+                                    &mut bloom.composite_mode,
+                                    additive,
+                                    "additive",
+                                );
+                                ui.selectable_value(&mut bloom.composite_mode, conserving, "EC")
+                                    .on_hover_text("energy conserving");
+                            });
+                            ui.end_row();
+                            ui.label("max mip dimension");
+                            ui.add(DragValue::new(&mut bloom.max_mip_dimension).range(1..=1024));
+                        });
+                    });
+                });
+                ui.separator();
+                let n = selected.iter().len();
+                ui.label(format!("selected: {n}"));
+                match n {
+                    0 => {}
+                    1 => {
+                        let (mut code, mut links) = selected.single_mut().unwrap();
+                        ScrollArea::vertical().show(ui, |ui| {
+                            links_line(ui, &mut links.0);
+                            code_line_i(ui, &mut code.0, &mut layouter);
+                            code_line_f(ui, &mut code.1, &mut layouter);
+                        });
+                    }
+                    _ => {
+                        if ui.button("apply to selected").clicked() {
+                            for (mut code, mut links) in selected.iter_mut() {
+                                code.0 = insert.code.0.clone();
+                                code.1 = insert.code.1.clone();
+                                links.0 = insert.links.clone();
+                            }
+                        }
+                        ScrollArea::vertical().show(ui, |ui| {
+                            links_line(ui, &mut insert.links);
+                            code_line_i(ui, &mut insert.code.0, &mut layouter);
+                            code_line_f(ui, &mut insert.code.1, &mut layouter);
+                        });
+                    }
+                }
+            } else if *mode == Mode::Joint {
                 ui.horizontal(|ui| {
-                    ui.label("local anchor 1");
-                    ui.add(DragValue::new(&mut joint.local_anchor_1.x).speed(0.01));
-                    ui.add(DragValue::new(&mut joint.local_anchor_1.y).speed(0.01));
+                    ui.label("type");
+                    ui.selectable_value(&mut joint.joint_type, JointType::Fixed, "Fixed");
+                    ui.selectable_value(&mut joint.joint_type, JointType::Distance, "Distance");
+                    ui.selectable_value(&mut joint.joint_type, JointType::Prismatic, "Prismatic");
+                    ui.selectable_value(&mut joint.joint_type, JointType::Revolute, "Revolute");
                 });
                 ui.horizontal(|ui| {
-                    ui.label("local anchor 2");
-                    ui.add(DragValue::new(&mut joint.local_anchor_2.x).speed(0.01));
-                    ui.add(DragValue::new(&mut joint.local_anchor_2.y).speed(0.01));
+                    ui.label("compliance");
+                    ui.add(
+                        DragValue::new(&mut joint.compliance)
+                            .range(0.0..=f32::INFINITY)
+                            .speed(0.00000001),
+                    );
                 });
+                ui.toggle_value(&mut joint.custom_anchors, "custom anchors?");
+                if joint.custom_anchors {
+                    ui.horizontal(|ui| {
+                        ui.label("local anchor 1");
+                        ui.add(DragValue::new(&mut joint.local_anchor_1.x).speed(0.01));
+                        ui.add(DragValue::new(&mut joint.local_anchor_1.y).speed(0.01));
+                    });
+                    ui.horizontal(|ui| {
+                        ui.label("local anchor 2");
+                        ui.add(DragValue::new(&mut joint.local_anchor_2.x).speed(0.01));
+                        ui.add(DragValue::new(&mut joint.local_anchor_2.y).speed(0.01));
+                    });
+                }
+                match joint.joint_type {
+                    JointType::Distance => {
+                        ui.horizontal(|ui| {
+                            ui.label("limits");
+                            ui.add(
+                                DragValue::new(&mut joint.dist_limits.0)
+                                    .range(0.0..=f32::INFINITY)
+                                    .speed(0.01),
+                            );
+                            ui.add(
+                                DragValue::new(&mut joint.dist_limits.1)
+                                    .range(0.0..=f32::INFINITY)
+                                    .speed(0.01),
+                            );
+                        });
+                        ui.horizontal(|ui| {
+                            ui.label("rest length");
+                            ui.add(
+                                DragValue::new(&mut joint.dist_rest)
+                                    .range(0.0..=f32::INFINITY)
+                                    .speed(0.01),
+                            );
+                        });
+                    }
+                    JointType::Prismatic => {
+                        ui.horizontal(|ui| {
+                            ui.label("limits");
+                            ui.add(DragValue::new(&mut joint.prismatic_limits.0).speed(0.01));
+                            ui.add(DragValue::new(&mut joint.prismatic_limits.1).speed(0.01));
+                        });
+                        ui.horizontal(|ui| {
+                            ui.label("free axis");
+                            ui.add(DragValue::new(&mut joint.prismatic_axis.x).speed(0.01));
+                            ui.add(DragValue::new(&mut joint.prismatic_axis.y).speed(0.01));
+                        });
+                    }
+                    JointType::Revolute => {
+                        ui.horizontal(|ui| {
+                            ui.label("limits");
+                            ui.add(DragValue::new(&mut joint.angle_limits.0).speed(0.01));
+                            ui.add(DragValue::new(&mut joint.angle_limits.1).speed(0.01));
+                        });
+                    }
+                    _ => {}
+                }
             }
-            match joint.joint_type {
-                JointType::Distance => {
-                    ui.horizontal(|ui| {
-                        ui.label("limits");
-                        ui.add(
-                            DragValue::new(&mut joint.dist_limits.0)
-                                .range(0.0..=f32::INFINITY)
-                                .speed(0.01),
-                        );
-                        ui.add(
-                            DragValue::new(&mut joint.dist_limits.1)
-                                .range(0.0..=f32::INFINITY)
-                                .speed(0.01),
-                        );
-                    });
-                    ui.horizontal(|ui| {
-                        ui.label("rest length");
-                        ui.add(
-                            DragValue::new(&mut joint.dist_rest)
-                                .range(0.0..=f32::INFINITY)
-                                .speed(0.01),
-                        );
-                    });
-                }
-                JointType::Prismatic => {
-                    ui.horizontal(|ui| {
-                        ui.label("limits");
-                        ui.add(DragValue::new(&mut joint.prismatic_limits.0).speed(0.01));
-                        ui.add(DragValue::new(&mut joint.prismatic_limits.1).speed(0.01));
-                    });
-                    ui.horizontal(|ui| {
-                        ui.label("free axis");
-                        ui.add(DragValue::new(&mut joint.prismatic_axis.x).speed(0.01));
-                        ui.add(DragValue::new(&mut joint.prismatic_axis.y).speed(0.01));
-                    });
-                }
-                JointType::Revolute => {
-                    ui.horizontal(|ui| {
-                        ui.label("limits");
-                        ui.add(DragValue::new(&mut joint.angle_limits.0).speed(0.01));
-                        ui.add(DragValue::new(&mut joint.angle_limits.1).speed(0.01));
-                    });
-                }
-                _ => {}
-            }
-        }
-    });
+        });
     let res = &win.single().unwrap().resolution;
     let (w, h) = (res.width(), res.height());
-    Window::new("lapis output")
+    egui::Window::new("lapis output")
         .pivot(Align2::RIGHT_TOP)
         .default_pos([w - 15., 15.])
         .show(ctx, |ui| {
@@ -434,7 +450,7 @@ fn egui_ui(
                 );
             });
         });
-    Window::new("lapis input")
+    egui::Window::new("lapis input")
         .pivot(Align2::RIGHT_BOTTOM)
         .default_pos([w - 15., h - 15.])
         .show(ctx, |ui| {
@@ -481,7 +497,7 @@ fn egui_ui(
                 });
             });
         });
-    Window::new("info")
+    egui::Window::new("info")
         .default_open(false)
         .pivot(Align2::LEFT_BOTTOM)
         .default_pos([15., h - 15.])
@@ -501,10 +517,10 @@ fn egui_ui(
                 }
             });
         });
-    Window::new("about")
+    egui::Window::new("about")
         .open(&mut lapis.data.about)
         .show(ctx, about_window_function);
-    Window::new("help")
+    egui::Window::new("help")
         .open(&mut lapis.data.help)
         .show(ctx, help_window_function);
 }
