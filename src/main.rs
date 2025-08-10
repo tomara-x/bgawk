@@ -12,6 +12,7 @@ use bevy::{
 use bevy_pancam::*;
 use std::time::Duration;
 
+mod audio;
 mod config;
 mod interaction;
 mod joints;
@@ -36,6 +37,7 @@ fn main() {
             unfocused_mode: UpdateMode::reactive_low_power(Duration::from_secs_f64(1. / 30.)),
         })
         .add_plugins(PanCamPlugin)
+        .add_plugins(audio::AudioPlugin)
         .add_plugins(InteractPlugin)
         .add_plugins(ObjectsPlugin)
         .add_plugins(JointsPlugin)

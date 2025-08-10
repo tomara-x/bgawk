@@ -1,12 +1,7 @@
-use crate::{interaction::Selected, objects::*};
+use crate::{audio::*, interaction::Selected, objects::*};
 use avian2d::prelude::*;
 use bevy::{ecs::system::SystemParam, prelude::*};
 use bevy_egui::egui::KeyboardShortcut;
-use cpal::{
-    traits::{DeviceTrait, HostTrait, StreamTrait},
-    FromSample, SizedSample, Stream,
-};
-use crossbeam_channel::{bounded, Receiver, Sender};
 use fundsp::hacker32::*;
 use std::{collections::HashMap, sync::Arc};
 use syn::{parse_str, Stmt};
@@ -29,13 +24,11 @@ pub struct LapisPlugin;
 
 impl Plugin for LapisPlugin {
     fn build(&self, app: &mut App) {
-        app.add_systems(Startup, init_lapis)
-            .add_observer(set_out_device)
-            .add_observer(set_in_device);
+        app.init_resource::<LapisData>();
     }
 }
 
-#[derive(Resource)]
+#[derive(Resource, Default)]
 pub struct LapisData {
     pub input: String,
     pub buffer: String,
@@ -50,8 +43,6 @@ pub struct LapisData {
     pub eventmap: HashMap<String, EventId>,
     pub srcmap: HashMap<String, Source>,
     pub entitymap: HashMap<String, Entity>,
-    pub slot: Slot,
-    pub receivers: (Receiver<f32>, Receiver<f32>),
     pub keys: Vec<(KeyboardShortcut, String)>,
     pub keys_active: bool,
     pub quiet: bool,
@@ -86,6 +77,10 @@ pub struct Lapis<'w, 's> {
     pub prismatic_query: Query<'w, 's, &'static PrismaticJoint>,
     pub time: ResMut<'w, Time<Virtual>>,
     pub selected_query: Query<'w, 's, Entity, With<Selected>>,
+    pub audio_out: ResMut<'w, AudioOutput>,
+    pub input_receiver: Res<'w, AudioInputReceiver1>,
+    pub input_channel_count: Res<'w, AudioInputChannelCount>,
+    pub sample_rate: Res<'w, SampleRate>,
 }
 
 impl Lapis<'_, '_> {
@@ -138,212 +133,4 @@ impl Lapis<'_, '_> {
             eval_stmt(stmt, self);
         }
     }
-}
-
-struct OutStream(Option<Stream>);
-struct InStream(Option<Stream>);
-
-fn init_lapis(world: &mut World) {
-    let (slot, slot_back) = Slot::new(Box::new(dc(0.) | dc(0.)));
-    let (ls, lr) = bounded(4096);
-    let (rs, rr) = bounded(4096);
-    let stream = default_out_device(slot_back);
-    world.insert_non_send_resource(OutStream(stream));
-    let stream = default_in_device(ls, rs);
-    world.insert_non_send_resource(InStream(stream));
-    world.insert_resource(LapisData {
-        input: String::new(),
-        buffer: String::new(),
-        fmap: HashMap::new(),
-        vmap: HashMap::new(),
-        gmap: HashMap::new(),
-        idmap: HashMap::new(),
-        bmap: HashMap::new(),
-        smap: HashMap::new(),
-        wmap: HashMap::new(),
-        seqmap: HashMap::new(),
-        eventmap: HashMap::new(),
-        srcmap: HashMap::new(),
-        entitymap: HashMap::new(),
-        slot,
-        receivers: (lr, rr),
-        keys: Vec::new(),
-        keys_active: false,
-        quiet: false,
-        about: false,
-        help: false,
-    });
-}
-
-fn default_out_device(slot: SlotBackend) -> Option<Stream> {
-    let host = cpal::default_host();
-    if let Some(device) = host.default_output_device() {
-        if let Ok(default_config) = device.default_output_config() {
-            let mut config = default_config.config();
-            config.channels = 2;
-            return match default_config.sample_format() {
-                cpal::SampleFormat::F32 => run::<f32>(&device, &config, slot),
-                cpal::SampleFormat::I16 => run::<i16>(&device, &config, slot),
-                cpal::SampleFormat::U16 => run::<u16>(&device, &config, slot),
-                format => {
-                    eprintln!("unsupported sample format: {format}");
-                    None
-                }
-            };
-        }
-    }
-    None
-}
-
-fn default_in_device(ls: Sender<f32>, rs: Sender<f32>) -> Option<Stream> {
-    let host = cpal::default_host();
-    if let Some(device) = host.default_input_device() {
-        if let Ok(default_config) = device.default_input_config() {
-            let mut config = default_config.config();
-            config.channels = 2;
-            return match default_config.sample_format() {
-                cpal::SampleFormat::F32 => run_in::<f32>(&device, &config, ls, rs),
-                cpal::SampleFormat::I16 => run_in::<i16>(&device, &config, ls, rs),
-                cpal::SampleFormat::U16 => run_in::<u16>(&device, &config, ls, rs),
-                format => {
-                    eprintln!("unsupported sample format: {format}");
-                    None
-                }
-            };
-        }
-    }
-    None
-}
-
-#[derive(Event)]
-struct OutDevice(usize, usize);
-
-fn set_out_device(
-    trig: Trigger<OutDevice>,
-    mut stream: NonSendMut<OutStream>,
-    mut lapis: ResMut<LapisData>,
-) {
-    let OutDevice(h, d) = *trig.event();
-    if let Some(host_id) = cpal::ALL_HOSTS.get(h) {
-        if let Ok(host) = cpal::host_from_id(*host_id) {
-            if let Ok(mut devices) = host.output_devices() {
-                if let Some(device) = devices.nth(d) {
-                    if let Ok(default_config) = device.default_output_config() {
-                        let mut config = default_config.config();
-                        config.channels = 2;
-                        let (slot, slot_back) = Slot::new(Box::new(dc(0.) | dc(0.)));
-                        lapis.slot = slot;
-                        let s = match default_config.sample_format() {
-                            cpal::SampleFormat::F32 => run::<f32>(&device, &config, slot_back),
-                            cpal::SampleFormat::I16 => run::<i16>(&device, &config, slot_back),
-                            cpal::SampleFormat::U16 => run::<u16>(&device, &config, slot_back),
-                            format => {
-                                eprintln!("unsupported sample format: {format}");
-                                None
-                            }
-                        };
-                        if s.is_some() {
-                            stream.0 = s;
-                        }
-                    }
-                }
-            }
-        }
-    }
-}
-
-#[derive(Event)]
-struct InDevice(usize, usize);
-
-fn set_in_device(
-    trig: Trigger<InDevice>,
-    mut stream: NonSendMut<InStream>,
-    mut lapis: ResMut<LapisData>,
-) {
-    let InDevice(h, d) = *trig.event();
-    if let Some(host_id) = cpal::ALL_HOSTS.get(h) {
-        if let Ok(host) = cpal::host_from_id(*host_id) {
-            if let Ok(mut devices) = host.input_devices() {
-                if let Some(device) = devices.nth(d) {
-                    if let Ok(default_config) = device.default_input_config() {
-                        let (ls, lr) = bounded(4096);
-                        let (rs, rr) = bounded(4096);
-                        lapis.receivers = (lr, rr);
-                        let mut config = default_config.config();
-                        config.channels = 2;
-                        let s = match default_config.sample_format() {
-                            cpal::SampleFormat::F32 => run_in::<f32>(&device, &config, ls, rs),
-                            cpal::SampleFormat::I16 => run_in::<i16>(&device, &config, ls, rs),
-                            cpal::SampleFormat::U16 => run_in::<u16>(&device, &config, ls, rs),
-                            format => {
-                                eprintln!("unsupported sample format: {format}");
-                                None
-                            }
-                        };
-                        if s.is_some() {
-                            stream.0 = s;
-                        }
-                    }
-                }
-            }
-        }
-    }
-}
-
-fn run<T>(device: &cpal::Device, config: &cpal::StreamConfig, slot: SlotBackend) -> Option<Stream>
-where
-    T: SizedSample + FromSample<f32>,
-{
-    let mut slot = BlockRateAdapter::new(Box::new(slot));
-    let err_fn = |err| eprintln!("an error occurred on stream: {err}");
-    let stream = device.build_output_stream(
-        config,
-        move |data: &mut [T], _| {
-            for frame in data.chunks_mut(2) {
-                let (l, r) = slot.get_stereo();
-                let l = if l.is_normal() { l.clamp(-1., 1.) } else { 0. };
-                let r = if r.is_normal() { r.clamp(-1., 1.) } else { 0. };
-                frame[0] = T::from_sample(l);
-                frame[1] = T::from_sample(r);
-            }
-        },
-        err_fn,
-        None,
-    );
-    if let Ok(stream) = stream {
-        if let Ok(()) = stream.play() {
-            return Some(stream);
-        }
-    }
-    None
-}
-
-fn run_in<T>(
-    device: &cpal::Device,
-    config: &cpal::StreamConfig,
-    ls: Sender<f32>,
-    rs: Sender<f32>,
-) -> Option<Stream>
-where
-    T: SizedSample,
-    f32: FromSample<T>,
-{
-    let err_fn = |err| eprintln!("an error occurred on stream: {err}");
-    let stream = device.build_input_stream(
-        config,
-        move |data: &[T], _| {
-            for frame in data.chunks(2) {
-                let _ = ls.try_send(frame[0].to_sample::<f32>());
-                let _ = rs.try_send(frame[1].to_sample::<f32>());
-            }
-        },
-        err_fn,
-        None,
-    );
-    if let Ok(stream) = stream {
-        if let Ok(()) = stream.play() {
-            return Some(stream);
-        }
-    }
-    None
 }

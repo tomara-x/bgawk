@@ -89,19 +89,12 @@ fn eval_expr(expr: Expr, lapis: &mut Lapis, buffer: &mut String) {
     } else if let Expr::MethodCall(expr) = expr {
         match expr.method.to_string().as_str() {
             "play" => {
-                if let Some(g) = eval_net(&expr.receiver, lapis) {
-                    if g.inputs() == 0 && g.outputs() == 1 {
-                        lapis
-                            .data
-                            .slot
-                            .set(Fade::Smooth, 0.01, Box::new(g | dc(0.)));
-                    } else if g.inputs() == 0 && g.outputs() == 2 {
-                        lapis.data.slot.set(Fade::Smooth, 0.01, Box::new(g));
-                    } else {
-                        lapis
-                            .data
-                            .slot
-                            .set(Fade::Smooth, 0.01, Box::new(dc(0.) | dc(0.)));
+                if let Some(mut g) = eval_net(&expr.receiver, lapis) {
+                    let slot_outputs = lapis.audio_out.outputs();
+                    if g.inputs() == 0 && g.outputs() == slot_outputs {
+                        g.allocate();
+                        g.set_sample_rate(lapis.sample_rate.0);
+                        lapis.audio_out.set(Fade::Smooth, 0.01, Box::new(g));
                     }
                 }
             }

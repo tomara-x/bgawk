@@ -890,18 +890,43 @@ fn call_net(expr: &ExprCall, lapis: &mut Lapis) -> Option<Net> {
             Some(Net::wrap(Box::new(impulse >> split)))
         }
         "input" => {
-            let (l, r) = lapis.data.receivers.clone();
-            let node = map(move |_: &Frame<f32, U0>| {
-                let mut out = (0., 0.);
-                if let Ok(s) = l.try_recv() {
-                    out.0 = s;
-                }
-                if let Ok(s) = r.try_recv() {
-                    out.1 = s;
-                }
-                out
-            });
-            Some(Net::wrap(Box::new(node)))
+            let r = lapis.input_receiver.clone();
+            let channels = lapis.input_channel_count.0;
+            if let (Some(i1), Some(i2)) = (args.first(), args.get(1)) {
+                let i1 = *i1 as usize;
+                let i2 = *i2 as usize;
+                let node = map(move |_: &Frame<f32, U0>| {
+                    let mut out = (0., 0.);
+                    // receive one frame
+                    for _ in 0..channels {
+                        if let Ok((channel, s)) = r.try_recv() {
+                            if channel == i1 {
+                                out.0 = s;
+                            }
+                            if channel == i2 {
+                                out.1 = s;
+                            }
+                        }
+                    }
+                    out
+                });
+                return Some(Net::wrap(Box::new(node)));
+            } else if let Some(i) = args.first() {
+                let i = *i as usize;
+                let node = map(move |_: &Frame<f32, U0>| {
+                    let mut out = 0.;
+                    for _ in 0..channels {
+                        if let Ok((channel, s)) = r.try_recv() {
+                            if channel == i {
+                                out = s;
+                            }
+                        }
+                    }
+                    out
+                });
+                return Some(Net::wrap(Box::new(node)));
+            }
+            None
         }
         "join" => {
             let n = nth_path_generic(&expr.func, 0)?
