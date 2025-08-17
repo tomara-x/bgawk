@@ -260,9 +260,11 @@ pub fn wave_methods(expr: &ExprMethodCall, lapis: &mut Lapis) -> Option<()> {
             let arg = expr.args.first()?;
             let k = nth_path_ident(&expr.receiver, 0)?;
             let wave = lapis.data.wmap.get(&k)?;
-            if let Expr::Lit(expr) = arg {
-                if let Lit::Str(expr) = &expr.lit {
-                    let _ = wave.save_wav16(expr.value());
+            if wave.channels() > 0 {
+                if let Expr::Lit(expr) = arg {
+                    if let Lit::Str(expr) = &expr.lit {
+                        let _ = wave.save_wav16(expr.value());
+                    }
                 }
             }
         }
@@ -270,9 +272,11 @@ pub fn wave_methods(expr: &ExprMethodCall, lapis: &mut Lapis) -> Option<()> {
             let arg = expr.args.first()?;
             let k = nth_path_ident(&expr.receiver, 0)?;
             let wave = lapis.data.wmap.get(&k)?;
-            if let Expr::Lit(expr) = arg {
-                if let Lit::Str(expr) = &expr.lit {
-                    let _ = wave.save_wav32(expr.value());
+            if wave.channels() > 0 {
+                if let Expr::Lit(expr) = arg {
+                    if let Lit::Str(expr) = &expr.lit {
+                        let _ = wave.save_wav32(expr.value());
+                    }
                 }
             }
         }
