@@ -234,13 +234,25 @@ fn eval_local(expr: &syn::Local, lapis: &mut Lapis) -> Option<()> {
     } else if let Pat::Tuple(pat) = &expr.pat {
         if let Some(init) = &expr.init {
             if let Expr::Call(call) = &*init.expr {
-                if nth_path_ident(&call.func, 0)? == "bounded" {
+                let f = nth_path_ident(&call.func, 0)?;
+                if f == "bounded" {
                     let p0 = pat_ident(pat.elems.first()?)?;
                     let p1 = pat_ident(pat.elems.get(1)?)?;
                     let cap = eval_usize(call.args.first()?, lapis)?;
                     let (s, r) = bounded(cap.clamp(0, 1000000));
                     let s = Net::wrap(Box::new(An(BuffIn::new(s))));
                     let r = Net::wrap(Box::new(An(BuffOut::new(r))));
+                    lapis.drop(&p0);
+                    lapis.data.gmap.insert(p0, s);
+                    lapis.drop(&p1);
+                    lapis.data.gmap.insert(p1, r);
+                } else if f == "buffer" {
+                    let p0 = pat_ident(pat.elems.first()?)?;
+                    let p1 = pat_ident(pat.elems.get(1)?)?;
+                    let cap = eval_usize(call.args.first()?, lapis)?;
+                    let (s, r) = fundsp::misc_nodes::buffer(cap.clamp(0, 1000000));
+                    let s = Net::wrap(Box::new(s));
+                    let r = Net::wrap(Box::new(r));
                     lapis.drop(&p0);
                     lapis.data.gmap.insert(p0, s);
                     lapis.drop(&p1);

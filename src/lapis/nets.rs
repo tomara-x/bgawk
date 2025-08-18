@@ -810,7 +810,18 @@ fn call_net(expr: &ExprCall, lapis: &mut Lapis) -> Option<Net> {
             let gain = args.first()?;
             Some(Net::wrap(Box::new(fir3(*gain))))
         }
-        "flanger" => None, //TODO
+        "flanger" => {
+            let feedback_amount = eval_float(expr.args.first()?, lapis)?;
+            let min_delay = eval_float(expr.args.get(1)?, lapis)?;
+            let max_delay = eval_float(expr.args.get(2)?, lapis)?;
+            let node = (pass() | pass())
+                & feedback2(
+                    tap(min_delay, max_delay) | zero(),
+                    shape(Tanh(feedback_amount)) | pass(),
+                );
+            let node = node >> (pass() | sink());
+            Some(Net::wrap(Box::new(node)))
+        }
         "flowpass" => {
             let arg = expr.args.first()?;
             let shape = call_shape(arg, lapis)?;
@@ -1242,7 +1253,18 @@ fn call_net(expr: &ExprCall, lapis: &mut Lapis) -> Option<Net> {
             let seed = eval_u64(expr.args.get(1)?, lapis)?;
             Some(Net::wrap(Box::new(pebbles(speed, seed))))
         }
-        "phaser" => None, //TODO
+        "phaser" => {
+            let feedback_amount = eval_float(expr.args.first()?, lapis)?;
+            let node = (pass() | pass())
+                & feedback(
+                    pipei::<U10, _, _>(|_i| add((0.0, 0.1)) >> !allpole())
+                        >> (mul(feedback_amount) | sink() | zero()),
+                );
+            let node = (pass() | map(|i: &Frame<f32, U1>| lerp(2.0, 20.0, clamp01(i[0]))))
+                >> node
+                >> (pass() | sink());
+            Some(Net::wrap(Box::new(node)))
+        }
         "pink" => Some(Net::wrap(Box::new(pink()))),
         "pinkpass" => Some(Net::wrap(Box::new(pinkpass()))),
         "pipe" => {
