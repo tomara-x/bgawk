@@ -560,7 +560,7 @@ fn call_net(expr: &ExprCall, lapis: &mut Lapis) -> Option<Net> {
         "allpole" => Some(Net::wrap(Box::new(allpole()))),
         "allpole_delay" => {
             let delay = args.first()?;
-            Some(Net::wrap(Box::new(allpole_delay(*delay))))
+            Some(Net::wrap(Box::new(allpole_delay(delay.max(0.0000001)))))
         }
         "bandpass" => Some(Net::wrap(Box::new(bandpass()))),
         "bandpass_hz" => {
@@ -699,7 +699,7 @@ fn call_net(expr: &ExprCall, lapis: &mut Lapis) -> Option<Net> {
         }
         "delay" => {
             let t = args.first()?;
-            Some(Net::wrap(Box::new(delay(*t))))
+            Some(Net::wrap(Box::new(delay(t.max(0.)))))
         }
         "dhighpass" => {
             let arg = expr.args.first()?;
@@ -996,15 +996,8 @@ fn call_net(expr: &ExprCall, lapis: &mut Lapis) -> Option<Net> {
         }
         "map" => None, //TODO i'll be seeing you...
         "f" => {
-            let arg = expr.args.first()?;
-            let mut f = String::new();
-            if let Expr::Lit(expr) = arg {
-                if let Lit::Str(expr) = &expr.lit {
-                    f = expr.value();
-                }
-            }
+            let f = eval_str_lit(expr.args.first()?)?;
             match f.as_str() {
-                "" => None,
                 "rise" => Some(Net::wrap(Box::new(maps::rise()))),
                 "fall" => Some(Net::wrap(Box::new(maps::fall()))),
                 ">" => Some(Net::wrap(Box::new(maps::gt()))),
@@ -1357,10 +1350,13 @@ fn call_net(expr: &ExprCall, lapis: &mut Lapis) -> Option<Net> {
         }
         "reverb4_stereo_delays" => {
             let arg = expr.args.first()?;
-            let delays = eval_vec(arg, lapis)?;
+            let mut delays = eval_vec(arg, lapis)?;
             let time = args.first()?;
             if delays.len() != 32 {
                 return None;
+            }
+            for d in delays.iter_mut() {
+                *d = d.max(0.);
             }
             Some(Net::wrap(Box::new(reverb4_stereo_delays(&delays, *time))))
         }
@@ -1459,6 +1455,7 @@ fn call_net(expr: &ExprCall, lapis: &mut Lapis) -> Option<Net> {
             }
         }
         "sumf" | "sumi" => None, //TODO
+        "t" => Some(Net::wrap(Box::new(lfo(|t| t)))),
         "tap" => {
             let min = args.first()?;
             let max = args.get(1)?;
@@ -1615,6 +1612,30 @@ fn call_net(expr: &ExprCall, lapis: &mut Lapis) -> Option<Net> {
         }
         "bitcrush" => Some(Net::wrap(Box::new(maps::bitcrush()))),
         "gate" => Some(Net::wrap(Box::new(An(Gate::new(*args.first()? as f64))))),
+        "phase_synth" => {
+            let table = eval_str_lit(expr.args.first()?)?;
+            let table = match table.as_str() {
+                "hammond" => hammond_table(),
+                "organ" => organ_table(),
+                "saw" => saw_table(),
+                "soft_saw" => soft_saw_table(),
+                "square" => square_table(),
+                "triangle" => triangle_table(),
+                "sine" => sine_table(),
+                _ => return None,
+            };
+            Some(Net::wrap(Box::new(An(PhaseSynth::new(table)))))
+        }
+        "unsteady" => {
+            let times = eval_vec(expr.args.first()?, lapis)?;
+            let looping = eval_bool(expr.args.get(1)?, lapis)?;
+            Some(Net::wrap(Box::new(An(Unsteady::new(times, looping)))))
+        }
+        "unsteady_ramp" => {
+            let times = eval_vec(expr.args.first()?, lapis)?;
+            let looping = eval_bool(expr.args.get(1)?, lapis)?;
+            Some(Net::wrap(Box::new(An(UnsteadyRamp::new(times, looping)))))
+        }
         _ => None,
     }
 }

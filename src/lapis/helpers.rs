@@ -4,6 +4,15 @@ use bevy_egui::egui::{Key, KeyboardShortcut, Modifiers};
 use fundsp::hacker32::*;
 use syn::{punctuated::Punctuated, *};
 
+pub fn eval_str_lit(expr: &Expr) -> Option<String> {
+    if let Expr::Lit(expr) = expr {
+        if let Lit::Str(expr) = &expr.lit {
+            return Some(expr.value());
+        }
+    }
+    None
+}
+
 pub fn device_commands(expr: &ExprCall, lapis: &mut Lapis, buffer: &mut String) -> Option<()> {
     let func = nth_path_ident(&expr.func, 0)?;
     match func.as_str() {
