@@ -1,4 +1,4 @@
-use super::{floats::*, helpers::*, Lapis};
+use super::{arrays::*, floats::*, helpers::*, ints::*, Lapis};
 use fundsp::hacker32::*;
 use syn::*;
 
@@ -27,16 +27,30 @@ fn call_shared(expr: &ExprCall, lapis: &Lapis) -> Option<Shared> {
     }
 }
 
-pub fn shared_methods(expr: &ExprMethodCall, lapis: &mut Lapis) {
+pub fn shared_methods(expr: &ExprMethodCall, lapis: &Lapis) -> Option<()> {
     if expr.method == "set" || expr.method == "set_value" {
-        if let Some(arg) = expr.args.first() {
-            if let Some(value) = eval_float(arg, lapis) {
-                if let Some(k) = nth_path_ident(&expr.receiver, 0) {
-                    if let Some(shared) = &mut lapis.data.smap.get_mut(&k) {
-                        shared.set(value);
-                    }
-                }
+        let k = nth_path_ident(&expr.receiver, 0)?;
+        if let Some(shared) = lapis.data.smap.get(&k) {
+            let value = eval_float(expr.args.first()?, lapis)?;
+            shared.set(value);
+        } else if let Some(table) = lapis.data.atomic_table_map.get(&k) {
+            let i = eval_usize(expr.args.first()?, lapis)?;
+            let value = eval_float(expr.args.get(1)?, lapis)?;
+            table.set(i, value);
+        }
+    }
+    None
+}
+
+pub fn eval_atomic_table(expr: &Expr, lapis: &Lapis) -> Option<AtomicTable> {
+    if let Expr::Call(expr) = expr {
+        let func = nth_path_ident(&expr.func, 0)?;
+        if func == "atomic_table" {
+            let wave = eval_vec(expr.args.first()?, lapis)?;
+            if wave.len().is_power_of_two() {
+                return Some(AtomicTable::new(&wave));
             }
         }
     }
+    None
 }

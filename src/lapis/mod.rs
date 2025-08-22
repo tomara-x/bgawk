@@ -43,6 +43,7 @@ pub struct LapisData {
     pub eventmap: HashMap<String, EventId>,
     pub srcmap: HashMap<String, Source>,
     pub entitymap: HashMap<String, Entity>,
+    pub atomic_table_map: HashMap<String, Arc<AtomicTable>>,
     pub keys: Vec<(KeyboardShortcut, String)>,
     pub keys_active: bool,
     pub quiet: bool,
@@ -96,6 +97,7 @@ impl Lapis<'_, '_> {
         self.data.eventmap.remove(k);
         self.data.srcmap.remove(k);
         self.data.entitymap.remove(k);
+        self.data.atomic_table_map.remove(k);
     }
     pub fn eval(&mut self, input: &str) {
         if !input.is_empty() {

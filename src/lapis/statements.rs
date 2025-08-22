@@ -204,6 +204,9 @@ fn eval_local(expr: &syn::Local, lapis: &mut Lapis) -> Option<()> {
             } else if let Some(arr) = eval_vec(&expr.expr, lapis) {
                 lapis.drop(&k);
                 lapis.data.vmap.insert(k, arr);
+            } else if let Some(table) = eval_atomic_table(&expr.expr, lapis) {
+                lapis.drop(&k);
+                lapis.data.atomic_table_map.insert(k, Arc::new(table));
             } else if let Some(id) = eval_nodeid(&expr.expr, lapis) {
                 lapis.drop(&k);
                 lapis.data.idmap.insert(k, id);

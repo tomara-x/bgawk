@@ -1,7 +1,7 @@
 use super::{entities::*, floats::*, helpers::*, ints::*, Lapis};
 use syn::*;
 
-pub fn eval_vec(expr: &Expr, lapis: &mut Lapis) -> Option<Vec<f32>> {
+pub fn eval_vec(expr: &Expr, lapis: &Lapis) -> Option<Vec<f32>> {
     match expr {
         Expr::Array(expr) => array_lit(expr, lapis),
         Expr::Path(_) => {

@@ -287,16 +287,21 @@ fn method_float(expr: &ExprMethodCall, lapis: &Lapis) -> Option<f32> {
                 None
             }
             "at" => {
-                let wave = lapis.data.wmap.get(&k)?;
-                let arg0 = expr.args.first()?;
-                let arg1 = expr.args.get(1)?;
-                let chan = eval_usize(arg0, lapis)?;
-                let index = eval_usize(arg1, lapis)?;
-                if chan < wave.channels() && index < wave.len() {
-                    Some(wave.at(chan, index))
-                } else {
-                    None
+                if let Some(wave) = lapis.data.wmap.get(&k) {
+                    let arg0 = expr.args.first()?;
+                    let arg1 = expr.args.get(1)?;
+                    let chan = eval_usize(arg0, lapis)?;
+                    let index = eval_usize(arg1, lapis)?;
+                    if chan < wave.channels() && index < wave.len() {
+                        return Some(wave.at(chan, index));
+                    }
+                } else if let Some(table) = lapis.data.atomic_table_map.get(&k) {
+                    let i = eval_usize(expr.args.first()?, lapis)?;
+                    if i < table.len() {
+                        return Some(table.at(i));
+                    }
                 }
+                None
             }
             "sample_rate" => {
                 let wave = lapis.data.wmap.get(&k)?;
@@ -309,6 +314,8 @@ fn method_float(expr: &ExprMethodCall, lapis: &Lapis) -> Option<f32> {
             "len" | "length" => {
                 if let Some(wave) = lapis.data.wmap.get(&k) {
                     Some(wave.len() as f32)
+                } else if let Some(table) = lapis.data.atomic_table_map.get(&k) {
+                    Some(table.len() as f32)
                 } else {
                     let vec = lapis.data.vmap.get(&k)?;
                     Some(vec.len() as f32)

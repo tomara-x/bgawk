@@ -1636,6 +1636,23 @@ fn call_net(expr: &ExprCall, lapis: &mut Lapis) -> Option<Net> {
             let looping = eval_bool(expr.args.get(1)?, lapis)?;
             Some(Net::wrap(Box::new(An(UnsteadyRamp::new(times, looping)))))
         }
+        "atomic_synth" => {
+            let k = nth_path_ident(expr.args.first()?, 0)?;
+            if let Some(table) = lapis.data.atomic_table_map.get(&k) {
+                let mut synth = AtomicSynth::<f32>::new(table.clone());
+                if let Some(arg1) = expr.args.get(1) {
+                    if let Some(interp) = eval_str_lit(arg1) {
+                        if interp == "linear" {
+                            synth.set_interpolation(Interpolation::Linear);
+                        } else if interp == "cubic" {
+                            synth.set_interpolation(Interpolation::Cubic);
+                        }
+                    }
+                }
+                return Some(Net::wrap(Box::new(An(synth))));
+            }
+            None
+        }
         _ => None,
     }
 }
