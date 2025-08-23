@@ -85,7 +85,7 @@ pub struct Lapis<'w, 's> {
 }
 
 impl Lapis<'_, '_> {
-    pub fn drop(&mut self, k: &String) {
+    pub fn drop(&mut self, k: &str) {
         self.data.fmap.remove(k);
         self.data.vmap.remove(k);
         self.data.gmap.remove(k);

@@ -260,6 +260,18 @@ fn eval_local(expr: &syn::Local, lapis: &mut Lapis) -> Option<()> {
                     lapis.data.gmap.insert(p0, s);
                     lapis.drop(&p1);
                     lapis.data.gmap.insert(p1, r);
+                } else if f == "Net" {
+                    let f = nth_path_ident(&call.func, 1)?;
+                    if f == "wrap_id" {
+                        let p0 = pat_ident(pat.elems.first()?)?;
+                        let p1 = pat_ident(pat.elems.get(1)?)?;
+                        let initial = eval_net(call.args.first()?, lapis)?;
+                        let (net, id) = Net::wrap_id(Box::new(initial));
+                        lapis.drop(&p0);
+                        lapis.data.gmap.insert(p0, net);
+                        lapis.drop(&p1);
+                        lapis.data.idmap.insert(p1, id);
+                    }
                 }
             }
         }
