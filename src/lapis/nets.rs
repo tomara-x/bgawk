@@ -1471,6 +1471,7 @@ fn call_net(expr: &ExprCall, lapis: &mut Lapis) -> Option<Net> {
             let x = eval_net(arg0, lapis)?;
             Some(!x)
         }
+        "tick" => Some(Net::wrap(Box::new(tick()))),
         "timer" => {
             let arg = expr.args.first()?;
             let shared = eval_shared(arg, lapis)?;
