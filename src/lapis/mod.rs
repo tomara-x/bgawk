@@ -1,7 +1,7 @@
 use crate::{audio::*, interaction::Selected, objects::*};
 use avian2d::prelude::*;
 use bevy::{ecs::system::SystemParam, prelude::*};
-use bevy_egui::egui::KeyboardShortcut;
+use bevy_egui::egui::{Modifiers, Key};
 use fundsp::hacker32::*;
 use std::{collections::HashMap, sync::Arc};
 use syn::{parse_str, Stmt};
@@ -44,8 +44,10 @@ pub struct LapisData {
     pub srcmap: HashMap<String, Source>,
     pub entitymap: HashMap<String, Entity>,
     pub atomic_table_map: HashMap<String, Arc<AtomicTable>>,
-    pub keys: Vec<(KeyboardShortcut, String)>,
+    // (modifiers, key, pressed)
+    pub keys: HashMap<(Modifiers, Key, bool), String>,
     pub keys_active: bool,
+    pub keys_repeat: bool,
     pub quiet: bool,
     pub about: bool,
     pub help: bool,

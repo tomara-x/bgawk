@@ -79,19 +79,22 @@ fn egui_ui(
         ui.fonts(|f| f.layout_job(layout_job))
     };
     if lapis.data.keys_active {
-        if lapis.data.quiet {
-            for (shortcut, code) in lapis.data.keys.clone() {
-                if ctx.input_mut(|i| i.consume_shortcut(&shortcut)) {
-                    lapis.quiet_eval(&code);
+        ctx.input(|i| {
+            for event in &i.events {
+                if let egui::Event::Key{ key, modifiers, pressed, repeat, ..} = event {
+                    if *repeat && !lapis.data.keys_repeat {
+                        continue;
+                    }
+                    if let Some(code) = lapis.data.keys.get(&(*modifiers, *key, *pressed)) {
+                        if lapis.data.quiet {
+                            lapis.quiet_eval(&code.clone());
+                        } else {
+                            lapis.eval(&code.clone());
+                        }
+                    }
                 }
             }
-        } else {
-            for (shortcut, code) in lapis.data.keys.clone() {
-                if ctx.input_mut(|i| i.consume_shortcut(&shortcut)) {
-                    lapis.eval(&code);
-                }
-            }
-        }
+        });
     }
     if !lapis.time.is_paused() {
         lapis.quiet_eval(&update_code.0);
@@ -432,6 +435,8 @@ fn egui_ui(
                     .on_hover_text("don't log collision/keybinding evaluation");
                 ui.toggle_value(&mut lapis.data.keys_active, "keys?")
                     .on_hover_text("enable keybindings");
+                ui.toggle_value(&mut lapis.data.keys_repeat, "keys repeat?")
+                    .on_hover_text("enable key repeat events");
             });
             let theme = CodeTheme::dark(font_sizes.1);
             let mut layouter = |ui: &Ui, string: &dyn TextBuffer, wrap_width: f32| {

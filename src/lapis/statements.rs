@@ -347,11 +347,11 @@ fn eval_assign(expr: &ExprAssign, lapis: &mut Lapis) {
                     }
                 } else if let Expr::Lit(right) = &*expr.right {
                     if let Some(shortcut) = parse_shortcut(left.value()) {
-                        lapis.data.keys.retain(|x| x.0 != shortcut);
+                        lapis.data.keys.remove(&shortcut);
                         if let Lit::Str(right) = &right.lit {
                             let code = right.value();
                             if !code.is_empty() {
-                                lapis.data.keys.push((shortcut, code));
+                                lapis.data.keys.insert(shortcut, code);
                             }
                         }
                     }

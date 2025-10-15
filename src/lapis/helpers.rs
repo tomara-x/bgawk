@@ -1,6 +1,6 @@
 use super::{floats::*, ints::*, Lapis};
 use crate::audio::*;
-use bevy_egui::egui::{Key, KeyboardShortcut, Modifiers};
+use bevy_egui::egui::{Key, Modifiers};
 use fundsp::hacker32::*;
 use syn::{punctuated::Punctuated, *};
 
@@ -58,7 +58,9 @@ pub fn device_commands(expr: &ExprCall, lapis: &mut Lapis, buffer: &mut String) 
     None
 }
 
-pub fn parse_shortcut(mut k: String) -> Option<KeyboardShortcut> {
+// starting with `!` means on the release of the shortcut
+pub fn parse_shortcut(mut k: String) -> Option<(Modifiers, Key, bool)> {
+    let release = k.starts_with('!');
     k = k.replace(char::is_whitespace, "");
     let mut modifiers = Modifiers::NONE;
     if k.contains("Ctrl") || k.contains("ctrl") {
@@ -81,9 +83,10 @@ pub fn parse_shortcut(mut k: String) -> Option<KeyboardShortcut> {
         .replace("Shift+", "")
         .replace("shift+", "")
         .replace("Command+", "")
-        .replace("command+", "");
+        .replace("command+", "")
+        .replacen("!", "", 1);
     let key = Key::from_name(&k)?;
-    Some(KeyboardShortcut::new(modifiers, key))
+    Some((modifiers, key, !release))
 }
 
 pub fn path_fade(expr: &Expr) -> Option<Fade> {
