@@ -1632,6 +1632,11 @@ fn call_net(expr: &ExprCall, lapis: &mut Lapis) -> Option<Net> {
             let looping = eval_bool(expr.args.get(1)?, lapis)?;
             Some(Net::wrap(Box::new(An(Unsteady::new(times, looping)))))
         }
+        "unsteady_no_reset" => {
+            let times = eval_vec(expr.args.first()?, lapis)?;
+            let looping = eval_bool(expr.args.get(1)?, lapis)?;
+            Some(Net::wrap(Box::new(An(Unsteady::new(times, looping).no_reset()))))
+        }
         "unsteady_ramp" => {
             let times = eval_vec(expr.args.first()?, lapis)?;
             let looping = eval_bool(expr.args.get(1)?, lapis)?;
@@ -1653,6 +1658,34 @@ fn call_net(expr: &ExprCall, lapis: &mut Lapis) -> Option<Net> {
                 return Some(Net::wrap(Box::new(An(synth))));
             }
             None
+        }
+        "ahr" => {
+            let a = eval_float(expr.args.first()?, lapis)?;
+            let h = eval_float(expr.args.get(1)?, lapis)?;
+            let r = eval_float(expr.args.get(2)?, lapis)?;
+            Some(Net::wrap(Box::new(ahr(a, h, r))))
+        }
+        "step" => {
+            let mut units: Vec<Box<dyn AudioUnit>> = Vec::new();
+            for arg in &expr.args {
+                if let Some(unit) = eval_net(arg, lapis) {
+                    if unit.inputs() == 0 && unit.outputs() == 1 {
+                        units.push(Box::new(unit));
+                    }
+                }
+            }
+            Some(Net::wrap(Box::new(An(Step::new(units)))))
+        }
+        "filter_step" => {
+            let mut units: Vec<Box<dyn AudioUnit>> = Vec::new();
+            for arg in &expr.args {
+                if let Some(unit) = eval_net(arg, lapis) {
+                    if unit.inputs() == 1 && unit.outputs() == 1 {
+                        units.push(Box::new(unit));
+                    }
+                }
+            }
+            Some(Net::wrap(Box::new(An(FilterStep::new(units)))))
         }
         _ => None,
     }
