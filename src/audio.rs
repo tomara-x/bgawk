@@ -127,7 +127,6 @@ fn set_out_device(
     net.allocate();
     let (slot, slot_back) = Slot::new(Box::new(net));
 
-    audio_output.0 = slot;
     let s = match sample_format {
         cpal::SampleFormat::F32 => run_out::<f32>(&device, &config, slot_back),
         cpal::SampleFormat::I16 => run_out::<i16>(&device, &config, slot_back),
@@ -136,6 +135,7 @@ fn set_out_device(
     };
     if s.is_some() {
         stream.0 = s;
+        audio_output.0 = slot;
         sr.0 = config.sample_rate.0 as f64;
         Ok(())
     } else {
