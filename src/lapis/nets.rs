@@ -902,7 +902,7 @@ fn call_net(expr: &ExprCall, lapis: &mut Lapis) -> Option<Net> {
         }
         "input" => {
             let r = lapis.input_receiver.clone();
-            let channels = lapis.input_channel_count.0;
+            let channels = lapis.in_stream_config.0.as_ref()?.channels;
             if let (Some(i1), Some(i2)) = (args.first(), args.get(1)) {
                 let i1 = *i1 as usize;
                 let i2 = *i2 as usize;

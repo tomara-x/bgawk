@@ -19,165 +19,197 @@ pub fn eval_float(expr: &Expr, lapis: &Lapis) -> Option<f32> {
 }
 
 fn field_float(expr: &ExprField, lapis: &Lapis) -> Option<f32> {
-    let mut e = path_lit_entity(&expr.base, lapis)?;
-    if e == Entity::PLACEHOLDER {
-        if let Ok(selected) = lapis.selected_query.single() {
-            e = selected;
+    if let Some(mut e) = path_lit_entity(&expr.base, lapis) {
+        if e == Entity::PLACEHOLDER {
+            if let Ok(selected) = lapis.selected_query.single() {
+                e = selected;
+            }
         }
-    }
-    if let Member::Named(ident) = &expr.member {
-        let trans = &lapis.trans_query;
-        return match ident.to_string().as_str() {
-            "x" => Some(trans.get(e).ok()?.translation.x),
-            "y" => Some(trans.get(e).ok()?.translation.y),
-            "z" => Some(trans.get(e).ok()?.translation.z),
-            "rx" => Some(trans.get(e).ok()?.scale.x),
-            "ry" => Some(trans.get(e).ok()?.scale.y),
-            "rot" => Some(trans.get(e).ok()?.rotation.to_euler(EulerRot::XYZ).2),
-            "mass" => Some(lapis.mass_query.get(e).ok()?.0),
-            "vx" => Some(lapis.lin_velocity_query.get(e).ok()?.x),
-            "vy" => Some(lapis.lin_velocity_query.get(e).ok()?.y),
-            "va" => Some(lapis.ang_velocity_query.get(e).ok()?.0),
-            "restitution" => Some(lapis.restitution_query.get(e).ok()?.coefficient),
-            "lindamp" => Some(lapis.lin_damp_query.get(e).ok()?.0),
-            "angdamp" => Some(lapis.ang_damp_query.get(e).ok()?.0),
-            "inertia" => Some(lapis.inertia_query.get(e).ok()?.0),
-            "h" => {
-                let mat_id = lapis.material_ids.get(e).ok()?;
-                let mat = lapis.materials.get(mat_id)?;
-                let hsla: Hsla = mat.color.into();
-                Some(hsla.hue)
-            }
-            "s" => {
-                let mat_id = lapis.material_ids.get(e).ok()?;
-                let mat = lapis.materials.get(mat_id)?;
-                let hsla: Hsla = mat.color.into();
-                Some(hsla.saturation)
-            }
-            "l" => {
-                let mat_id = lapis.material_ids.get(e).ok()?;
-                let mat = lapis.materials.get(mat_id)?;
-                let hsla: Hsla = mat.color.into();
-                Some(hsla.lightness)
-            }
-            "a" => {
-                let mat_id = lapis.material_ids.get(e).ok()?;
-                let mat = lapis.materials.get(mat_id)?;
-                let hsla: Hsla = mat.color.into();
-                Some(hsla.alpha)
-            }
-            "sides" => Some(lapis.sides_query.get(e).ok()?.0 as f32),
-            "cmx" => Some(lapis.cm_query.get(e).ok()?.x),
-            "cmy" => Some(lapis.cm_query.get(e).ok()?.y),
-            "friction" => Some(lapis.friction_query.get(e).ok()?.dynamic_coefficient),
-            "tail" => Some(lapis.tail_query.get(e).ok()?.len as f32),
-            "layer" => Some(lapis.layer_query.get(e).ok()?.memberships.0.ilog2() as f32),
-            // joint fields
-            "joint_type" => {
-                if lapis.fixed_query.contains(e) {
-                    Some(0.)
-                } else if lapis.distance_query.contains(e) {
-                    Some(1.)
-                } else if lapis.prismatic_query.contains(e) {
-                    Some(2.)
-                } else if lapis.revolute_query.contains(e) {
-                    Some(3.)
-                } else {
-                    None
+        if let Member::Named(ident) = &expr.member {
+            let trans = &lapis.trans_query;
+            return match ident.to_string().as_str() {
+                "x" => Some(trans.get(e).ok()?.translation.x),
+                "y" => Some(trans.get(e).ok()?.translation.y),
+                "z" => Some(trans.get(e).ok()?.translation.z),
+                "rx" => Some(trans.get(e).ok()?.scale.x),
+                "ry" => Some(trans.get(e).ok()?.scale.y),
+                "rot" => Some(trans.get(e).ok()?.rotation.to_euler(EulerRot::XYZ).2),
+                "mass" => Some(lapis.mass_query.get(e).ok()?.0),
+                "vx" => Some(lapis.lin_velocity_query.get(e).ok()?.x),
+                "vy" => Some(lapis.lin_velocity_query.get(e).ok()?.y),
+                "va" => Some(lapis.ang_velocity_query.get(e).ok()?.0),
+                "restitution" => Some(lapis.restitution_query.get(e).ok()?.coefficient),
+                "lindamp" => Some(lapis.lin_damp_query.get(e).ok()?.0),
+                "angdamp" => Some(lapis.ang_damp_query.get(e).ok()?.0),
+                "inertia" => Some(lapis.inertia_query.get(e).ok()?.0),
+                "h" => {
+                    let mat_id = lapis.material_ids.get(e).ok()?;
+                    let mat = lapis.materials.get(mat_id)?;
+                    let hsla: Hsla = mat.color.into();
+                    Some(hsla.hue)
                 }
-            }
-            "compliance" => {
-                if let Ok(j) = lapis.fixed_query.get(e) {
-                    Some(j.compliance)
-                } else if let Ok(j) = lapis.distance_query.get(e) {
-                    Some(j.compliance)
-                } else if let Ok(j) = lapis.prismatic_query.get(e) {
-                    Some(j.compliance)
-                } else if let Ok(j) = lapis.revolute_query.get(e) {
-                    Some(j.compliance)
-                } else {
-                    None
+                "s" => {
+                    let mat_id = lapis.material_ids.get(e).ok()?;
+                    let mat = lapis.materials.get(mat_id)?;
+                    let hsla: Hsla = mat.color.into();
+                    Some(hsla.saturation)
                 }
-            }
-            "anchor1x" => {
-                if let Ok(j) = lapis.fixed_query.get(e) {
-                    Some(j.local_anchor1.x)
-                } else if let Ok(j) = lapis.distance_query.get(e) {
-                    Some(j.local_anchor1.x)
-                } else if let Ok(j) = lapis.prismatic_query.get(e) {
-                    Some(j.local_anchor1.x)
-                } else if let Ok(j) = lapis.revolute_query.get(e) {
-                    Some(j.local_anchor1.x)
-                } else {
-                    None
+                "l" => {
+                    let mat_id = lapis.material_ids.get(e).ok()?;
+                    let mat = lapis.materials.get(mat_id)?;
+                    let hsla: Hsla = mat.color.into();
+                    Some(hsla.lightness)
                 }
-            }
-            "anchor1y" => {
-                if let Ok(j) = lapis.fixed_query.get(e) {
-                    Some(j.local_anchor1.y)
-                } else if let Ok(j) = lapis.distance_query.get(e) {
-                    Some(j.local_anchor1.y)
-                } else if let Ok(j) = lapis.prismatic_query.get(e) {
-                    Some(j.local_anchor1.y)
-                } else if let Ok(j) = lapis.revolute_query.get(e) {
-                    Some(j.local_anchor1.y)
-                } else {
-                    None
+                "a" => {
+                    let mat_id = lapis.material_ids.get(e).ok()?;
+                    let mat = lapis.materials.get(mat_id)?;
+                    let hsla: Hsla = mat.color.into();
+                    Some(hsla.alpha)
                 }
-            }
-            "anchor2x" => {
-                if let Ok(j) = lapis.fixed_query.get(e) {
-                    Some(j.local_anchor2.x)
-                } else if let Ok(j) = lapis.distance_query.get(e) {
-                    Some(j.local_anchor2.x)
-                } else if let Ok(j) = lapis.prismatic_query.get(e) {
-                    Some(j.local_anchor2.x)
-                } else if let Ok(j) = lapis.revolute_query.get(e) {
-                    Some(j.local_anchor2.x)
-                } else {
-                    None
+                "sides" => Some(lapis.sides_query.get(e).ok()?.0 as f32),
+                "cmx" => Some(lapis.cm_query.get(e).ok()?.x),
+                "cmy" => Some(lapis.cm_query.get(e).ok()?.y),
+                "friction" => Some(lapis.friction_query.get(e).ok()?.dynamic_coefficient),
+                "tail" => Some(lapis.tail_query.get(e).ok()?.len as f32),
+                "layer" => Some(lapis.layer_query.get(e).ok()?.memberships.0.ilog2() as f32),
+                // joint fields
+                "joint_type" => {
+                    if lapis.fixed_query.contains(e) {
+                        Some(0.)
+                    } else if lapis.distance_query.contains(e) {
+                        Some(1.)
+                    } else if lapis.prismatic_query.contains(e) {
+                        Some(2.)
+                    } else if lapis.revolute_query.contains(e) {
+                        Some(3.)
+                    } else {
+                        None
+                    }
                 }
-            }
-            "anchor2y" => {
-                if let Ok(j) = lapis.fixed_query.get(e) {
-                    Some(j.local_anchor2.y)
-                } else if let Ok(j) = lapis.distance_query.get(e) {
-                    Some(j.local_anchor2.y)
-                } else if let Ok(j) = lapis.prismatic_query.get(e) {
-                    Some(j.local_anchor2.y)
-                } else if let Ok(j) = lapis.revolute_query.get(e) {
-                    Some(j.local_anchor2.y)
-                } else {
-                    None
+                "compliance" => {
+                    if let Ok(j) = lapis.fixed_query.get(e) {
+                        Some(j.compliance)
+                    } else if let Ok(j) = lapis.distance_query.get(e) {
+                        Some(j.compliance)
+                    } else if let Ok(j) = lapis.prismatic_query.get(e) {
+                        Some(j.compliance)
+                    } else if let Ok(j) = lapis.revolute_query.get(e) {
+                        Some(j.compliance)
+                    } else {
+                        None
+                    }
                 }
-            }
-            "min" => {
-                if let Ok(j) = lapis.distance_query.get(e) {
-                    Some(j.length_limits?.min)
-                } else if let Ok(j) = lapis.prismatic_query.get(e) {
-                    Some(j.free_axis_limits?.min)
-                } else if let Ok(j) = lapis.revolute_query.get(e) {
-                    Some(j.angle_limit?.min)
-                } else {
-                    None
+                "anchor1x" => {
+                    if let Ok(j) = lapis.fixed_query.get(e) {
+                        Some(j.local_anchor1.x)
+                    } else if let Ok(j) = lapis.distance_query.get(e) {
+                        Some(j.local_anchor1.x)
+                    } else if let Ok(j) = lapis.prismatic_query.get(e) {
+                        Some(j.local_anchor1.x)
+                    } else if let Ok(j) = lapis.revolute_query.get(e) {
+                        Some(j.local_anchor1.x)
+                    } else {
+                        None
+                    }
                 }
-            }
-            "max" => {
-                if let Ok(j) = lapis.distance_query.get(e) {
-                    Some(j.length_limits?.max)
-                } else if let Ok(j) = lapis.prismatic_query.get(e) {
-                    Some(j.free_axis_limits?.max)
-                } else if let Ok(j) = lapis.revolute_query.get(e) {
-                    Some(j.angle_limit?.max)
-                } else {
-                    None
+                "anchor1y" => {
+                    if let Ok(j) = lapis.fixed_query.get(e) {
+                        Some(j.local_anchor1.y)
+                    } else if let Ok(j) = lapis.distance_query.get(e) {
+                        Some(j.local_anchor1.y)
+                    } else if let Ok(j) = lapis.prismatic_query.get(e) {
+                        Some(j.local_anchor1.y)
+                    } else if let Ok(j) = lapis.revolute_query.get(e) {
+                        Some(j.local_anchor1.y)
+                    } else {
+                        None
+                    }
                 }
+                "anchor2x" => {
+                    if let Ok(j) = lapis.fixed_query.get(e) {
+                        Some(j.local_anchor2.x)
+                    } else if let Ok(j) = lapis.distance_query.get(e) {
+                        Some(j.local_anchor2.x)
+                    } else if let Ok(j) = lapis.prismatic_query.get(e) {
+                        Some(j.local_anchor2.x)
+                    } else if let Ok(j) = lapis.revolute_query.get(e) {
+                        Some(j.local_anchor2.x)
+                    } else {
+                        None
+                    }
+                }
+                "anchor2y" => {
+                    if let Ok(j) = lapis.fixed_query.get(e) {
+                        Some(j.local_anchor2.y)
+                    } else if let Ok(j) = lapis.distance_query.get(e) {
+                        Some(j.local_anchor2.y)
+                    } else if let Ok(j) = lapis.prismatic_query.get(e) {
+                        Some(j.local_anchor2.y)
+                    } else if let Ok(j) = lapis.revolute_query.get(e) {
+                        Some(j.local_anchor2.y)
+                    } else {
+                        None
+                    }
+                }
+                "min" => {
+                    if let Ok(j) = lapis.distance_query.get(e) {
+                        Some(j.length_limits?.min)
+                    } else if let Ok(j) = lapis.prismatic_query.get(e) {
+                        Some(j.free_axis_limits?.min)
+                    } else if let Ok(j) = lapis.revolute_query.get(e) {
+                        Some(j.angle_limit?.min)
+                    } else {
+                        None
+                    }
+                }
+                "max" => {
+                    if let Ok(j) = lapis.distance_query.get(e) {
+                        Some(j.length_limits?.max)
+                    } else if let Ok(j) = lapis.prismatic_query.get(e) {
+                        Some(j.free_axis_limits?.max)
+                    } else if let Ok(j) = lapis.revolute_query.get(e) {
+                        Some(j.angle_limit?.max)
+                    } else {
+                        None
+                    }
+                }
+                "rest" => Some(lapis.distance_query.get(e).ok()?.rest_length),
+                "axis_x" => Some(lapis.prismatic_query.get(e).ok()?.free_axis.x),
+                "axis_y" => Some(lapis.prismatic_query.get(e).ok()?.free_axis.y),
+                _ => None,
+            };
+        }
+    } else {
+        let base = nth_path_ident(&expr.base, 0)?;
+        if let Member::Named(ident) = &expr.member {
+            if base == "out_stream" {
+                let config = lapis.out_stream_config.0.as_ref()?;
+                return match ident.to_string().as_str() {
+                    "sr" => Some(config.sample_rate.0 as f32),
+                    "chan" => Some(config.channels as f32),
+                    "buffer" => {
+                        if let cpal::BufferSize::Fixed(size) = config.buffer_size {
+                            return Some(size as f32);
+                        }
+                        None
+                    }
+                    _ => None,
+                };
+            } else if base == "in_stream" {
+                let config = lapis.in_stream_config.0.as_ref()?;
+                return match ident.to_string().as_str() {
+                    "sr" => Some(config.sample_rate.0 as f32),
+                    "chan" => Some(config.channels as f32),
+                    "buffer" => {
+                        if let cpal::BufferSize::Fixed(size) = config.buffer_size {
+                            return Some(size as f32);
+                        }
+                        None
+                    }
+                    _ => None,
+                };
             }
-            "rest" => Some(lapis.distance_query.get(e).ok()?.rest_length),
-            "axis_x" => Some(lapis.prismatic_query.get(e).ok()?.free_axis.x),
-            "axis_y" => Some(lapis.prismatic_query.get(e).ok()?.free_axis.y),
-            _ => None,
-        };
+        }
     }
     None
 }
@@ -402,9 +434,7 @@ fn bin_expr_float(expr: &ExprBinary, lapis: &Lapis) -> Option<f32> {
 
 fn path_float(expr: &Path, lapis: &Lapis) -> Option<f32> {
     let k = expr.segments.first()?.ident.to_string();
-    if k == "SR" {
-        Some(lapis.sample_rate.0 as f32)
-    } else if let Some(c) = constant_float(&k) {
+    if let Some(c) = constant_float(&k) {
         Some(c)
     } else {
         lapis.data.fmap.get(&k).copied()

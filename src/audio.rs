@@ -1,7 +1,7 @@
 use bevy::prelude::*;
 use cpal::{
     traits::{DeviceTrait, HostTrait, StreamTrait},
-    FromSample, SizedSample, Stream,
+    FromSample, SizedSample, Stream, StreamConfig
 };
 use crossbeam_channel::{bounded, Receiver, Sender};
 use fundsp::hacker32::*;
@@ -36,13 +36,11 @@ pub struct AudioInputReceiver1(pub Receiver<(usize, f32)>);
 #[derive(Resource, Deref)]
 pub struct AudioInputReceiver2(pub Receiver<(usize, f32)>);
 
-/// how many channels the current input stream has
 #[derive(Resource, Deref)]
-pub struct AudioInputChannelCount(pub usize);
+pub struct InStreamConfig(pub Option<StreamConfig>);
 
-/// stores the sample rate of the current output stream
-#[derive(Resource, DerefMut, Deref)]
-pub struct SampleRate(pub f64);
+#[derive(Resource, Deref)]
+pub struct OutStreamConfig(pub Option<StreamConfig>);
 
 /// trigger this event to start a new input stream (ending the current one)
 /// the default (host/device/config) will be used for any field set to None
@@ -75,8 +73,8 @@ pub fn init_audio(world: &mut World) {
     // dummy things
     let (slot, _) = Slot::new(Box::new(dc(0.)));
     world.insert_resource(AudioOutput(slot));
-    world.insert_resource(SampleRate(44100.));
-    world.insert_resource(AudioInputChannelCount(0));
+    world.insert_resource(InStreamConfig(None));
+    world.insert_resource(OutStreamConfig(None));
     world.insert_non_send_resource(OutStream(None));
     world.insert_non_send_resource(InStream(None));
     let (_, r1) = bounded(1);
@@ -94,7 +92,7 @@ fn set_out_device(
     trig: Trigger<SetOutDevice>,
     mut stream: NonSendMut<OutStream>,
     mut audio_output: ResMut<AudioOutput>,
-    mut sr: ResMut<SampleRate>,
+    mut out_stream_config: ResMut<OutStreamConfig>,
 ) -> Result {
     let event = trig.event();
     let host = if let Some(h) = event.host {
@@ -136,7 +134,7 @@ fn set_out_device(
     if s.is_some() {
         stream.0 = s;
         audio_output.0 = slot;
-        sr.0 = config.sample_rate.0 as f64;
+        out_stream_config.0 = Some(config);
         Ok(())
     } else {
         Err(format!("couldn't start stream with given settings\n{event:?}").into())
@@ -148,7 +146,7 @@ fn set_in_device(
     mut stream: NonSendMut<InStream>,
     mut audio_input_receiver1: ResMut<AudioInputReceiver1>,
     mut audio_input_receiver2: ResMut<AudioInputReceiver2>,
-    mut input_channel_count: ResMut<AudioInputChannelCount>,
+    mut in_stream_config: ResMut<InStreamConfig>,
 ) -> Result {
     let event = trig.event();
     let host = if let Some(h) = event.host {
@@ -192,7 +190,7 @@ fn set_in_device(
         stream.0 = s;
         audio_input_receiver1.0 = r1;
         audio_input_receiver2.0 = r2;
-        input_channel_count.0 = c;
+        in_stream_config.0 = Some(config);
         Ok(())
     } else {
         Err(format!("couldn't start stream with given settings\n{event:?}").into())

@@ -92,9 +92,11 @@ fn eval_expr(expr: Expr, lapis: &mut Lapis, buffer: &mut String) {
                 if let Some(mut g) = eval_net(&expr.receiver, lapis) {
                     let slot_outputs = lapis.audio_out.outputs();
                     if g.inputs() == 0 && g.outputs() == slot_outputs {
-                        g.allocate();
-                        g.set_sample_rate(lapis.sample_rate.0);
-                        lapis.audio_out.set(Fade::Smooth, 0.01, Box::new(g));
+                        if let Some(config) = &lapis.out_stream_config.0 {
+                            g.allocate();
+                            g.set_sample_rate(config.sample_rate.0 as f64);
+                            lapis.audio_out.set(Fade::Smooth, 0.01, Box::new(g));
+                        }
                     }
                 }
             }

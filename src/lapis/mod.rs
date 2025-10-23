@@ -82,8 +82,8 @@ pub struct Lapis<'w, 's> {
     pub selected_query: Query<'w, 's, Entity, With<Selected>>,
     pub audio_out: ResMut<'w, AudioOutput>,
     pub input_receiver: Res<'w, AudioInputReceiver1>,
-    pub input_channel_count: Res<'w, AudioInputChannelCount>,
-    pub sample_rate: Res<'w, SampleRate>,
+    pub in_stream_config: Res<'w, InStreamConfig>,
+    pub out_stream_config: Res<'w, OutStreamConfig>,
 }
 
 impl Lapis<'_, '_> {
