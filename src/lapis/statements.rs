@@ -7,7 +7,7 @@ use crate::objects::*;
 use avian2d::prelude::*;
 use bevy::prelude::*;
 use crossbeam_channel::bounded;
-use fundsp::hacker32::*;
+use fundsp::hacker::*;
 use std::{sync::Arc, thread, time::Duration};
 use syn::*;
 

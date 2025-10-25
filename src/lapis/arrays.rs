@@ -1,5 +1,5 @@
 use super::{entities::*, floats::*, helpers::*, ints::*, nets::*, Lapis};
-use fundsp::hacker32::*;
+use fundsp::hacker::*;
 use syn::*;
 
 pub fn eval_vec(expr: &Expr, lapis: &mut Lapis) -> Option<Vec<f32>> {

@@ -4,7 +4,7 @@ use cpal::{
     FromSample, SizedSample, Stream, StreamConfig,
 };
 use crossbeam_channel::{bounded, Receiver, Sender};
-use fundsp::hacker32::*;
+use fundsp::hacker::*;
 //use assert_no_alloc::*;
 
 //#[cfg(debug_assertions)]

@@ -1,5 +1,5 @@
 use super::{arrays::*, atomics::*, bools::*, floats::*, helpers::*, ints::*, sources::*, Lapis};
-use fundsp::hacker32::*;
+use fundsp::hacker::*;
 use fundsp::maps;
 use fundsp::sound::*;
 use syn::*;

@@ -1,6 +1,6 @@
 use super::{floats::*, ints::*, Lapis};
 use bevy_egui::egui::{Key, Modifiers};
-use fundsp::hacker32::*;
+use fundsp::hacker::*;
 use syn::{punctuated::Punctuated, *};
 
 pub fn eval_str_lit(expr: &Expr) -> Option<String> {

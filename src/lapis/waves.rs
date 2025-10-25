@@ -1,5 +1,5 @@
 use super::{arrays::*, floats::*, helpers::*, ints::*, nets::*, Lapis};
-use fundsp::hacker32::*;
+use fundsp::hacker::*;
 use std::sync::Arc;
 use syn::*;
 

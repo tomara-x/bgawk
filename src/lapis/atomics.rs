@@ -1,5 +1,5 @@
 use super::{arrays::*, floats::*, helpers::*, ints::*, Lapis};
-use fundsp::hacker32::*;
+use fundsp::hacker::*;
 use syn::*;
 
 pub fn eval_shared(expr: &Expr, lapis: &Lapis) -> Option<Shared> {

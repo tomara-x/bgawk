@@ -1,6 +1,6 @@
 use super::{entities::*, helpers::*, ints::*, nets::*, Lapis};
 use bevy::prelude::*;
-use fundsp::hacker32::*;
+use fundsp::hacker::*;
 use syn::*;
 
 pub fn eval_float(expr: &Expr, lapis: &Lapis) -> Option<f32> {

@@ -1,5 +1,5 @@
 use super::{helpers::*, ints::*, nets::*, Lapis};
-use fundsp::hacker32::*;
+use fundsp::hacker::*;
 use syn::*;
 
 fn method_source(expr: &ExprMethodCall, lapis: &Lapis) -> Option<Source> {

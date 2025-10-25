@@ -2,7 +2,7 @@ use crate::{audio::*, interaction::Selected, objects::*};
 use avian2d::prelude::*;
 use bevy::{ecs::system::SystemParam, prelude::*};
 use bevy_egui::egui::{Key, Modifiers};
-use fundsp::hacker32::*;
+use fundsp::hacker::*;
 use std::{collections::HashMap, sync::Arc};
 use syn::{parse_str, Stmt};
 
