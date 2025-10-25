@@ -1,5 +1,4 @@
 use super::{floats::*, ints::*, Lapis};
-use crate::audio::*;
 use bevy_egui::egui::{Key, Modifiers};
 use fundsp::hacker32::*;
 use syn::{punctuated::Punctuated, *};
@@ -9,51 +8,6 @@ pub fn eval_str_lit(expr: &Expr) -> Option<String> {
         if let Lit::Str(expr) = &expr.lit {
             return Some(expr.value());
         }
-    }
-    None
-}
-
-pub fn device_commands(expr: &ExprCall, lapis: &mut Lapis, buffer: &mut String) -> Option<()> {
-    let func = nth_path_ident(&expr.func, 0)?;
-    match func.as_str() {
-        "list_in_devices" => {
-            let list = list_in_devices().trim_end().replace('\n', "\n//");
-            buffer.push_str(&format!("\n//{list}"));
-        }
-        "list_out_devices" => {
-            let list = list_out_devices().trim_end().replace('\n', "\n//");
-            buffer.push_str(&format!("\n//{list}"));
-        }
-        "set_in_device" => {
-            // underscores will evaluate to None
-            let host = eval_usize(expr.args.first()?, lapis);
-            let device = eval_usize(expr.args.get(1)?, lapis);
-            let channels = eval_usize(expr.args.get(2)?, lapis).map(|x| x as u16);
-            let sr = eval_usize(expr.args.get(3)?, lapis).map(|x| x as u32);
-            let buffer = eval_usize(expr.args.get(4)?, lapis).map(|x| x as u32);
-            lapis.commands.trigger(SetInDevice {
-                host,
-                device,
-                channels,
-                sr,
-                buffer,
-            });
-        }
-        "set_out_device" => {
-            let host = eval_usize(expr.args.first()?, lapis);
-            let device = eval_usize(expr.args.get(1)?, lapis);
-            let channels = eval_usize(expr.args.get(2)?, lapis).map(|x| x as u16);
-            let sr = eval_usize(expr.args.get(3)?, lapis).map(|x| x as u32);
-            let buffer = eval_usize(expr.args.get(4)?, lapis).map(|x| x as u32);
-            lapis.commands.trigger(SetOutDevice {
-                host,
-                device,
-                channels,
-                sr,
-                buffer,
-            });
-        }
-        _ => {}
     }
     None
 }

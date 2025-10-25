@@ -16,6 +16,8 @@ pub struct AudioPlugin;
 impl Plugin for AudioPlugin {
     fn build(&self, app: &mut App) {
         app.add_systems(PreStartup, init_audio)
+            .add_observer(drop_out_stream)
+            .add_observer(drop_in_stream)
             .add_observer(set_out_device)
             .add_observer(set_in_device);
     }
@@ -195,6 +197,20 @@ fn set_in_device(
     } else {
         Err(format!("couldn't start stream with given settings\n{event:?}").into())
     }
+}
+
+#[derive(Event)]
+pub struct DropInStream;
+
+#[derive(Event)]
+pub struct DropOutStream;
+
+fn drop_in_stream(_: Trigger<DropInStream>, mut stream: NonSendMut<InStream>) {
+    stream.0 = None;
+}
+
+fn drop_out_stream(_: Trigger<DropOutStream>, mut stream: NonSendMut<OutStream>) {
+    stream.0 = None;
 }
 
 fn run_out<T>(

@@ -2,12 +2,13 @@ use super::{
     arrays::*, atomics::*, bools::*, entities::*, floats::*, helpers::*, ints::*, nets::*,
     sequencers::*, sources::*, waves::*, Lapis,
 };
+use crate::audio::*;
 use crate::objects::*;
 use avian2d::prelude::*;
 use bevy::prelude::*;
 use crossbeam_channel::bounded;
 use fundsp::hacker32::*;
-use std::sync::Arc;
+use std::{sync::Arc, thread, time::Duration};
 use syn::*;
 
 pub fn eval_stmt(s: Stmt, lapis: &mut Lapis) -> String {
@@ -81,7 +82,7 @@ fn eval_expr(expr: Expr, lapis: &mut Lapis, buffer: &mut String) {
         float_bin_assign(&expr, lapis);
     } else if let Expr::Call(expr) = expr {
         gravity_commands(&expr, lapis);
-        device_commands(&expr, lapis, buffer);
+        function_calls(&expr, lapis, buffer);
     } else if let Expr::Break(_) = expr {
         buffer.push_str("#B");
     } else if let Expr::Continue(_) = expr {
@@ -391,6 +392,59 @@ fn gravity_commands(expr: &ExprCall, lapis: &mut Lapis) -> Option<()> {
     } else if func == "attraction" {
         let a = eval_float(expr.args.first()?, lapis)?;
         lapis.commands.insert_resource(AttractionFactor(a));
+    }
+    None
+}
+
+fn function_calls(expr: &ExprCall, lapis: &mut Lapis, buffer: &mut String) -> Option<()> {
+    let func = nth_path_ident(&expr.func, 0)?;
+    match func.as_str() {
+        "list_in_devices" => {
+            let list = list_in_devices().trim_end().replace('\n', "\n//");
+            buffer.push_str(&format!("\n//{list}"));
+        }
+        "list_out_devices" => {
+            let list = list_out_devices().trim_end().replace('\n', "\n//");
+            buffer.push_str(&format!("\n//{list}"));
+        }
+        "set_in_device" => {
+            // underscores will evaluate to None
+            let host = eval_usize(expr.args.first()?, lapis);
+            let device = eval_usize(expr.args.get(1)?, lapis);
+            let channels = eval_usize(expr.args.get(2)?, lapis).map(|x| x as u16);
+            let sr = eval_usize(expr.args.get(3)?, lapis).map(|x| x as u32);
+            let buffer = eval_usize(expr.args.get(4)?, lapis).map(|x| x as u32);
+            lapis.commands.trigger(SetInDevice {
+                host,
+                device,
+                channels,
+                sr,
+                buffer,
+            });
+        }
+        "set_out_device" => {
+            let host = eval_usize(expr.args.first()?, lapis);
+            let device = eval_usize(expr.args.get(1)?, lapis);
+            let channels = eval_usize(expr.args.get(2)?, lapis).map(|x| x as u16);
+            let sr = eval_usize(expr.args.get(3)?, lapis).map(|x| x as u32);
+            let buffer = eval_usize(expr.args.get(4)?, lapis).map(|x| x as u32);
+            lapis.commands.trigger(SetOutDevice {
+                host,
+                device,
+                channels,
+                sr,
+                buffer,
+            });
+        }
+        "drop_in_stream" => lapis.commands.trigger(DropInStream),
+        "drop_out_stream" => lapis.commands.trigger(DropOutStream),
+        "sleep" => {
+            let d = eval_float(expr.args.first()?, lapis)?;
+            let d = Duration::try_from_secs_f32(d).ok()?;
+            thread::sleep(d);
+        }
+        "panic" => panic!(),
+        _ => {}
     }
     None
 }
