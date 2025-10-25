@@ -1,7 +1,7 @@
 use bevy::prelude::*;
 use cpal::{
     traits::{DeviceTrait, HostTrait, StreamTrait},
-    FromSample, SizedSample, Stream, StreamConfig
+    FromSample, SizedSample, Stream, StreamConfig,
 };
 use crossbeam_channel::{bounded, Receiver, Sender};
 use fundsp::hacker32::*;

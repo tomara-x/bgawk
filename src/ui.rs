@@ -81,7 +81,14 @@ fn egui_ui(
     if lapis.data.keys_active {
         ctx.input(|i| {
             for event in &i.events {
-                if let egui::Event::Key{ key, modifiers, pressed, repeat, ..} = event {
+                if let egui::Event::Key {
+                    key,
+                    modifiers,
+                    pressed,
+                    repeat,
+                    ..
+                } = event
+                {
                     if *repeat && !lapis.data.keys_repeat {
                         continue;
                     }
