@@ -1,6 +1,6 @@
 use crate::{
     interaction::*,
-    lapis::{floats::eval_float, Lapis},
+    lapis::{floats::eval_float_f32, Lapis},
 };
 use avian2d::prelude::*;
 use bevy::{prelude::*, sprite::AlphaMode2d};
@@ -451,7 +451,7 @@ fn sync_links(links_query: Query<(Entity, &Links)>, mut lapis: Lapis) {
             // assign a float expression
             } else if dir == "<" || dir == "=" {
                 if let Ok(expr) = parse_str::<Expr>(var) {
-                    if let Some(f) = eval_float(&expr, &lapis) {
+                    if let Some(f) = eval_float_f32(&expr, &lapis) {
                         let cmd = &mut lapis.commands;
                         match property {
                             "x" => cmd.trigger_targets(Property::X(f), e),

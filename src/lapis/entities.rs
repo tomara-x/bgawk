@@ -62,7 +62,7 @@ fn call_entity(expr: &ExprCall, lapis: &mut Lapis) -> Option<Entity> {
             }
         }
         "spawn" => {
-            let r = eval_float(expr.args.first()?, lapis)?;
+            let r = eval_float_f32(expr.args.first()?, lapis)?;
             let e = lapis.commands.spawn_empty().id();
             lapis.commands.trigger_targets(InsertDefaults(r), e);
             Some(e)
@@ -75,10 +75,10 @@ fn call_entity(expr: &ExprCall, lapis: &mut Lapis) -> Option<Entity> {
                 lapis.commands.trigger_targets(JointEntities(e1, e2), e);
                 Some(e)
             } else {
-                let x1 = eval_float(expr.args.first()?, lapis)?;
-                let y1 = eval_float(expr.args.get(1)?, lapis)?;
-                let x2 = eval_float(expr.args.get(2)?, lapis)?;
-                let y2 = eval_float(expr.args.get(3)?, lapis)?;
+                let x1 = eval_float_f32(expr.args.first()?, lapis)?;
+                let y1 = eval_float_f32(expr.args.get(1)?, lapis)?;
+                let x2 = eval_float_f32(expr.args.get(2)?, lapis)?;
+                let y2 = eval_float_f32(expr.args.get(3)?, lapis)?;
                 let e = lapis.commands.spawn_empty().id();
                 let i = Vec2::new(x1, y1);
                 let f = Vec2::new(x2, y2);
@@ -102,7 +102,7 @@ fn method_entity(expr: &ExprMethodCall, lapis: &mut Lapis) -> Option<Entity> {
         lapis.commands.trigger_targets(Disjoint, e);
         return None;
     }
-    let val = eval_float(expr.args.first()?, lapis);
+    let val = eval_float_f32(expr.args.first()?, lapis);
     let cmd = &mut lapis.commands;
     match expr.method.to_string().as_str() {
         "x" => cmd.trigger_targets(Property::X(val?), e),
@@ -168,26 +168,26 @@ fn method_entity(expr: &ExprMethodCall, lapis: &mut Lapis) -> Option<Entity> {
         },
         "compliance" => cmd.trigger_targets(JointProperty::Compliance(val?), e),
         "anchor1" => {
-            let val2 = eval_float(expr.args.get(1)?, lapis)?;
+            let val2 = eval_float_f32(expr.args.get(1)?, lapis)?;
             lapis
                 .commands
                 .trigger_targets(JointProperty::Anchor1(val?, val2), e);
         }
         "anchor2" => {
-            let val2 = eval_float(expr.args.get(1)?, lapis)?;
+            let val2 = eval_float_f32(expr.args.get(1)?, lapis)?;
             lapis
                 .commands
                 .trigger_targets(JointProperty::Anchor2(val?, val2), e);
         }
         "limits" => {
-            let val2 = eval_float(expr.args.get(1)?, lapis)?;
+            let val2 = eval_float_f32(expr.args.get(1)?, lapis)?;
             lapis
                 .commands
                 .trigger_targets(JointProperty::Limits(val?, val2), e);
         }
         "rest" => cmd.trigger_targets(JointProperty::Rest(val?), e),
         "free_axis" => {
-            let val2 = eval_float(expr.args.get(1)?, lapis)?;
+            let val2 = eval_float_f32(expr.args.get(1)?, lapis)?;
             lapis
                 .commands
                 .trigger_targets(JointProperty::FreeAxis(val?, val2), e);

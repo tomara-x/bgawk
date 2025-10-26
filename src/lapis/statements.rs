@@ -297,7 +297,7 @@ fn eval_assign(expr: &ExprAssign, lapis: &mut Lapis) {
         Expr::Index(left) => {
             if let Some(k) = nth_path_ident(&left.expr, 0) {
                 if let Some(index) = eval_usize(&left.index, lapis) {
-                    if let Some(right) = eval_float(&expr.right, lapis) {
+                    if let Some(right) = eval_float_f32(&expr.right, lapis) {
                         if let Some(vec) = lapis.data.vmap.get_mut(&k) {
                             if let Some(v) = vec.get_mut(index) {
                                 *v = right;
@@ -340,7 +340,7 @@ fn eval_for_loop(expr: &ExprForLoop, lapis: &mut Lapis, buffer: &mut String) {
         let tmp = lapis.data.fmap.remove(&ident);
         if let Some((r0, r1)) = bounds {
             'main_loop: for i in r0..r1 {
-                lapis.data.fmap.insert(ident.clone(), i as f32);
+                lapis.data.fmap.insert(ident.clone(), i as f64);
                 for stmt in &expr.body.stmts {
                     let s = eval_stmt(stmt.clone(), lapis);
                     buffer.push_str(&s);
@@ -358,7 +358,7 @@ fn eval_for_loop(expr: &ExprForLoop, lapis: &mut Lapis, buffer: &mut String) {
             }
         } else if let Some(arr) = arr {
             'main_loop: for i in arr {
-                lapis.data.fmap.insert(ident.clone(), i);
+                lapis.data.fmap.insert(ident.clone(), i as f64);
                 for stmt in &expr.body.stmts {
                     let s = eval_stmt(stmt.clone(), lapis);
                     buffer.push_str(&s);
@@ -386,11 +386,11 @@ fn eval_for_loop(expr: &ExprForLoop, lapis: &mut Lapis, buffer: &mut String) {
 fn gravity_commands(expr: &ExprCall, lapis: &mut Lapis) -> Option<()> {
     let func = nth_path_ident(&expr.func, 0)?;
     if func == "gravity" {
-        let x = eval_float(expr.args.first()?, lapis)?;
-        let y = eval_float(expr.args.get(1)?, lapis)?;
+        let x = eval_float_f32(expr.args.first()?, lapis)?;
+        let y = eval_float_f32(expr.args.get(1)?, lapis)?;
         lapis.commands.insert_resource(Gravity(Vec2::new(x, y)));
     } else if func == "attraction" {
-        let a = eval_float(expr.args.first()?, lapis)?;
+        let a = eval_float_f32(expr.args.first()?, lapis)?;
         lapis.commands.insert_resource(AttractionFactor(a));
     }
     None
@@ -440,7 +440,7 @@ fn function_calls(expr: &ExprCall, lapis: &mut Lapis, buffer: &mut String) -> Op
         "drop_out_stream" => lapis.commands.trigger(DropOutStream),
         "sleep" => {
             let d = eval_float(expr.args.first()?, lapis)?;
-            let d = Duration::try_from_secs_f32(d).ok()?;
+            let d = Duration::try_from_secs_f64(d).ok()?;
             thread::sleep(d);
         }
         "panic" => panic!(),

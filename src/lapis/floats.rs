@@ -3,7 +3,11 @@ use bevy::prelude::*;
 use fundsp::hacker::*;
 use syn::*;
 
-pub fn eval_float(expr: &Expr, lapis: &Lapis) -> Option<f32> {
+pub fn eval_float_f32(expr: &Expr, lapis: &Lapis) -> Option<f32> {
+    Some(eval_float(expr, lapis)? as f32)
+}
+
+pub fn eval_float(expr: &Expr, lapis: &Lapis) -> Option<f64> {
     match expr {
         Expr::Call(expr) => call_float(expr, lapis),
         Expr::Lit(expr) => lit_float(&expr.lit),
@@ -18,7 +22,7 @@ pub fn eval_float(expr: &Expr, lapis: &Lapis) -> Option<f32> {
     }
 }
 
-fn field_float(expr: &ExprField, lapis: &Lapis) -> Option<f32> {
+fn field_float(expr: &ExprField, lapis: &Lapis) -> Option<f64> {
     if let Some(mut e) = path_lit_entity(&expr.base, lapis) {
         if e == Entity::PLACEHOLDER {
             if let Ok(selected) = lapis.selected_query.single() {
@@ -27,7 +31,7 @@ fn field_float(expr: &ExprField, lapis: &Lapis) -> Option<f32> {
         }
         if let Member::Named(ident) = &expr.member {
             let trans = &lapis.trans_query;
-            return match ident.to_string().as_str() {
+            let f = match ident.to_string().as_str() {
                 "x" => Some(trans.get(e).ok()?.translation.x),
                 "y" => Some(trans.get(e).ok()?.translation.y),
                 "z" => Some(trans.get(e).ok()?.translation.z),
@@ -178,6 +182,7 @@ fn field_float(expr: &ExprField, lapis: &Lapis) -> Option<f32> {
                 "axis_y" => Some(lapis.prismatic_query.get(e).ok()?.free_axis.y),
                 _ => None,
             };
+            return f.map(|x| x as f64);
         }
     } else {
         let base = nth_path_ident(&expr.base, 0)?;
@@ -185,11 +190,11 @@ fn field_float(expr: &ExprField, lapis: &Lapis) -> Option<f32> {
             if base == "out_stream" {
                 let config = lapis.out_stream_config.0.as_ref()?;
                 return match ident.to_string().as_str() {
-                    "sr" => Some(config.sample_rate.0 as f32),
-                    "chan" => Some(config.channels as f32),
+                    "sr" => Some(config.sample_rate.0 as f64),
+                    "chan" => Some(config.channels as f64),
                     "buffer" => {
                         if let cpal::BufferSize::Fixed(size) = config.buffer_size {
-                            return Some(size as f32);
+                            return Some(size as f64);
                         }
                         None
                     }
@@ -198,11 +203,11 @@ fn field_float(expr: &ExprField, lapis: &Lapis) -> Option<f32> {
             } else if base == "in_stream" {
                 let config = lapis.in_stream_config.0.as_ref()?;
                 return match ident.to_string().as_str() {
-                    "sr" => Some(config.sample_rate.0 as f32),
-                    "chan" => Some(config.channels as f32),
+                    "sr" => Some(config.sample_rate.0 as f64),
+                    "chan" => Some(config.channels as f64),
                     "buffer" => {
                         if let cpal::BufferSize::Fixed(size) = config.buffer_size {
-                            return Some(size as f32);
+                            return Some(size as f64);
                         }
                         None
                     }
@@ -214,13 +219,13 @@ fn field_float(expr: &ExprField, lapis: &Lapis) -> Option<f32> {
     None
 }
 
-fn index_float(expr: &ExprIndex, lapis: &Lapis) -> Option<f32> {
+fn index_float(expr: &ExprIndex, lapis: &Lapis) -> Option<f64> {
     let k = nth_path_ident(&expr.expr, 0)?;
     let index = eval_usize(&expr.index, lapis)?;
-    lapis.data.vmap.get(&k)?.get(index).copied()
+    Some(*lapis.data.vmap.get(&k)?.get(index)? as f64)
 }
 
-fn method_float(expr: &ExprMethodCall, lapis: &Lapis) -> Option<f32> {
+fn method_float(expr: &ExprMethodCall, lapis: &Lapis) -> Option<f64> {
     if let Some(f) = eval_float(&expr.receiver, lapis) {
         match expr.method.to_string().as_str() {
             "floor" => Some(f.floor()),
@@ -298,23 +303,23 @@ fn method_float(expr: &ExprMethodCall, lapis: &Lapis) -> Option<f32> {
         match expr.method.to_string().as_str() {
             "value" => {
                 let shared = &mut lapis.data.smap.get(&k)?;
-                Some(shared.value())
+                Some(shared.value() as f64)
             }
             "delta" => {
                 if k == "time" {
-                    return Some(lapis.time.delta_secs());
+                    return Some(lapis.time.delta_secs_f64());
                 }
                 None
             }
             "elapsed_wrapped" => {
                 if k == "time" {
-                    return Some(lapis.time.elapsed_secs_wrapped());
+                    return Some(lapis.time.elapsed_secs_wrapped_f64());
                 }
                 None
             }
             "elapsed" => {
                 if k == "time" {
-                    return Some(lapis.time.elapsed_secs());
+                    return Some(lapis.time.elapsed_secs_f64());
                 }
                 None
             }
@@ -325,59 +330,59 @@ fn method_float(expr: &ExprMethodCall, lapis: &Lapis) -> Option<f32> {
                     let chan = eval_usize(arg0, lapis)?;
                     let index = eval_usize(arg1, lapis)?;
                     if chan < wave.channels() && index < wave.len() {
-                        return Some(wave.at(chan, index));
+                        return Some(wave.at(chan, index) as f64);
                     }
                 } else if let Some(table) = lapis.data.atomic_table_map.get(&k) {
                     let i = eval_usize(expr.args.first()?, lapis)?;
                     if i < table.len() {
-                        return Some(table.at(i));
+                        return Some(table.at(i) as f64);
                     }
                 }
                 None
             }
             "sample_rate" => {
                 let wave = lapis.data.wmap.get(&k)?;
-                Some(wave.sample_rate() as f32)
+                Some(wave.sample_rate())
             }
             "channels" => {
                 let wave = lapis.data.wmap.get(&k)?;
-                Some(wave.channels() as f32)
+                Some(wave.channels() as f64)
             }
             "len" | "length" => {
                 if let Some(wave) = lapis.data.wmap.get(&k) {
-                    Some(wave.len() as f32)
+                    Some(wave.len() as f64)
                 } else if let Some(table) = lapis.data.atomic_table_map.get(&k) {
-                    Some(table.len() as f32)
+                    Some(table.len() as f64)
                 } else {
                     let vec = lapis.data.vmap.get(&k)?;
-                    Some(vec.len() as f32)
+                    Some(vec.len() as f64)
                 }
             }
             "duration" => {
                 let wave = lapis.data.wmap.get(&k)?;
-                Some(wave.duration() as f32)
+                Some(wave.duration())
             }
             "amplitude" => {
                 let wave = lapis.data.wmap.get(&k)?;
-                Some(wave.amplitude())
+                Some(wave.amplitude() as f64)
             }
             "size" => {
                 let net = lapis.data.gmap.get(&k)?;
-                Some(net.size() as f32)
+                Some(net.size() as f64)
             }
             "inputs" => {
                 let net = lapis.data.gmap.get(&k)?;
-                Some(net.inputs() as f32)
+                Some(net.inputs() as f64)
             }
             "outputs" => {
                 let net = lapis.data.gmap.get(&k)?;
-                Some(net.outputs() as f32)
+                Some(net.outputs() as f64)
             }
             "inputs_in" => {
                 let net = lapis.data.gmap.get(&k)?;
                 let id = eval_path_nodeid(expr.args.first()?, lapis)?;
                 if net.contains(id) {
-                    Some(net.inputs_in(id) as f32)
+                    Some(net.inputs_in(id) as f64)
                 } else {
                     None
                 }
@@ -386,23 +391,23 @@ fn method_float(expr: &ExprMethodCall, lapis: &Lapis) -> Option<f32> {
                 let net = lapis.data.gmap.get(&k)?;
                 let id = eval_path_nodeid(expr.args.first()?, lapis)?;
                 if net.contains(id) {
-                    Some(net.outputs_in(id) as f32)
+                    Some(net.outputs_in(id) as f64)
                 } else {
                     None
                 }
             }
             "first" => {
                 let vec = &mut lapis.data.vmap.get(&k)?;
-                vec.first().copied()
+                Some(*vec.first()? as f64)
             }
             "last" => {
                 let vec = &mut lapis.data.vmap.get(&k)?;
-                vec.last().copied()
+                Some(*vec.last()? as f64)
             }
             "get" => {
                 let index = eval_usize(expr.args.first()?, lapis)?;
                 let vec = &mut lapis.data.vmap.get(&k)?;
-                vec.get(index).copied()
+                Some(*vec.get(index)? as f64)
             }
             _ => None,
         }
@@ -411,15 +416,15 @@ fn method_float(expr: &ExprMethodCall, lapis: &Lapis) -> Option<f32> {
     }
 }
 
-fn lit_float(expr: &Lit) -> Option<f32> {
+fn lit_float(expr: &Lit) -> Option<f64> {
     match expr {
-        Lit::Float(expr) => expr.base10_parse::<f32>().ok(),
-        Lit::Int(expr) => expr.base10_parse::<f32>().ok(),
+        Lit::Float(expr) => expr.base10_parse::<f64>().ok(),
+        Lit::Int(expr) => expr.base10_parse::<f64>().ok(),
         _ => None,
     }
 }
 
-fn bin_expr_float(expr: &ExprBinary, lapis: &Lapis) -> Option<f32> {
+fn bin_expr_float(expr: &ExprBinary, lapis: &Lapis) -> Option<f64> {
     let left = eval_float(&expr.left, lapis)?;
     let right = eval_float(&expr.right, lapis)?;
     match expr.op {
@@ -432,7 +437,7 @@ fn bin_expr_float(expr: &ExprBinary, lapis: &Lapis) -> Option<f32> {
     }
 }
 
-fn path_float(expr: &Path, lapis: &Lapis) -> Option<f32> {
+fn path_float(expr: &Path, lapis: &Lapis) -> Option<f64> {
     let k = expr.segments.first()?.ident.to_string();
     if let Some(c) = constant_float(&k) {
         Some(c)
@@ -441,16 +446,16 @@ fn path_float(expr: &Path, lapis: &Lapis) -> Option<f32> {
     }
 }
 
-fn unary_float(expr: &ExprUnary, lapis: &Lapis) -> Option<f32> {
+fn unary_float(expr: &ExprUnary, lapis: &Lapis) -> Option<f64> {
     match expr.op {
         UnOp::Neg(_) => Some(-eval_float(&expr.expr, lapis)?),
         _ => None,
     }
 }
 
-fn call_float(expr: &ExprCall, lapis: &Lapis) -> Option<f32> {
+fn call_float(expr: &ExprCall, lapis: &Lapis) -> Option<f64> {
     let func = nth_path_ident(&expr.func, 0)?;
-    let args = accumulate_args(&expr.args, lapis);
+    let args = accumulate_args_f64(&expr.args, lapis);
     match func.as_str() {
         "a_weight" => Some(a_weight(*args.first()?)),
         "abs" => Some(abs(*args.first()?)),
@@ -497,8 +502,8 @@ fn call_float(expr: &ExprCall, lapis: &Lapis) -> Option<f32> {
         "midi_hz" => Some(midi_hz(*args.first()?)),
         "min" => Some(min(*args.first()?, *args.get(1)?)),
         "pow" => Some(pow(*args.first()?, *args.get(1)?)),
-        "rnd1" => Some(rnd1(eval_u64(expr.args.first()?, lapis)?) as f32),
-        "rnd2" => Some(rnd2(eval_u64(expr.args.first()?, lapis)?) as f32),
+        "rnd1" => Some(rnd1(eval_u64(expr.args.first()?, lapis)?)),
+        "rnd2" => Some(rnd2(eval_u64(expr.args.first()?, lapis)?)),
         "round" => Some(round(*args.first()?)),
         "semitone_ratio" => Some(semitone_ratio(*args.first()?)),
         "signum" => Some(signum(*args.first()?)),
@@ -546,44 +551,34 @@ fn call_float(expr: &ExprCall, lapis: &Lapis) -> Option<f32> {
     }
 }
 
-pub fn wrap(x: f32) -> f32 {
-    x - x.floor()
-}
-
-pub fn mirror(x: f32) -> f32 {
-    let x = x / 2. - 0.5;
-    let x = x - x.floor();
-    abs(x - 0.5) * 2.
-}
-
-fn constant_float(s: &str) -> Option<f32> {
+fn constant_float(s: &str) -> Option<f64> {
     match s {
-        "E" => Some(std::f32::consts::E),
-        "FRAC_1_PI" => Some(std::f32::consts::FRAC_1_PI),
-        "FRAC_1_SQRT_2" => Some(std::f32::consts::FRAC_1_SQRT_2),
-        "FRAC_2_PI" => Some(std::f32::consts::FRAC_2_PI),
-        "FRAC_2_SQRT_PI" => Some(std::f32::consts::FRAC_2_SQRT_PI),
-        "FRAC_PI_2" => Some(std::f32::consts::FRAC_PI_2),
-        "FRAC_PI_3" => Some(std::f32::consts::FRAC_PI_3),
-        "FRAC_PI_4" => Some(std::f32::consts::FRAC_PI_4),
-        "FRAC_PI_6" => Some(std::f32::consts::FRAC_PI_6),
-        "FRAC_PI_8" => Some(std::f32::consts::FRAC_PI_8),
-        "LN_2" => Some(std::f32::consts::LN_2),
-        "LN_10" => Some(std::f32::consts::LN_10),
-        "LOG2_10" => Some(std::f32::consts::LOG2_10),
-        "LOG2_E" => Some(std::f32::consts::LOG2_E),
-        "LOG10_2" => Some(std::f32::consts::LOG10_2),
-        "LOG10_E" => Some(std::f32::consts::LOG10_E),
-        "PI" => Some(std::f32::consts::PI),
-        "SQRT_2" => Some(std::f32::consts::SQRT_2),
-        "TAU" => Some(std::f32::consts::TAU),
-        "EGAMMA" => Some(0.5772157),
-        "FRAC_1_SQRT_3" => Some(0.57735026),
-        "FRAC_1_SQRT_PI" => Some(0.5641896),
-        "PHI" => Some(1.618034),
-        "SQRT_3" => Some(1.7320508),
-        "inf" | "Inf" | "INF" => Some(f32::INFINITY),
-        "nan" | "Nan" | "NaN" | "NAN" => Some(f32::NAN),
+        "E" => Some(std::f64::consts::E),
+        "FRAC_1_PI" => Some(std::f64::consts::FRAC_1_PI),
+        "FRAC_1_SQRT_2" => Some(std::f64::consts::FRAC_1_SQRT_2),
+        "FRAC_2_PI" => Some(std::f64::consts::FRAC_2_PI),
+        "FRAC_2_SQRT_PI" => Some(std::f64::consts::FRAC_2_SQRT_PI),
+        "FRAC_PI_2" => Some(std::f64::consts::FRAC_PI_2),
+        "FRAC_PI_3" => Some(std::f64::consts::FRAC_PI_3),
+        "FRAC_PI_4" => Some(std::f64::consts::FRAC_PI_4),
+        "FRAC_PI_6" => Some(std::f64::consts::FRAC_PI_6),
+        "FRAC_PI_8" => Some(std::f64::consts::FRAC_PI_8),
+        "LN_2" => Some(std::f64::consts::LN_2),
+        "LN_10" => Some(std::f64::consts::LN_10),
+        "LOG2_10" => Some(std::f64::consts::LOG2_10),
+        "LOG2_E" => Some(std::f64::consts::LOG2_E),
+        "LOG10_2" => Some(std::f64::consts::LOG10_2),
+        "LOG10_E" => Some(std::f64::consts::LOG10_E),
+        "PI" => Some(std::f64::consts::PI),
+        "SQRT_2" => Some(std::f64::consts::SQRT_2),
+        "TAU" => Some(std::f64::consts::TAU),
+        "EGAMMA" => Some(0.577_215_664_901_532_9),
+        "FRAC_1_SQRT_3" => Some(0.577_350_269_189_625_7),
+        "FRAC_1_SQRT_PI" => Some(0.564_189_583_547_756_3),
+        "PHI" => Some(1.618_033_988_749_895),
+        "SQRT_3" => Some(1.732_050_807_568_877_2),
+        "inf" | "Inf" | "INF" => Some(f64::INFINITY),
+        "nan" | "Nan" | "NaN" | "NAN" => Some(f64::NAN),
         _ => None,
     }
 }

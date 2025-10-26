@@ -17,7 +17,7 @@ pub fn eval_vec(expr: &Expr, lapis: &mut Lapis) -> Option<Vec<f32>> {
 fn array_lit(expr: &ExprArray, lapis: &Lapis) -> Option<Vec<f32>> {
     let mut arr = Vec::new();
     for elem in &expr.elems {
-        if let Some(n) = eval_float(elem, lapis) {
+        if let Some(n) = eval_float_f32(elem, lapis) {
             arr.push(n);
         }
     }
@@ -81,7 +81,7 @@ pub fn vec_methods(expr: &ExprMethodCall, lapis: &mut Lapis) -> Option<()> {
     match expr.method.to_string().as_str() {
         "push" => {
             let arg = expr.args.first()?;
-            let v = eval_float(arg, lapis)?;
+            let v = eval_float_f32(arg, lapis)?;
             let k = nth_path_ident(&expr.receiver, 0)?;
             let vec = lapis.data.vmap.get_mut(&k)?;
             vec.push(v);
@@ -93,7 +93,7 @@ pub fn vec_methods(expr: &ExprMethodCall, lapis: &mut Lapis) -> Option<()> {
         }
         "insert" => {
             let index = eval_usize(expr.args.first()?, lapis)?;
-            let val = eval_float(expr.args.get(1)?, lapis)?;
+            let val = eval_float_f32(expr.args.get(1)?, lapis)?;
             let k = nth_path_ident(&expr.receiver, 0)?;
             let vec = lapis.data.vmap.get_mut(&k)?;
             if index < vec.len() {
@@ -110,7 +110,7 @@ pub fn vec_methods(expr: &ExprMethodCall, lapis: &mut Lapis) -> Option<()> {
         }
         "resize" => {
             let new_len = eval_usize(expr.args.first()?, lapis)?;
-            let val = eval_float(expr.args.get(1)?, lapis)?;
+            let val = eval_float_f32(expr.args.get(1)?, lapis)?;
             let k = nth_path_ident(&expr.receiver, 0)?;
             let vec = lapis.data.vmap.get_mut(&k)?;
             vec.resize(new_len, val);
