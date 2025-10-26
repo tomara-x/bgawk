@@ -1,4 +1,4 @@
-use super::{arrays::*, floats::*, helpers::*, ints::*, nets::*, Lapis};
+use super::{arrays::*, floats::*, helpers::*, ints::*, nets::*, strings::*, Lapis};
 use fundsp::hacker::*;
 use std::sync::Arc;
 use syn::*;
@@ -257,27 +257,19 @@ pub fn wave_methods(expr: &ExprMethodCall, lapis: &mut Lapis) -> Option<()> {
             }
         }
         "save_wav16" => {
-            let arg = expr.args.first()?;
+            let name = eval_string(expr.args.first()?, lapis)?;
             let k = nth_path_ident(&expr.receiver, 0)?;
             let wave = lapis.data.wmap.get(&k)?;
             if wave.channels() > 0 {
-                if let Expr::Lit(expr) = arg {
-                    if let Lit::Str(expr) = &expr.lit {
-                        let _ = wave.save_wav16(expr.value());
-                    }
-                }
+                let _ = wave.save_wav16(name);
             }
         }
         "save_wav32" => {
-            let arg = expr.args.first()?;
+            let name = eval_string(expr.args.first()?, lapis)?;
             let k = nth_path_ident(&expr.receiver, 0)?;
             let wave = lapis.data.wmap.get(&k)?;
             if wave.channels() > 0 {
-                if let Expr::Lit(expr) = arg {
-                    if let Lit::Str(expr) = &expr.lit {
-                        let _ = wave.save_wav32(expr.value());
-                    }
-                }
+                let _ = wave.save_wav32(name);
             }
         }
         "remove_channel" => {

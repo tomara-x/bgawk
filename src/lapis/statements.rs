@@ -1,6 +1,6 @@
 use super::{
     arrays::*, atomics::*, bools::*, entities::*, floats::*, helpers::*, ints::*, nets::*,
-    sequencers::*, sources::*, waves::*, Lapis,
+    sequencers::*, sources::*, strings::*, waves::*, Lapis,
 };
 use crate::audio::*;
 use crate::objects::*;
@@ -78,6 +78,8 @@ fn eval_expr(expr: Expr, lapis: &mut Lapis, buffer: &mut String) {
         buffer.push_str(&format!("\n// {event:?}"));
     } else if let Some(entity) = eval_entity(&expr, lapis) {
         buffer.push_str(&format!("\n// {entity:?}"));
+    } else if let Some(string) = eval_string(&expr, lapis) {
+        buffer.push_str(&format!("\n// \"{}\"", string));
     } else if let Expr::Binary(expr) = expr {
         float_bin_assign(&expr, lapis);
     } else if let Expr::Call(expr) = expr {
@@ -202,6 +204,9 @@ fn eval_local(expr: &syn::Local, lapis: &mut Lapis) -> Option<()> {
             } else if let Some(entity) = eval_entity(&expr.expr, lapis) {
                 lapis.drop(&k);
                 lapis.data.entitymap.insert(k, entity);
+            } else if let Some(string) = eval_string(&expr.expr, lapis) {
+                lapis.drop(&k);
+                lapis.data.string_map.insert(k, string);
             }
         }
     } else if let Pat::Tuple(pat) = &expr.pat {
@@ -292,6 +297,10 @@ fn eval_assign(expr: &ExprAssign, lapis: &mut Lapis) {
                 if let Some(var) = lapis.data.entitymap.get_mut(&ident) {
                     *var = entity;
                 }
+            } else if let Some(string) = eval_string(&expr.right, lapis) {
+                if let Some(var) = lapis.data.string_map.get_mut(&ident) {
+                    *var = string;
+                }
             }
         }
         Expr::Index(left) => {
@@ -315,15 +324,13 @@ fn eval_assign(expr: &ExprAssign, lapis: &mut Lapis) {
                         "quiet" => lapis.data.quiet = b,
                         _ => {}
                     }
-                } else if let Expr::Lit(right) = &*expr.right {
+                } else if let Some(right) = eval_string(&expr.right, lapis) {
                     if let Some(shortcut) = parse_shortcut(left.value()) {
                         lapis.data.keys.remove(&shortcut);
-                        if let Lit::Str(right) = &right.lit {
-                            let key = shortcut.1.name();
-                            let code = right.value().replace("$key", key);
-                            if !code.is_empty() {
-                                lapis.data.keys.insert(shortcut, code);
-                            }
+                        let key = shortcut.1.name();
+                        let code = right.replace("$key", key);
+                        if !code.is_empty() {
+                            lapis.data.keys.insert(shortcut, code);
                         }
                     }
                 }
@@ -444,6 +451,14 @@ fn function_calls(expr: &ExprCall, lapis: &mut Lapis, buffer: &mut String) -> Op
             thread::sleep(d);
         }
         "panic" => panic!(),
+        "eval" => {
+            let code = eval_string(expr.args.first()?, lapis)?;
+            lapis.eval(&code);
+        }
+        "quiet_eval" => {
+            let code = eval_string(expr.args.first()?, lapis)?;
+            lapis.quiet_eval(&code);
+        }
         _ => {}
     }
     None

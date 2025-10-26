@@ -17,6 +17,7 @@ mod nets;
 mod sequencers;
 mod sources;
 mod statements;
+mod strings;
 mod waves;
 use statements::*;
 
@@ -44,6 +45,7 @@ pub struct LapisData {
     pub srcmap: HashMap<String, Source>,
     pub entitymap: HashMap<String, Entity>,
     pub atomic_table_map: HashMap<String, Arc<AtomicTable>>,
+    pub string_map: HashMap<String, String>,
     // (modifiers, key, pressed)
     pub keys: HashMap<(Modifiers, Key, bool), String>,
     pub keys_active: bool,
@@ -100,6 +102,7 @@ impl Lapis<'_, '_> {
         self.data.srcmap.remove(k);
         self.data.entitymap.remove(k);
         self.data.atomic_table_map.remove(k);
+        self.data.string_map.remove(k);
     }
     pub fn eval(&mut self, input: &str) {
         if !input.is_empty() {
@@ -122,8 +125,8 @@ impl Lapis<'_, '_> {
                 Ok(stmt) => {
                     self.data.buffer.push('\n');
                     let input = std::mem::take(&mut self.data.input);
-                    let out = eval_stmt(stmt, self);
                     self.data.buffer.push_str(&input);
+                    let out = eval_stmt(stmt, self);
                     self.data.buffer.push_str(&out);
                 }
                 Err(err) => {

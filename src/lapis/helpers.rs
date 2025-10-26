@@ -3,15 +3,6 @@ use bevy_egui::egui::{Key, Modifiers};
 use fundsp::hacker::*;
 use syn::{punctuated::Punctuated, *};
 
-pub fn eval_str_lit(expr: &Expr) -> Option<String> {
-    if let Expr::Lit(expr) = expr {
-        if let Lit::Str(expr) = &expr.lit {
-            return Some(expr.value());
-        }
-    }
-    None
-}
-
 // starting with `!` means on the release of the shortcut
 pub fn parse_shortcut(mut k: String) -> Option<(Modifiers, Key, bool)> {
     let release = k.starts_with('!');
