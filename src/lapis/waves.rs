@@ -309,11 +309,6 @@ pub fn wave_methods(expr: &ExprMethodCall, lapis: &mut Lapis) -> Option<()> {
 }
 
 pub fn path_wave<'a>(expr: &'a Expr, lapis: &'a Lapis) -> Option<&'a Arc<Wave>> {
-    match expr {
-        Expr::Path(expr) => {
-            let k = expr.path.segments.first()?.ident.to_string();
-            lapis.data.wmap.get(&k)
-        }
-        _ => None,
-    }
+    let k = nth_path_ident(expr, 0)?;
+    lapis.data.wmap.get(&k)
 }
