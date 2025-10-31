@@ -79,7 +79,7 @@ fn eval_expr(expr: Expr, lapis: &mut Lapis, buffer: &mut String) {
     } else if let Some(entity) = eval_entity(&expr, lapis) {
         buffer.push_str(&format!("\n// {entity:?}"));
     } else if let Some(string) = eval_string(&expr, lapis) {
-        buffer.push_str(&format!("\n// \"{}\"", string));
+        buffer.push_str(&format!("\n/* \"{}\" */", string));
     } else if let Expr::Binary(expr) = expr {
         float_bin_assign(&expr, lapis);
     } else if let Expr::Call(expr) = expr {
