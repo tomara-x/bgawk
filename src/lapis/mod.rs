@@ -111,6 +111,36 @@ impl Lapis<'_, '_> {
         self.data.atomic_table_map.remove(k);
         self.data.string_map.remove(k);
     }
+    pub fn clear_keys(&mut self) {
+        self.data.keys.clear();
+        self.data.keys.shrink_to_fit();
+    }
+    pub fn clear_maps(&mut self) {
+        self.data.fmap.clear();
+        self.data.fmap.shrink_to_fit();
+        self.data.vmap.clear();
+        self.data.vmap.shrink_to_fit();
+        self.data.gmap.clear();
+        self.data.gmap.shrink_to_fit();
+        self.data.idmap.clear();
+        self.data.idmap.shrink_to_fit();
+        self.data.bmap.clear();
+        self.data.bmap.shrink_to_fit();
+        self.data.smap.clear();
+        self.data.smap.shrink_to_fit();
+        self.data.wmap.clear();
+        self.data.wmap.shrink_to_fit();
+        self.data.seqmap.clear();
+        self.data.seqmap.shrink_to_fit();
+        self.data.eventmap.clear();
+        self.data.eventmap.shrink_to_fit();
+        self.data.srcmap.clear();
+        self.data.srcmap.shrink_to_fit();
+        self.data.atomic_table_map.clear();
+        self.data.atomic_table_map.shrink_to_fit();
+        self.data.string_map.clear();
+        self.data.string_map.shrink_to_fit();
+    }
     pub fn eval(&mut self, input: &str) {
         if !input.is_empty() {
             self.data.buffer.push('\n');
