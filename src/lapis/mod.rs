@@ -26,6 +26,13 @@ pub struct LapisPlugin;
 impl Plugin for LapisPlugin {
     fn build(&self, app: &mut App) {
         app.init_resource::<LapisData>();
+        app.add_systems(Startup, init_eval);
+    }
+}
+
+fn init_eval(mut lapis: Lapis) {
+    if let Ok(init) = std::fs::read_to_string("init.rs") {
+        lapis.eval(&init);
     }
 }
 
