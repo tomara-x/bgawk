@@ -187,33 +187,24 @@ fn field_float(expr: &ExprField, lapis: &Lapis) -> Option<f64> {
     } else {
         let base = nth_path_ident(&expr.base, 0)?;
         if let Member::Named(ident) = &expr.member {
-            if base == "out_stream" {
-                let config = lapis.out_stream_config.0.as_ref()?;
-                return match ident.to_string().as_str() {
-                    "sr" => Some(config.sample_rate.0 as f64),
-                    "chan" => Some(config.channels as f64),
-                    "buffer" => {
-                        if let cpal::BufferSize::Fixed(size) = config.buffer_size {
-                            return Some(size as f64);
-                        }
-                        None
-                    }
-                    _ => None,
-                };
+            let config = if base == "out_stream" {
+                lapis.out_stream_config.0.as_ref()?
             } else if base == "in_stream" {
-                let config = lapis.in_stream_config.0.as_ref()?;
-                return match ident.to_string().as_str() {
-                    "sr" => Some(config.sample_rate.0 as f64),
-                    "chan" => Some(config.channels as f64),
-                    "buffer" => {
-                        if let cpal::BufferSize::Fixed(size) = config.buffer_size {
-                            return Some(size as f64);
-                        }
-                        None
+                lapis.in_stream_config.0.as_ref()?
+            } else {
+                return None;
+            };
+            return match ident.to_string().as_str() {
+                "sr" => Some(config.sample_rate.0 as f64),
+                "chan" => Some(config.channels as f64),
+                "buffer" => {
+                    if let cpal::BufferSize::Fixed(size) = config.buffer_size {
+                        return Some(size as f64);
                     }
-                    _ => None,
-                };
-            }
+                    None
+                }
+                _ => None,
+            };
         }
     }
     None

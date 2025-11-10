@@ -205,12 +205,22 @@ pub struct DropInStream;
 #[derive(Event)]
 pub struct DropOutStream;
 
-fn drop_in_stream(_: Trigger<DropInStream>, mut stream: NonSendMut<InStream>) {
+fn drop_in_stream(
+    _: Trigger<DropInStream>,
+    mut stream: NonSendMut<InStream>,
+    mut config: ResMut<InStreamConfig>,
+) {
     stream.0 = None;
+    config.0 = None;
 }
 
-fn drop_out_stream(_: Trigger<DropOutStream>, mut stream: NonSendMut<OutStream>) {
+fn drop_out_stream(
+    _: Trigger<DropOutStream>,
+    mut stream: NonSendMut<OutStream>,
+    mut config: ResMut<OutStreamConfig>,
+) {
     stream.0 = None;
+    config.0 = None;
 }
 
 fn run_out<T>(

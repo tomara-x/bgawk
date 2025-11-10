@@ -329,7 +329,7 @@ fn eval_assign(expr: &ExprAssign, lapis: &mut Lapis) {
                     if let Some(shortcut) = parse_shortcut(left.value()) {
                         lapis.data.keys.remove(&shortcut);
                         let key = shortcut.1.name();
-                        let code = right.replace("$key", key);
+                        let code = right.replace("@", key);
                         if !code.is_empty() {
                             lapis.data.keys.insert(shortcut, code);
                         }
