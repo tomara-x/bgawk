@@ -1,4 +1,4 @@
-use super::{floats::*, helpers::*, ints::*, Lapis};
+use super::{Lapis, floats::*, helpers::*, ints::*};
 use syn::*;
 
 pub fn eval_string(expr: &Expr, lapis: &Lapis) -> Option<String> {

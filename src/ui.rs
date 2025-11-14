@@ -9,7 +9,7 @@ use bevy::{
     prelude::*,
     window::WindowMode,
 };
-use bevy_egui::{egui, egui::*, EguiContexts, EguiPlugin, EguiPrimaryContextPass};
+use bevy_egui::{EguiContexts, EguiPlugin, EguiPrimaryContextPass, egui, egui::*};
 use egui_extras::syntax_highlighting::*;
 use std::sync::Arc;
 

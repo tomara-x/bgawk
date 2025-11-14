@@ -1,4 +1,4 @@
-use super::{entities::*, helpers::*, ints::*, nets::*, Lapis};
+use super::{Lapis, entities::*, helpers::*, ints::*, nets::*};
 use bevy::prelude::*;
 use fundsp::hacker::*;
 use syn::*;
@@ -24,10 +24,10 @@ pub fn eval_float(expr: &Expr, lapis: &Lapis) -> Option<f64> {
 
 fn field_float(expr: &ExprField, lapis: &Lapis) -> Option<f64> {
     if let Some(mut e) = path_lit_entity(&expr.base, lapis) {
-        if e == Entity::PLACEHOLDER {
-            if let Ok(selected) = lapis.selected_query.single() {
-                e = selected;
-            }
+        if e == Entity::PLACEHOLDER
+            && let Ok(selected) = lapis.selected_query.single()
+        {
+            e = selected;
         }
         if let Member::Named(ident) = &expr.member {
             let trans = &lapis.trans_query;

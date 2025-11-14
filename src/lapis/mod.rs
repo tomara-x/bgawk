@@ -4,7 +4,7 @@ use bevy::{ecs::system::SystemParam, prelude::*};
 use bevy_egui::egui::{Key, Modifiers};
 use fundsp::hacker::*;
 use std::{collections::HashMap, sync::Arc};
-use syn::{parse_str, Stmt};
+use syn::{Stmt, parse_str};
 
 mod arrays;
 mod atomics;

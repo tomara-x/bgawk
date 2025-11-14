@@ -1,4 +1,4 @@
-use super::{floats::*, Lapis};
+use super::{Lapis, floats::*};
 use syn::*;
 
 pub fn eval_i32(expr: &Expr, lapis: &Lapis) -> Option<i32> {

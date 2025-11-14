@@ -192,20 +192,20 @@ pub fn update_cursor_info(
 ) {
     if mouse_button_input.just_pressed(MouseButton::Left) {
         let (cam, cam_transform) = camera_query.single().unwrap();
-        if let Some(cursor_pos) = windows.single().unwrap().cursor_position() {
-            if let Ok(point) = cam.viewport_to_world_2d(cam_transform, cursor_pos) {
-                cursor.i = point;
-            }
+        if let Some(cursor_pos) = windows.single().unwrap().cursor_position()
+            && let Ok(point) = cam.viewport_to_world_2d(cam_transform, cursor_pos)
+        {
+            cursor.i = point;
         }
     }
     if mouse_button_input.pressed(MouseButton::Left) {
         let (cam, cam_transform) = camera_query.single().unwrap();
-        if let Some(cursor_pos) = windows.single().unwrap().cursor_position() {
-            if let Ok(point) = cam.viewport_to_world_2d(cam_transform, cursor_pos) {
-                cursor.f = point;
-                cursor.d = point - *last_pos;
-                *last_pos = point;
-            }
+        if let Some(cursor_pos) = windows.single().unwrap().cursor_position()
+            && let Ok(point) = cam.viewport_to_world_2d(cam_transform, cursor_pos)
+        {
+            cursor.f = point;
+            cursor.d = point - *last_pos;
+            *last_pos = point;
         }
     }
     if mouse_button_input.just_released(MouseButton::Left) {
@@ -385,15 +385,14 @@ fn update_selection(
             (cursor.f.y, cursor.i.y)
         };
         for e in visible.single().unwrap().get(TypeId::of::<Mesh2d>()) {
-            if let Ok(t) = trans_query.get(*e) {
-                if (min_x < t.translation.x && t.translation.x < max_x)
-                    && (min_y < t.translation.y && t.translation.y < max_y)
-                {
-                    if ctrl {
-                        commands.entity(*e).remove::<Selected>();
-                    } else {
-                        commands.entity(*e).insert(Selected);
-                    }
+            if let Ok(t) = trans_query.get(*e)
+                && (min_x < t.translation.x && t.translation.x < max_x)
+                && (min_y < t.translation.y && t.translation.y < max_y)
+            {
+                if ctrl {
+                    commands.entity(*e).remove::<Selected>();
+                } else {
+                    commands.entity(*e).insert(Selected);
                 }
             }
         }
@@ -435,12 +434,12 @@ fn follow_object(
     mut camera_query: Query<&mut Transform, With<Camera>>,
     mouse_button_input: Res<ButtonInput<MouseButton>>,
 ) {
-    if mouse_button_input.pressed(MouseButton::Right) {
-        if let Ok(t) = selected_query.single() {
-            let mut cam = camera_query.single_mut().unwrap();
-            cam.translation.x = t.translation.x;
-            cam.translation.y = t.translation.y;
-        }
+    if mouse_button_input.pressed(MouseButton::Right)
+        && let Ok(t) = selected_query.single()
+    {
+        let mut cam = camera_query.single_mut().unwrap();
+        cam.translation.x = t.translation.x;
+        cam.translation.y = t.translation.y;
     }
 }
 
@@ -484,7 +483,9 @@ fn copy_selection(
             let links = &links_query.get(e).unwrap().0;
             let code = code_query.get(e).unwrap();
             let (ci, cf) = (&code.0, &code.1);
-            let line = format!("let _ = spawn({rx}).x({x}).y({y}).z({z}).ry({ry}).rot({rot}).mass({mass}).inertia({inertia}).vx({vx}).vy({vy}).va({va}).restitution({restitution}).lindamp({lindamp}).angdamp({angdamp}).h({h}).s({s}).l({l}).a({a}).sides({sides}).cmx({cmx}).cmy({cmy}).friction({friction}).tail({tail}).layer({layer}).dynamic({dynamic}).sensor({sensor}).links(\"{links}\").code_i(\"{ci}\").code_f(\"{cf}\");\n");
+            let line = format!(
+                "let _ = spawn({rx}).x({x}).y({y}).z({z}).ry({ry}).rot({rot}).mass({mass}).inertia({inertia}).vx({vx}).vy({vy}).va({va}).restitution({restitution}).lindamp({lindamp}).angdamp({angdamp}).h({h}).s({s}).l({l}).a({a}).sides({sides}).cmx({cmx}).cmy({cmy}).friction({friction}).tail({tail}).layer({layer}).dynamic({dynamic}).sensor({sensor}).links(\"{links}\").code_i(\"{ci}\").code_f(\"{cf}\");\n"
+            );
             selection.push_str(&line);
         }
         for j in lapis.fixed_query.iter() {
@@ -493,8 +494,15 @@ fn copy_selection(
                 let t2 = lapis.trans_query.get(j.entity2).unwrap().translation;
                 let line = format!(
                     "let _ = joint({},{},{},{}).joint_type(0).compliance({}).anchor1({},{}).anchor2({},{});\n",
-                    t1.x, t1.y, t2.x, t2.y, j.compliance,
-                    j.local_anchor1.x, j.local_anchor1.y, j.local_anchor2.x, j.local_anchor2.y,
+                    t1.x,
+                    t1.y,
+                    t2.x,
+                    t2.y,
+                    j.compliance,
+                    j.local_anchor1.x,
+                    j.local_anchor1.y,
+                    j.local_anchor2.x,
+                    j.local_anchor2.y,
                 );
                 selection.push_str(&line);
             }
@@ -506,8 +514,18 @@ fn copy_selection(
                 let limits = j.length_limits.unwrap();
                 let line = format!(
                     "let _ = joint({},{},{},{}).joint_type(1).limits({},{}).compliance({}).anchor1({},{}).anchor2({},{}).rest({});\n",
-                    t1.x, t1.y, t2.x, t2.y, limits.min, limits.max, j.compliance,
-                    j.local_anchor1.x, j.local_anchor1.y, j.local_anchor2.x, j.local_anchor2.y, j.rest_length,
+                    t1.x,
+                    t1.y,
+                    t2.x,
+                    t2.y,
+                    limits.min,
+                    limits.max,
+                    j.compliance,
+                    j.local_anchor1.x,
+                    j.local_anchor1.y,
+                    j.local_anchor2.x,
+                    j.local_anchor2.y,
+                    j.rest_length,
                 );
                 selection.push_str(&line);
             }
@@ -519,9 +537,19 @@ fn copy_selection(
                 let limits = j.free_axis_limits.unwrap();
                 let line = format!(
                     "let _ = joint({},{},{},{}).joint_type(2).limits({},{}).compliance({}).anchor1({},{}).anchor2({},{}).free_axis({},{});\n",
-                    t1.x, t1.y, t2.x, t2.y, limits.min, limits.max, j.compliance,
-                    j.local_anchor1.x, j.local_anchor1.y, j.local_anchor2.x, j.local_anchor2.y,
-                    j.free_axis.x, j.free_axis.y,
+                    t1.x,
+                    t1.y,
+                    t2.x,
+                    t2.y,
+                    limits.min,
+                    limits.max,
+                    j.compliance,
+                    j.local_anchor1.x,
+                    j.local_anchor1.y,
+                    j.local_anchor2.x,
+                    j.local_anchor2.y,
+                    j.free_axis.x,
+                    j.free_axis.y,
                 );
                 selection.push_str(&line);
             }
@@ -533,16 +561,25 @@ fn copy_selection(
                 let limits = j.angle_limit.unwrap();
                 let line = format!(
                     "let _ = joint({},{},{},{}).joint_type(3).limits({},{}).compliance({}).anchor1({},{}).anchor2({},{});\n",
-                    t1.x, t1.y, t2.x, t2.y, limits.min, limits.max, j.compliance,
-                    j.local_anchor1.x, j.local_anchor1.y, j.local_anchor2.x, j.local_anchor2.y,
+                    t1.x,
+                    t1.y,
+                    t2.x,
+                    t2.y,
+                    limits.min,
+                    limits.max,
+                    j.compliance,
+                    j.local_anchor1.x,
+                    j.local_anchor1.y,
+                    j.local_anchor2.x,
+                    j.local_anchor2.y,
                 );
                 selection.push_str(&line);
             }
         }
-        if !selection.is_empty() {
-            if let Ok(ctx) = contexts.ctx_mut() {
-                ctx.copy_text(selection);
-            }
+        if !selection.is_empty()
+            && let Ok(ctx) = contexts.ctx_mut()
+        {
+            ctx.copy_text(selection);
         }
     }
 }

@@ -1,4 +1,4 @@
-use super::{arrays::*, bools::*, floats::*, helpers::*, Lapis};
+use super::{Lapis, arrays::*, bools::*, floats::*, helpers::*};
 use crate::interaction::*;
 use crate::{joints::*, objects::*};
 use bevy::prelude::*;
@@ -138,24 +138,24 @@ fn method_entity(expr: &ExprMethodCall, lapis: &mut Lapis) -> Option<Entity> {
             lapis.commands.trigger_targets(Property::Sensor(b), e);
         }
         "links" => {
-            if let Expr::Lit(expr) = expr.args.first()? {
-                if let Lit::Str(expr) = &expr.lit {
-                    cmd.trigger_targets(Property::Links(expr.value()), e);
-                }
+            if let Expr::Lit(expr) = expr.args.first()?
+                && let Lit::Str(expr) = &expr.lit
+            {
+                cmd.trigger_targets(Property::Links(expr.value()), e);
             }
         }
         "code_i" => {
-            if let Expr::Lit(expr) = expr.args.first()? {
-                if let Lit::Str(expr) = &expr.lit {
-                    cmd.trigger_targets(Property::CodeI(expr.value()), e);
-                }
+            if let Expr::Lit(expr) = expr.args.first()?
+                && let Lit::Str(expr) = &expr.lit
+            {
+                cmd.trigger_targets(Property::CodeI(expr.value()), e);
             }
         }
         "code_f" => {
-            if let Expr::Lit(expr) = expr.args.first()? {
-                if let Lit::Str(expr) = &expr.lit {
-                    cmd.trigger_targets(Property::CodeF(expr.value()), e);
-                }
+            if let Expr::Lit(expr) = expr.args.first()?
+                && let Lit::Str(expr) = &expr.lit
+            {
+                cmd.trigger_targets(Property::CodeF(expr.value()), e);
             }
         }
         // joint methods

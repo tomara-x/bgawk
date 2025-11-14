@@ -1,11 +1,11 @@
 use crate::{
     interaction::*,
-    lapis::{floats::eval_float_f32, Lapis},
+    lapis::{Lapis, floats::eval_float_f32},
 };
 use avian2d::prelude::*;
 use bevy::{prelude::*, sprite::AlphaMode2d};
 use std::collections::VecDeque;
-use syn::{parse_str, Expr};
+use syn::{Expr, parse_str};
 
 pub struct ObjectsPlugin;
 
@@ -151,14 +151,14 @@ fn attract(
     while let Some([(e1, l1), (e2, l2)]) = combinations.fetch_next() {
         if l1 == l2 {
             let [mut e1, mut e2] = query.get_many_mut([e1, e2]).unwrap();
-            let m1 = e1.0 .0;
-            let m2 = e2.0 .0;
-            let p1 = e1.1 .0;
-            let p2 = e2.1 .0;
+            let m1 = e1.0.0;
+            let m2 = e2.0.0;
+            let p1 = e1.1.0;
+            let p2 = e2.1.0;
             let r = p1.distance_squared(p2);
             if r > 1. {
-                e1.2 .0 += (p2 - p1) * m2 / r * factor.0;
-                e2.2 .0 += (p1 - p2) * m1 / r * factor.0;
+                e1.2.0 += (p2 - p1) * m2 / r * factor.0;
+                e2.2.0 += (p1 - p2) * m1 / r * factor.0;
             }
         }
     }
@@ -449,54 +449,53 @@ fn sync_links(links_query: Query<(Entity, &Links)>, mut lapis: Lapis) {
                     _ => {}
                 }
             // assign a float expression
-            } else if dir == "<" || dir == "=" {
-                if let Ok(expr) = parse_str::<Expr>(var) {
-                    if let Some(f) = eval_float_f32(&expr, &lapis) {
-                        let cmd = &mut lapis.commands;
-                        match property {
-                            "x" => cmd.trigger_targets(Property::X(f), e),
-                            "y" => cmd.trigger_targets(Property::Y(f), e),
-                            "z" => cmd.trigger_targets(Property::Z(f), e),
-                            "rx" => cmd.trigger_targets(Property::Rx(f), e),
-                            "ry" => cmd.trigger_targets(Property::Ry(f), e),
-                            "rot" => cmd.trigger_targets(Property::Rot(f), e),
-                            "mass" => cmd.trigger_targets(Property::Mass(f), e),
-                            "vx" => cmd.trigger_targets(Property::Vx(f), e),
-                            "vy" => cmd.trigger_targets(Property::Vy(f), e),
-                            "va" => cmd.trigger_targets(Property::Va(f), e),
-                            "vm" => {
-                                let v = lapis.lin_velocity_query.get(e).unwrap();
-                                let m = f;
-                                let p = v.y.atan2(v.x);
-                                cmd.trigger_targets(Property::Vx(m * p.cos()), e);
-                                cmd.trigger_targets(Property::Vy(m * p.sin()), e);
-                            }
-                            "vp" => {
-                                let v = lapis.lin_velocity_query.get(e).unwrap();
-                                let m = v.x.hypot(v.y);
-                                let p = f;
-                                cmd.trigger_targets(Property::Vx(m * p.cos()), e);
-                                cmd.trigger_targets(Property::Vy(m * p.sin()), e);
-                            }
-                            "restitution" => cmd.trigger_targets(Property::Restitution(f), e),
-                            "lindamp" => cmd.trigger_targets(Property::LinDamp(f), e),
-                            "angdamp" => cmd.trigger_targets(Property::AngDamp(f), e),
-                            "inertia" => cmd.trigger_targets(Property::Inertia(f), e),
-                            "h" => cmd.trigger_targets(Property::H(f), e),
-                            "s" => cmd.trigger_targets(Property::S(f), e),
-                            "l" => cmd.trigger_targets(Property::L(f), e),
-                            "a" => cmd.trigger_targets(Property::A(f), e),
-                            "sides" => cmd.trigger_targets(Property::Sides(f as u32), e),
-                            "cmx" => cmd.trigger_targets(Property::Cmx(f), e),
-                            "cmy" => cmd.trigger_targets(Property::Cmy(f), e),
-                            "friction" => cmd.trigger_targets(Property::Friction(f), e),
-                            "tail" => cmd.trigger_targets(Property::Tail(f as usize), e),
-                            "layer" => cmd.trigger_targets(Property::Layer(f as u32), e),
-                            "dynamic" => cmd.trigger_targets(Property::Dynamic(f > 0.), e),
-                            "sensor" => cmd.trigger_targets(Property::Sensor(f > 0.), e),
-                            _ => {}
-                        }
+            } else if (dir == "<" || dir == "=")
+                && let Ok(expr) = parse_str::<Expr>(var)
+                && let Some(f) = eval_float_f32(&expr, &lapis)
+            {
+                let cmd = &mut lapis.commands;
+                match property {
+                    "x" => cmd.trigger_targets(Property::X(f), e),
+                    "y" => cmd.trigger_targets(Property::Y(f), e),
+                    "z" => cmd.trigger_targets(Property::Z(f), e),
+                    "rx" => cmd.trigger_targets(Property::Rx(f), e),
+                    "ry" => cmd.trigger_targets(Property::Ry(f), e),
+                    "rot" => cmd.trigger_targets(Property::Rot(f), e),
+                    "mass" => cmd.trigger_targets(Property::Mass(f), e),
+                    "vx" => cmd.trigger_targets(Property::Vx(f), e),
+                    "vy" => cmd.trigger_targets(Property::Vy(f), e),
+                    "va" => cmd.trigger_targets(Property::Va(f), e),
+                    "vm" => {
+                        let v = lapis.lin_velocity_query.get(e).unwrap();
+                        let m = f;
+                        let p = v.y.atan2(v.x);
+                        cmd.trigger_targets(Property::Vx(m * p.cos()), e);
+                        cmd.trigger_targets(Property::Vy(m * p.sin()), e);
                     }
+                    "vp" => {
+                        let v = lapis.lin_velocity_query.get(e).unwrap();
+                        let m = v.x.hypot(v.y);
+                        let p = f;
+                        cmd.trigger_targets(Property::Vx(m * p.cos()), e);
+                        cmd.trigger_targets(Property::Vy(m * p.sin()), e);
+                    }
+                    "restitution" => cmd.trigger_targets(Property::Restitution(f), e),
+                    "lindamp" => cmd.trigger_targets(Property::LinDamp(f), e),
+                    "angdamp" => cmd.trigger_targets(Property::AngDamp(f), e),
+                    "inertia" => cmd.trigger_targets(Property::Inertia(f), e),
+                    "h" => cmd.trigger_targets(Property::H(f), e),
+                    "s" => cmd.trigger_targets(Property::S(f), e),
+                    "l" => cmd.trigger_targets(Property::L(f), e),
+                    "a" => cmd.trigger_targets(Property::A(f), e),
+                    "sides" => cmd.trigger_targets(Property::Sides(f as u32), e),
+                    "cmx" => cmd.trigger_targets(Property::Cmx(f), e),
+                    "cmy" => cmd.trigger_targets(Property::Cmy(f), e),
+                    "friction" => cmd.trigger_targets(Property::Friction(f), e),
+                    "tail" => cmd.trigger_targets(Property::Tail(f as usize), e),
+                    "layer" => cmd.trigger_targets(Property::Layer(f as u32), e),
+                    "dynamic" => cmd.trigger_targets(Property::Dynamic(f > 0.), e),
+                    "sensor" => cmd.trigger_targets(Property::Sensor(f > 0.), e),
+                    _ => {}
                 }
             }
         }

@@ -1,4 +1,4 @@
-use super::{entities::*, floats::*, helpers::*, Lapis};
+use super::{Lapis, entities::*, floats::*, helpers::*};
 use avian2d::prelude::*;
 use syn::*;
 
@@ -16,10 +16,11 @@ pub fn eval_bool(expr: &Expr, lapis: &Lapis) -> Option<bool> {
 }
 
 fn method_bool(expr: &ExprMethodCall, lapis: &Lapis) -> Option<bool> {
-    if let Some(k) = nth_path_ident(&expr.receiver, 0) {
-        if k == "time" && expr.method == "is_paused" {
-            return Some(lapis.time.is_paused());
-        }
+    if let Some(k) = nth_path_ident(&expr.receiver, 0)
+        && k == "time"
+        && expr.method == "is_paused"
+    {
+        return Some(lapis.time.is_paused());
     }
     None
 }

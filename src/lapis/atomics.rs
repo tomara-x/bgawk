@@ -1,4 +1,4 @@
-use super::{arrays::*, floats::*, helpers::*, ints::*, Lapis};
+use super::{Lapis, arrays::*, floats::*, helpers::*, ints::*};
 use fundsp::hacker::*;
 use syn::*;
 

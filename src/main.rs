@@ -6,7 +6,7 @@ use bevy::{
         bloom::{Bloom, BloomCompositeMode},
         tonemapping::Tonemapping,
     },
-    ecs::error::{error, GLOBAL_ERROR_HANDLER},
+    ecs::error::{GLOBAL_ERROR_HANDLER, error},
     prelude::*,
     winit::{UpdateMode, WinitSettings},
 };

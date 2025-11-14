@@ -1,9 +1,9 @@
 use bevy::prelude::*;
 use cpal::{
-    traits::{DeviceTrait, HostTrait, StreamTrait},
     FromSample, SizedSample, Stream, StreamConfig,
+    traits::{DeviceTrait, HostTrait, StreamTrait},
 };
-use crossbeam_channel::{bounded, Receiver, Sender};
+use crossbeam_channel::{Receiver, Sender, bounded};
 use fundsp::hacker::*;
 //use assert_no_alloc::*;
 
@@ -254,10 +254,10 @@ where
         err_fn,
         None,
     );
-    if let Ok(stream) = stream {
-        if let Ok(()) = stream.play() {
-            return Some(stream);
-        }
+    if let Ok(stream) = stream
+        && let Ok(()) = stream.play()
+    {
+        return Some(stream);
     }
     None
 }
@@ -287,10 +287,10 @@ where
         err_fn,
         None,
     );
-    if let Ok(stream) = stream {
-        if let Ok(()) = stream.play() {
-            return Some(stream);
-        }
+    if let Ok(stream) = stream
+        && let Ok(()) = stream.play()
+    {
+        return Some(stream);
     }
     None
 }

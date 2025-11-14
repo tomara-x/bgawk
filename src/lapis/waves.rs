@@ -1,4 +1,4 @@
-use super::{arrays::*, floats::*, helpers::*, ints::*, nets::*, strings::*, Lapis};
+use super::{Lapis, arrays::*, floats::*, helpers::*, ints::*, nets::*, strings::*};
 use fundsp::hacker::*;
 use std::sync::Arc;
 use syn::*;
@@ -78,10 +78,10 @@ fn call_wave(expr: &ExprCall, lapis: &mut Lapis) -> Option<Wave> {
         }
         "load" => {
             let arg0 = expr.args.first()?;
-            if let Expr::Lit(expr) = arg0 {
-                if let Lit::Str(expr) = &expr.lit {
-                    return Wave::load(expr.value()).ok();
-                }
+            if let Expr::Lit(expr) = arg0
+                && let Lit::Str(expr) = &expr.lit
+            {
+                return Wave::load(expr.value()).ok();
             }
             None
         }
