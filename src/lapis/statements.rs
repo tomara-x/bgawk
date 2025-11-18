@@ -44,22 +44,14 @@ fn eval_expr(expr: Expr, lapis: &mut Lapis, buffer: &mut String) {
         buffer.push_str(&format!("\n// {b:?}"));
     } else if let Some(s) = eval_shared(&expr, lapis) {
         buffer.push_str(&format!("\n// Shared({})", s.value()));
-    } else if let Some(w) = path_wave(&expr, lapis) {
-        let info = format!(
-            "\n// Wave(ch:{}, sr:{}, len:{}, dur:{})",
-            w.channels(),
-            w.sample_rate(),
-            w.len(),
-            w.duration()
-        );
-        buffer.push_str(&info);
     } else if let Some(w) = eval_wave(&expr, lapis) {
         buffer.push_str(&format!(
-            "\n// Wave(ch:{}, sr:{}, len:{}, dur:{})",
+            "\n// Wave(ch:{}, sr:{}, len:{}, dur:{}, arcs:{})",
             w.channels(),
             w.sample_rate(),
             w.len(),
-            w.duration()
+            w.duration(),
+            Arc::strong_count(&w) - 1
         ));
     } else if let Some(seq) = path_seq(&expr, lapis).or(call_seq(&expr, lapis).as_ref()) {
         let info = format!(
@@ -80,6 +72,10 @@ fn eval_expr(expr: Expr, lapis: &mut Lapis, buffer: &mut String) {
         buffer.push_str(&format!("\n// {entity:?}"));
     } else if let Some(string) = eval_string(&expr, lapis) {
         buffer.push_str(&format!("\n/* \"{}\" */", string));
+    } else if let Some(k) = nth_path_ident(&expr, 0)
+        && let Some(t) = lapis.data.atomic_table_map.get(&k)
+    {
+        buffer.push_str(&format!("\n// AtomicTable(len:{})", t.len()));
     } else if let Expr::Binary(expr) = expr {
         float_bin_assign(&expr, lapis);
     } else if let Expr::Call(expr) = expr {
@@ -191,8 +187,7 @@ fn eval_local(expr: &syn::Local, lapis: &mut Lapis) -> Option<()> {
                 lapis.data.smap.insert(k, s);
             } else if let Some(w) = eval_wave(&expr.expr, lapis) {
                 lapis.drop(&k);
-                let wave = Arc::new(w);
-                lapis.data.wmap.insert(k, wave);
+                lapis.data.wmap.insert(k, w);
             } else if let Some(seq) = call_seq(&expr.expr, lapis) {
                 lapis.drop(&k);
                 lapis.data.seqmap.insert(k, seq);
